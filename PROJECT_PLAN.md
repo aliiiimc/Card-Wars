@@ -309,7 +309,6 @@ This is the best structure if you want:
 - less interference
 - a project that still feels technical and serious
 
-Ali gets more of the game sense, rule design, and card balancing work, which matches what the team said he is good at.
 
 ## 9. Balance Check for the Team
 This role split is more balanced than the previous one.
