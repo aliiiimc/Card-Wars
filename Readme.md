@@ -34,7 +34,8 @@ Destroy the opponent's Fort.
 
 Since this is your first Unity/C# project, start here:
 
-1. **Install Unity Hub** → install Unity 2022 LTS (stable, most tutorials target it)
+1. **Install Unity Hub** → install **Unity 6 LTS, version 6000.3.10f1** (must match project `ProjectSettings/ProjectVersion.txt`)
+   - **Version lock rule**: do not upgrade/downgrade Unity for this project unless the team agrees and updates `ProjectSettings/ProjectVersion.txt` in Git.
 2. **Pick 2D or 3D** — for a card/strategy game, **2D is simpler** to start with
 3. **Learn C# basics** — variables, functions, classes, lists, enums
    - Free: [Microsoft C# fundamentals](https://learn.microsoft.com/en-us/dotnet/csharp/tour-of-csharp/)
