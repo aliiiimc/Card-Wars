@@ -1,123 +1,166 @@
-# Fort & Cards — Turn-Based Strategy Game
+# Fort & Cards - Turn-Based Strategy Game
 
 ## Game Concept Summary
 
-A **PVP turn-based strategy card game** hosted on a local server. Each player defends a **Fort** using cards drawn from three categories.
+A local turn-based strategy card game where each player defends a **Fort** on the map.
+The match is played on one machine first, with gameplay quality taking priority over networking.
 
 ---
 
 ## Core Mechanics
 
 ### The Fort
-- Each player has a Fort on the map — lose it, you lose the game
-- The Fort has HP and can be defended with Environment cards
+- Each player has a Fort on the map
+- If a Fort is destroyed, that player loses
+- Fort HP is part of the main game rules and balance
 
 ### Card System
-We start game like this
-| Category | Starting Hand | Purpose |
-|----------|--------------|---------|
-| **Environment** (2) | Build structures, plant money-generating fields, deploy natural disasters (volcano, earthquake, fog) |
-| **Character** (2) | Spawn units for offense/defense — soldiers, animals, wizards, mythical beings |
-| **Spell** (1) | Heal, accelerate field growth, steal opponent's cards, buffs/debuffs |
+We start the game like this:
 
-- **Starting hand**: 5 cards (2 Environment + 2 Character + 1 Spell), drawn randomly
-- **Buy/Discard**: Discard 1 card to buy a random card from the buy stack (chance-based rarity)
+| Category | Starting Hand | Purpose |
+|----------|---------------|---------|
+| **Environment** (2) | Build structures, plant money-generating fields, deploy natural disasters |
+| **Character** (2) | Spawn units for offense and defense |
+| **Spell** (1) | Heal, direct damage, buffs, debuffs, utility effects |
+
+- **Starting hand**: 5 cards total
+- Suggested first hand: `2 Environment + 2 Character + 1 Spell`
+- After the starting hand, players do **not** draw automatically each turn
+- Each turn gives guaranteed income
+- During the **Buy** phase, the player may buy **1 card maximum**
+- In v1, a bought card goes directly into the player's hand
+
+### Economy Rules
+- Every turn, the player gets a minimum amount of money
+- Card prices should stay low enough for early turns to feel active
+- Economy cards should help, but not snowball too fast
+- Limiting purchases to 1 per turn keeps the pace more fair and controlled
 
 ### Win Condition
 Destroy the opponent's Fort.
 
 ---
 
-## How to Build This in Unity — Step by Step
+## Match Flow
 
-### Phase 0: Learn the Basics (Week 1–2)
+The match follows this turn order:
 
-Since this is your first Unity/C# project, start here:
+1. **Setup**
+   - Create both players
+   - Assign starting money
+   - Assign Fort HP
+   - Give the starting hand
+   - Set the current player
+2. **Income**
+   - The current player gains guaranteed money
+3. **Buy**
+   - The player may buy up to 1 card
+   - Bought cards go directly to hand in v1
+4. **Play**
+   - The player uses cards from hand
+5. **Attack**
+   - Units attack enemy units or the enemy Fort
+6. **End**
+   - Check win or lose
+   - Pass the turn to the other player
 
-1. **Install Unity Hub** → install **Unity 6 LTS, version 6000.3.10f1** (must match project `ProjectSettings/ProjectVersion.txt`)
-   - **Version lock rule**: do not upgrade/downgrade Unity for this project unless the team agrees and updates `ProjectSettings/ProjectVersion.txt` in Git.
-2. **Pick 2D or 3D** — for a card/strategy game, **2D is simpler** to start with
-3. **Learn C# basics** — variables, functions, classes, lists, enums
-   - Free: [Microsoft C# fundamentals](https://learn.microsoft.com/en-us/dotnet/csharp/tour-of-csharp/)
-4. **Follow Unity's official beginner tutorials** (2–3 hours)
-   - Unity Learn: "Create with Code" or "Junior Programmer" pathway
-5. **Key Unity concepts to understand first:**
-   - GameObjects, Components, Prefabs
-   - MonoBehaviour lifecycle (`Start()`, `Update()`)
-   - UI system (Canvas, Buttons, Text)
-   - ScriptableObjects (perfect for card data)
+Short version:
+
+`Setup -> Income -> Buy -> Play -> Attack -> End -> Next Player`
+
+Design note:
+
+- This system is less random than a classic draw-every-turn card game
+- The player chooses cards through spending, so economy becomes part of the strategy
+- The first version should focus on a clear and reliable flow before extra complexity
+
+---
+
+## How to Build This in Unity - Step by Step
+
+### Phase 0: Learn the Basics
+
+Since this is a first Unity/C# project, start here:
+
+1. Install Unity Hub and use **Unity 6 LTS, version 6000.3.10f1**
+2. Keep the project version locked to `ProjectSettings/ProjectVersion.txt`
+3. Learn basic C#:
+   - variables
+   - functions
+   - classes
+   - lists
+   - enums
+4. Learn the main Unity concepts:
+   - GameObjects
+   - Components
+   - MonoBehaviour
+   - ScriptableObjects
    - Scene management
+   - Canvas and UI basics
 
-### Phase 1: Card Data & Deck System (Week 3)
+### Phase 1: Card Data and Economy System
 
-**Goal**: Define cards as data, build a deck, draw hands.
+**Goal**: Define cards as data, create the starting hand, and support the buy flow.
 
-```
+```text
 Assets/
   ScriptableObjects/
     Cards/
       EnvironmentCards/
       CharacterCards/
       SpellCards/
+    GameConfig/
   Scripts/
     Cards/
-      Card.cs              — base ScriptableObject
-      EnvironmentCard.cs   — inherits Card
-      CharacterCard.cs     — inherits Card
-      SpellCard.cs         — inherits Card
+      Card.cs
+      EnvironmentCard.cs
+      CharacterCard.cs
+      SpellCard.cs
     Deck/
-      Deck.cs              — list of cards, shuffle, draw
-      DiscardPile.cs       — discarded cards
-      BuyStack.cs          — random card purchase logic
+      StartingHand.cs
+      BuyStack.cs
+      DiscardPile.cs
     Player/
-      PlayerHand.cs        — holds 5 cards, play/discard
-      PlayerData.cs        — money, fort HP, stats
+      PlayerHand.cs
+      PlayerData.cs
+    Config/
+      GameConfig.cs
 ```
 
-**How ScriptableObjects work for cards:**
-```csharp
-// Card.cs — base card
-[CreateAssetMenu(fileName = "NewCard", menuName = "Cards/Card")]
-public class Card : ScriptableObject
-{
-    public string cardName;
-    public string description;
-    public Sprite artwork;
-    public int cost;
-    public CardCategory category; // enum: Environment, Character, Spell
-}
+Suggested data in `GameConfig`:
 
-// Enum
-public enum CardCategory { Environment, Character, Spell }
-```
+- starting money
+- starting Fort HP
+- starting hand size
+- max hand size
+- money per turn
+- buy cost
 
-> ScriptableObjects let you create card assets in the Unity Editor — no code needed to add new cards. Right-click → Create → Cards → Card.
+### Phase 2: Game Board and Fort
 
-### Phase 2: Game Board & Fort (Week 4)
+**Goal**: Create the map, place Forts, and build a basic tile system.
 
-**Goal**: Create the map, place Forts, basic grid/tile system.
+- Use a Tilemap or simple grid for the board
+- Each player's Fort is placed on the board
+- Define legal placement zones
 
-- Use a **Tilemap** (2D) or simple grid for the game board
-- Each player's Fort is a GameObject with HP
-- Define placement zones where cards can be played
-
-```
+```text
 Scripts/
   Board/
-    GameBoard.cs        — grid setup, tile references
-    Tile.cs             — what occupies each tile
+    GameBoard.cs
+    Tile.cs
   Fort/
-    Fort.cs             — HP, defense stats, damage/destroy logic
+    Fort.cs
 ```
 
-### Phase 3: Turn System (Week 5)
+### Phase 3: Turn System
 
-**Goal**: Alternate turns, define what a player can do per turn.
+**Goal**: Alternate turns and enforce the game phases.
 
 ```csharp
 public class TurnManager : MonoBehaviour
 {
-    public enum Phase { Draw, Play, Attack, End }
+    public enum Phase { Income, Buy, Play, Attack, End, GameOver }
 
     public void StartTurn(Player player) { }
     public void EndTurn() { }
@@ -126,67 +169,66 @@ public class TurnManager : MonoBehaviour
 ```
 
 Each turn:
-1. **Draw phase** — option to buy/discard
-2. **Play phase** — place cards on the board
-3. **Attack phase** — units attack
-4. **End phase** — field income, effects resolve, pass turn
 
-### Phase 4: Card Effects & Combat (Week 6–7)
+1. **Income phase** - gain guaranteed money
+2. **Buy phase** - buy up to 1 card
+3. **Play phase** - play cards from hand
+4. **Attack phase** - attack with units
+5. **End phase** - check victory and pass the turn
 
-**Goal**: Make cards actually do things.
+### Phase 4: Card Effects and Combat
 
-- **Environment**: spawn buildings/fields on tiles, trigger disasters on enemy tiles
-- **Character**: spawn units with HP/ATK/movement, basic combat (ATK vs HP)
-- **Spell**: apply effects (heal Fort, boost units, steal card)
+**Goal**: Make cards and units affect the board.
 
-Use an **interface pattern**:
-```csharp
-public interface IPlayable
-{
-    void Play(Player owner, Tile target);
-}
-```
+- **Environment**: buildings, income fields, hazards
+- **Character**: units with HP, ATK, movement, range
+- **Spell**: heal, damage, buff, debuff, utility
 
-### Phase 5: Local Multiplayer / Networking (Week 8–9)
+Suggested effect pipeline:
 
-**Goal**: Two players on a local network.
+1. Select a card
+2. Validate the target
+3. Spend the cost if needed
+4. Apply the effect
+5. Move the card to the correct pile if needed
 
-**Options (easiest to hardest):**
+### Phase 5: Local Play First
+
+**Goal**: Finish a clean local version before networking.
+
+Options:
 
 | Option | Difficulty | Description |
-|--------|-----------|-------------|
-| **Hot-seat** (same PC) | Easy | Players take turns on the same screen |
-| **Unity Netcode for GameObjects** | Medium | Unity's built-in networking, good for LAN |
-| **Mirror Networking** | Medium | Popular free networking library, lots of tutorials |
+|--------|------------|-------------|
+| **Hot-seat** (same PC) | Easy | Both players take turns on one machine |
+| **Unity Netcode for GameObjects** | Medium | Unity networking solution |
+| **Mirror Networking** | Medium | Popular free networking library |
 
-**Recommendation**: Start with **hot-seat** (pass and play) to get the game working first, then add networking with **Mirror** (most beginner-friendly for LAN).
+Recommendation:
 
-```
-Scripts/
-  Networking/
-    GameServer.cs        — host game, manage connections
-    GameClient.cs        — connect to host
-    NetworkTurnManager.cs — sync turns over network
-```
+- Finish the local version first
+- Add networking only after the match flow is reliable
 
-### Phase 6: UI & Polish (Week 10+)
+### Phase 6: UI and Polish
 
-- Card hand UI (drag and drop cards)
-- Board interaction (click to place, highlight valid tiles)
-- HP bars, money display, turn indicator
-- Card animations (draw, play, discard)
-- Sound effects, visual effects for spells/attacks
+- Hand UI
+- Money display
+- Turn and phase display
+- Fort HP display
+- Valid target highlights
+- Error feedback
+- Game over screen
 
 ---
 
 ## Recommended Project Structure
 
-```
+```text
 Assets/
   Art/
-    Cards/           — card artwork (can use placeholder squares at first)
-    Board/           — tile sprites
-    UI/              — buttons, panels
+    Cards/
+    Board/
+    UI/
   Audio/
   Prefabs/
     Cards/
@@ -196,8 +238,8 @@ Assets/
     MainMenu.unity
     GameScene.unity
   ScriptableObjects/
-    Cards/           — all card data assets
-    GameConfig/      — balance values (starting money, fort HP, etc.)
+    Cards/
+    GameConfig/
   Scripts/
     Cards/
     Board/
@@ -208,6 +250,7 @@ Assets/
     TurnSystem/
     Networking/
     UI/
+    Config/
 ```
 
 ---
@@ -215,46 +258,38 @@ Assets/
 ## How to Work as a Team
 
 ### Use Git from Day 1
-- Create a GitHub/GitLab repo
-- Use Unity's `.gitignore` template (critical — Unity generates huge files)
-- Each person works on a **branch**, merge via pull requests
-- **Never commit the `Library/` folder**
-
+- Create a GitHub or GitLab repo
+- Use Unity's `.gitignore` template
+- Each person works on a branch
+- Merge through pull requests
+- Never commit the `Library/` folder
 
 ### Development Rules
-1. **Prototype ugly first** — use colored squares, not art. Gameplay > visuals
-2. **Test constantly** — play the game after every feature, even with placeholder art
-3. **Keep a shared doc** (Notion, Google Doc) for card ideas and balance values
-4. **Use ScriptableObjects for all data** — makes it easy for non-coders to add cards
-5. **Commit often, with clear messages** — "Add card draw logic" not "stuff"
-
----
-
-## Recommended Learning Resources
-
-- **Unity Learn** (free): learn.unity.com — official beginner tutorials
-- **Brackeys** (YouTube): best Unity beginner channel (archived but still relevant)
-- **Code Monkey** (YouTube): great for C# + Unity gameplay systems
-- **Mirror Networking docs**: mirror-networking.gitbook.io — when you reach networking
-- **Game Dev with ScriptableObjects**: search "Unite 2017 ScriptableObjects" on YouTube
+1. Prototype ugly first - gameplay before visuals
+2. Test constantly after each feature
+3. Keep a shared balance sheet for card costs and stats
+4. Use ScriptableObjects for data
+5. Commit often with clear messages
 
 ---
 
 ## Milestone Checklist
 
-- [ ] Everyone installs Unity, creates a test project, runs "Hello World"
-- [ ] Card ScriptableObjects created, can define cards in editor
-- [ ] Deck shuffle + draw 5 cards working
-- [ ] Cards display in player's hand (UI)
+- [ ] Everyone installs Unity and opens the project
+- [ ] Card ScriptableObjects created
+- [ ] Starting hand setup working
+- [ ] Income phase working
+- [ ] Buy phase working with 1 card maximum per turn
+- [ ] Cards appear in player's hand
 - [ ] Game board with tiles rendered
-- [ ] Fort placed, has HP, can take damage
-- [ ] Turn system working (hot-seat, 2 players same screen)
+- [ ] Fort placed, has HP, and can take damage
+- [ ] Turn system working in local play
 - [ ] Cards can be played onto the board
 - [ ] Character units move and attack
-- [ ] Environment effects work (build, fields, disasters)
+- [ ] Environment effects work
 - [ ] Spell effects work
-- [ ] Buy/discard system working
-- [ ] Money system (round rewards, field income)
-- [ ] Win condition (Fort destroyed → game over screen)
-- [ ] LAN multiplayer working
-- [ ] UI polish, animations, sound
+- [ ] Money system feels balanced
+- [ ] Win condition works
+- [ ] Game over screen works
+- [ ] Networking is added only after the local version is stable
+- [ ] UI polish, animations, and sound
