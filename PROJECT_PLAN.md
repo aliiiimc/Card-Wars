@@ -23,7 +23,7 @@ Start with:
 
 - 2 Forts
 - a hex board
-- 3 card types: Environment, Character, Spell
+- 3 card types: World Effect, Character, Spell
 - a small card set: about 12 to 15 cards
 - this turn order:
   - draw
@@ -34,7 +34,7 @@ Start with:
 
 Keep the card ideas simple at first:
 
-- Environment:
+- World Effect:
   - defense building
   - money field
   - hazard tile
@@ -262,7 +262,7 @@ Goal: make full matches possible.
   - restart flow
   - error messages
 - Fatine:
-  - environment cards
+  - world effect cards
   - final card effect cleanup
 
 ### Week 5 and After

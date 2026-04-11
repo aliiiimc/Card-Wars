@@ -19,12 +19,12 @@ We start the game like this:
 
 | Category | Starting Hand | Purpose |
 |----------|---------------|---------|
-| **Environment** (2) | Build structures, plant money-generating fields, deploy natural disasters |
+| **World Effect** (2) | Build structures, plant money-generating fields, deploy hazards and weather |
 | **Character** (2) | Spawn units for offense and defense |
 | **Spell** (1) | Heal, direct damage, buffs, debuffs, utility effects |
 
 - **Starting hand**: 5 cards total
-- Suggested first hand: `2 Environment + 2 Character + 1 Spell`
+- Suggested first hand: `2 World Effect + 2 Character + 1 Spell`
 - After the starting hand, players do **not** draw automatically each turn
 - Each turn gives guaranteed income
 - During the **Buy** phase, the player may buy **1 card maximum**
@@ -106,14 +106,14 @@ Since this is a first Unity/C# project, start here:
 Assets/
   ScriptableObjects/
     Cards/
-      EnvironmentCards/
+      WorldEffectCards/
       CharacterCards/
       SpellCards/
     GameConfig/
   Scripts/
     Cards/
       Card.cs
-      EnvironmentCard.cs
+      WorldEffectCard.cs
       CharacterCard.cs
       SpellCard.cs
     Deck/
@@ -180,7 +180,7 @@ Each turn:
 
 **Goal**: Make cards and units affect the board.
 
-- **Environment**: buildings, income fields, hazards
+- **World Effect**: buildings, income fields, hazards, weather
 - **Character**: units with HP, ATK, movement, range
 - **Spell**: heal, damage, buff, debuff, utility
 
@@ -286,7 +286,7 @@ Assets/
 - [ ] Turn system working in local play
 - [ ] Cards can be played onto the board
 - [ ] Character units move and attack
-- [ ] Environment effects work
+- [ ] World effect cards work
 - [ ] Spell effects work
 - [ ] Money system feels balanced
 - [ ] Win condition works
