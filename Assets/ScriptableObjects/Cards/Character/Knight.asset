@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
+  m_Name: Knight
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
+  cardName: Knight
+  cost: 3
+  handDeckSprite: {fileID: 21300000, guid: 7006ea0479b8b0945a0e47e0c3911bbd, type: 3}
+  manifestedSprite: {fileID: 21300000, guid: 4d62fa01d61d01049bf9b88c48db9f5c, type: 3}
+  description: 
+  maxHp: 5
+  attackDamage: 1
+  startsReadyToAttack: 1
+  unitMovementCapacity: 1
