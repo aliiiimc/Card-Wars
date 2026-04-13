@@ -48,7 +48,12 @@ public class CardManifest : MonoBehaviour
             return;
         }
 
-        Sprite manifestSprite = runtimeState.SourceCard.manifestedSprite;
+        Sprite manifestSprite = runtimeState.SourceCard switch
+        {
+            CharacterCardData characterCard => characterCard.manifestedSprite,
+            WorldEffectCardData worldEffectCard => worldEffectCard.manifestedSprite,
+            _ => runtimeState.SourceCard.handDeckSprite
+        };
         if (manifestSprite == null)
         {
             // Fallback keeps old/new assets visible even before all data is filled.

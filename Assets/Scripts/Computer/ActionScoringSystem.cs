@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace FortGame.Computer 
 {
-    /// <summary>
+    /// <summary> 
     /// Evaluates a list of possible ComputerActions and assigns each a score based on heuristic rules.
     /// </summary>
     public class ActionScoringSystem

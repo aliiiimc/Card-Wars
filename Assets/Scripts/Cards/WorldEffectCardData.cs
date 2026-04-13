@@ -4,6 +4,9 @@ using UnityEngine;
 public class WorldEffectCardData : CardData
 {
     [Header("World Effect")]
+    // Sprite used when this world effect is manifested on the board.
+    public Sprite manifestedSprite;
+
     // Classifies effect families like buildings, fields, hazards, weather.
     public WorldEffectCategory category;
 

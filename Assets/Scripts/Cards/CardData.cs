@@ -15,9 +15,6 @@ public abstract class CardData : ScriptableObject
     [FormerlySerializedAs("artwork")]
     public Sprite handDeckSprite;
 
-    // Sprite used when this card is manifested on the board.
-    public Sprite manifestedSprite;
-
     // Drop rarity tier.
     // public CardRarity rarity = CardRarity.Common;
 
