@@ -4,6 +4,9 @@ using UnityEngine;
 public class CharacterCardData : CardData
 {
     [Header("Character")]
+    // Sprite used when this character is manifested on the board.
+    public Sprite manifestedSprite;
+
     // Unit health when the card is manifested on board.
     public int maxHp;
 
