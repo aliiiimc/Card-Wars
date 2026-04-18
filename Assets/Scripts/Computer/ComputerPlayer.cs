@@ -13,6 +13,11 @@ namespace FortGame.Computer
         [Header("Player Data")]
         public PlayerState playerState;
 
+        [Header("State Sources")]
+        public GameManager gameManager;
+        public HexGrid hexGrid;
+        public List<CardData> debugHandCards = new List<CardData>();
+
         [Header("Computer Settings")]
         public float delayBetweenActions = 1.5f; // Wait time to simulate thinking and allow user to observe
 
@@ -23,6 +28,16 @@ namespace FortGame.Computer
         {
             // Initialize the Computer Brain
             _brain = new ComputerBrain();
+
+            if (gameManager == null)
+            {
+                gameManager = FindFirstObjectByType<GameManager>();
+            }
+
+            if (hexGrid == null)
+            {
+                hexGrid = FindFirstObjectByType<HexGrid>();
+            }
 
             // Setup initial player state if not provided
             if (playerState == null)
@@ -63,15 +78,11 @@ namespace FortGame.Computer
                 loopSecurity++;
 
                 // 1. Brain analyzes the board and player state to find the best action
-                bool hasActionToTake = _brain.DetermineNextAction(playerState);
+                bool hasActionToTake = _brain.DetermineNextAction(this);
 
                 if (hasActionToTake)
                 {
-                    // Execute the action (we will flesh this out with ActionScoringSystem)
                     Debug.Log($"[{playerState.playerName}] Executing chosen action...");
-                    
-                    // Simulate resource/money exhaustion for now
-                    playerState.money--; 
 
                     // Wait so the human player can see what just happened
                     yield return new WaitForSeconds(delayBetweenActions);

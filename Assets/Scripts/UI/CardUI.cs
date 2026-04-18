@@ -8,7 +8,7 @@ namespace FortGame.UI
     /// Represents a single Card visually on the screen.
     /// Handles mouse interactions like hover, drag, and drop.
     /// </summary>
-    public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class CardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
     {
         [Header("Card Visuals")]
         public TextMeshProUGUI cardNameText;
@@ -16,15 +16,40 @@ namespace FortGame.UI
         public RectTransform rectTransform;
         public CanvasGroup canvasGroup;
 
+        [Header("Selection Visuals")]
+        public Color selectedColor = new Color(1f, 1f, 0f, 1f); // Yellow
+        private Image _imageComponent;
+        private Color _originalColor;
+
         // Variables to remember where the card belongs when dragged
         private Transform _originalParent;
         private Vector3 _originalPosition;
         private int _originalSiblingIndex;
+        private bool _isSelected = false;
+
+        public string CardName => cardNameText?.text ?? "Unknown";
+        public bool IsSelected => _isSelected;
 
         private void Awake()
         {
             if (rectTransform == null) rectTransform = GetComponent<RectTransform>();
             if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+            _imageComponent = GetComponent<Image>();
+            if (_imageComponent != null)
+            {
+                _originalColor = _imageComponent.color;
+            }
+        }
+
+        public void SetSelected(bool selected)
+        {
+            _isSelected = selected;
+            if (_imageComponent != null)
+            {
+                _imageComponent.color = selected ? selectedColor : _originalColor;
+            }
+
+            Debug.Log($"[CardUI] {CardName} selection set to {selected}");
         }
 
         // --- HOVER EFFECTS ---
@@ -32,13 +57,35 @@ namespace FortGame.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             // Simple hover effect: scale up slightly
-            transform.localScale = Vector3.one * 1.1f;
+            if (!_isSelected)
+            {
+                transform.localScale = Vector3.one * 1.1f;
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             // Reset scale when mouse leaves
-            transform.localScale = Vector3.one;
+            if (!_isSelected)
+            {
+                transform.localScale = Vector3.one;
+            }
+        }
+
+        // --- CLICK SELECTION ---
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            bool selected = CardSelectionManager.Instance?.TrySelectCard(this) ?? false;
+
+            if (selected)
+            {
+                TargetSelectionManager.Instance?.ShowValidTargets(this);
+            }
+            else if (CardSelectionManager.Instance?.SelectedCard == this)
+            {
+                TargetSelectionManager.Instance?.OnSelectionCancelled();
+            }
         }
 
         // --- DRAG AND DROP ---
