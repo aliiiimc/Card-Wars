@@ -5,10 +5,12 @@ namespace FortGame.Computer
     public enum ActionType
     {
         PlayUnitCard,
+        PlayWorldEffectCard,
         PlaySpellCard,
         MoveUnit,
         AttackUnit,
-        AttackFort
+        AttackFort,
+        EndTurn
     }
 
     /// <summary>
@@ -20,6 +22,15 @@ namespace FortGame.Computer
     {
         public string actionName;
         public ActionType type;
+
+        // Execution payload used by the legal-action reader and executor.
+        public string actingPlayerId;
+        public CardRuntimeState sourceCard;
+        public CardTarget target;
+        public string sourceCardName;
+        public string validationReason;
+        public bool isLegalAction = true;
+        public bool isGeneratedByLegalReader = false;
 
         // Properties needed for the 5 Rules we laid out:
         
@@ -51,10 +62,25 @@ namespace FortGame.Computer
         [Header("Advanced: Synergy")]
         public bool hasSynergyOnBoard = false;
 
+        [Header("Turn Control")]
+        public bool endsTurn = false;
+
         public ComputerAction(string name, ActionType t)
         {
             actionName = name;
             type = t;
+        }
+
+        public static ComputerAction CreateEndTurnAction(string actingPlayer)
+        {
+            return new ComputerAction("End Turn", ActionType.EndTurn)
+            {
+                actingPlayerId = actingPlayer,
+                endsTurn = true,
+                isGeneratedByLegalReader = true,
+                isLegalAction = true,
+                cost = 0
+            };
         }
     }
 }

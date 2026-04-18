@@ -66,6 +66,13 @@ public class HexTile : MonoBehaviour
     void OnMouseDown()
     {
         Debug.Log($"Clicked ({q},{r}) | Type: {tileType} | Owner: {owner}");
+
+        // Attempt to select this tile as a target if target selection is active
+        FortGame.UI.TargetSelectionManager targetMgr = FortGame.UI.TargetSelectionManager.Instance;
+        if (targetMgr != null)
+        {
+            targetMgr.TrySelectTarget(this);
+        }
     }
     void OnMouseEnter()
     {

@@ -13,6 +13,23 @@ namespace FortGame.UI
         public TextMeshProUGUI fortHpText;
         public TextMeshProUGUI moneyText;
         public TextMeshProUGUI turnStatusText;
+        public TextMeshProUGUI errorMessageText;
+        public float errorMessageDuration = 3f;
+
+        private float _errorMessageTimer = 0f;
+
+        private void Update()
+        {
+            // Fade out error message after duration
+            if (_errorMessageTimer > 0)
+            {
+                _errorMessageTimer -= Time.deltaTime;
+                if (_errorMessageTimer <= 0 && errorMessageText != null)
+                {
+                    errorMessageText.text = "";
+                }
+            }
+        }
 
         /// <summary>
         /// Updates the HUD to reflect the current state of the provided PlayerState.
@@ -39,6 +56,19 @@ namespace FortGame.UI
             if (turnStatusText != null)
             {
                 turnStatusText.text = statusMessage;
+            }
+        }
+
+        /// <summary>
+        /// Display an error message to the player.
+        /// </summary>
+        public void ShowError(string message)
+        {
+            if (errorMessageText != null)
+            {
+                errorMessageText.text = message;
+                _errorMessageTimer = errorMessageDuration;
+                Debug.Log($"[HUDManager] Error: {message}");
             }
         }
     }

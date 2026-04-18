@@ -36,6 +36,12 @@ namespace FortGame.Computer
         {
             float score = 0f;
 
+            if (action.endsTurn || action.type == ActionType.EndTurn)
+            {
+                // End-turn should only be selected when nothing useful is available.
+                return -1000f;
+            }
+
             // 1. Guarantee Win (+10000)
             if (action.willDestroyEnemyFort)
             {
@@ -56,7 +62,7 @@ namespace FortGame.Computer
             }
 
             // 3. Favorable Unit Trades (+100 to +300)
-            if (action.type == ActionType.AttackUnit || action.type == ActionType.PlaySpellCard)
+            if (action.type == ActionType.AttackUnit || action.type == ActionType.PlaySpellCard || action.type == ActionType.PlayWorldEffectCard)
             {
                 if (action.destroysEnemyUnit && action.survivesTrade)
                 {
