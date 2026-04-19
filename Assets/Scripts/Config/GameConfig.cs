@@ -10,5 +10,7 @@ public class GameConfig : ScriptableObject
     public int maxHandSize = 7;
     public int moneyPerTurn = 2;
     public int buyCost = 1;
+    public int discardMoneyReward = 1;
+    public int maxDiscardCardsPerTurn = 1;
 
 }

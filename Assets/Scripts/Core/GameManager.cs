@@ -10,6 +10,21 @@ public class GameManager : MonoBehaviour
     public PlayerState currentPlayer;
     public bool hasBoughtThisTurn;
     public string winnerName;
+    public int discardCardsUsedThisTurn;
+    public bool mustDiscardAfterBuy;
+    public bool isBuyDecisionPending;
+
+
+
+
+
+
+
+
+
+
+
+
 
     private void Start()
     {
@@ -66,7 +81,11 @@ public class GameManager : MonoBehaviour
         }
 
         hasBoughtThisTurn = false;
+        discardCardsUsedThisTurn = 0;   
+        isBuyDecisionPending = false;
+        mustDiscardAfterBuy = false;
         currentPlayer.money += gameConfig.moneyPerTurn;
+        
 
         Debug.Log(currentPlayer.playerName + " receives income.");
         Debug.Log(currentPlayer.playerName + " money is now: " + currentPlayer.money);
@@ -95,36 +114,31 @@ public class GameManager : MonoBehaviour
         StartTurn();
     }
 
-    public void TestEndTurn()
-    {
-        EndTurn();
-    }
+    
 
     public void BuyCard()
     {
         if (currentPhase != GamePhase.Buy)
-        {
-            Debug.Log("You cannot buy cards right now.");
-            return;
-        }
+        {Debug.Log("You cannot buy cards right now.");
+            return;}
 
         if (hasBoughtThisTurn)
-        {
-            Debug.Log(currentPlayer.playerName + " already bought a card this turn.");
-            return;
-        }
+        {Debug.Log(currentPlayer.playerName + " already bought a card this turn.");
+            return;}
 
         if (currentPlayer.money < gameConfig.buyCost)
-        {
-            Debug.Log(currentPlayer.playerName + " does not have enough money to buy a card.");
-            return;
-        }
+        {Debug.Log(currentPlayer.playerName + " does not have enough money to buy a card.");
+            return;}
 
-        if (currentPlayer.handCount >= currentPlayer.maxHandSize)
-        {
-            Debug.Log(currentPlayer.playerName + " cannot buy because hand is full.");
-            return;
-        }
+        if (currentPlayer.handCount >= currentPlayer.maxHandSize && discardCardsUsedThisTurn >= gameConfig.maxDiscardCardsPerTurn)
+        { Debug.Log(currentPlayer.playerName + " cannot buy because hand is full and no discard is available this turn.");
+            return;}
+
+        if (currentPlayer.handCount >= currentPlayer.maxHandSize){
+            isBuyDecisionPending = true;
+            Debug.Log(currentPlayer.playerName + " has a full hand. Confirm buy to buy anyway and be forced to discard, or cancel.");
+            return;}
+
 
         currentPlayer.money -= gameConfig.buyCost;
         currentPlayer.handCount += 1;
@@ -138,10 +152,27 @@ public class GameManager : MonoBehaviour
         LogStateSummary();
     }
 
-    public void TestBuyCard()
-    {
-        BuyCard();
+
+    public void ConfirmBuyWithFullHand(){
+    if (!isBuyDecisionPending)
+    {Debug.Log("No buy decision is pending.");
+        return;}
+
+    currentPlayer.money -= gameConfig.buyCost;
+    currentPlayer.handCount += 1;
+    hasBoughtThisTurn = true;
+    isBuyDecisionPending = false;
+    mustDiscardAfterBuy = true;
+
+    Debug.Log(currentPlayer.playerName + " bought a card and must now discard.");
+    Debug.Log(currentPlayer.playerName + " money is now: " + currentPlayer.money);
+    Debug.Log(currentPlayer.playerName + " hand count is now: " + currentPlayer.handCount);
+
+    LogStateSummary();
     }
+
+
+    
 
     public void GoToPlayPhase()
     {
@@ -206,13 +237,7 @@ public class GameManager : MonoBehaviour
         ApplyFortDamage(player2, damage);
     }
 
-    public void TestPlayer2Lose()
-    {
-        player2.fortHp = 0;
-        Debug.Log(player2.playerName + " fort HP is now: " + player2.fortHp);
-        CheckGameOver();
-        LogStateSummary();
-    }
+    
 
     public string GetStateSummary()
     {
@@ -221,9 +246,11 @@ public class GameManager : MonoBehaviour
         return "Phase=" + currentPhase
             + " | CurrentPlayer=" + currentPlayer.playerName
             + " | HasBought=" + hasBoughtThisTurn
+            + " | DiscardCardsUsedThisTurn=" + discardCardsUsedThisTurn
             + " | Winner=" + winnerText
             + " | P1(Money=" + player1.money + ", Hand=" + player1.handCount + ", Fort=" + player1.fortHp + ")"
-            + " | P2(Money=" + player2.money + ", Hand=" + player2.handCount + ", Fort=" + player2.fortHp + ")";
+            + " | P2(Money=" + player2.money + ", Hand=" + player2.handCount + ", Fort=" + player2.fortHp + ")"
+            ;
     }
 
     public void LogStateSummary()
@@ -245,4 +272,68 @@ public class GameManager : MonoBehaviour
         CheckGameOver();
         LogStateSummary();
     }
+
+    public void DiscardCard()
+{
+    if (currentPhase != GamePhase.Buy)
+    {Debug.Log("You can only discard during Buy phase.");
+        return;}
+
+    if (discardCardsUsedThisTurn >= gameConfig.maxDiscardCardsPerTurn)
+    {Debug.Log(currentPlayer.playerName + " already used the maximum number of discards this turn.");
+        return;}
+
+    if (currentPlayer.handCount <= 0)
+    {Debug.Log(currentPlayer.playerName + " has no cards to discard.");
+        return;}
+
+    currentPlayer.handCount -= 1;
+    currentPlayer.discardCount += 1;
+    currentPlayer.money += gameConfig.discardMoneyReward;
+    discardCardsUsedThisTurn += 1;
+
+    Debug.Log(currentPlayer.playerName + " discarded a card.");
+    Debug.Log(currentPlayer.playerName + " money is now: " + currentPlayer.money);
+    Debug.Log(currentPlayer.playerName + " hand count is now: " + currentPlayer.handCount);
+
+    LogStateSummary();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public void TestDiscardCard(){
+    DiscardCard();}
+    public void TestEndTurn()
+    {EndTurn();}
+
+    public void TestPlayer2Lose()
+    {player2.fortHp = 0;
+    Debug.Log(player2.playerName + " fort HP is now: " + player2.fortHp);
+    CheckGameOver();
+    LogStateSummary();}
+
+    public void TestBuyCard()
+    {BuyCard();}
 }
