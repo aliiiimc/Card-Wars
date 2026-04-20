@@ -5,7 +5,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "CardLibrary", menuName = "Cards/Card Library")]
 public class CardLibrary : ScriptableObject
 {
-    // Master list of card definitions available to this game mode.
     public List<CardData> cards = new List<CardData>();
 
     // Finds a card by UI display name.
