@@ -14,6 +14,7 @@ namespace FortGame.UI
         private TargetSelectionManager _targetSelectionMgr;
         private HUDManager _hudManager;
         private GameManager _gameManager;
+        private ComputerPlayer _computerPlayer;
 
         private void Awake()
         {
@@ -28,6 +29,7 @@ namespace FortGame.UI
             _targetSelectionMgr = FindFirstObjectByType<TargetSelectionManager>();
             _hudManager = FindFirstObjectByType<HUDManager>();
             _gameManager = FindFirstObjectByType<GameManager>();
+            _computerPlayer = FindFirstObjectByType<ComputerPlayer>();
         }
 
         private void Update()
@@ -66,8 +68,20 @@ namespace FortGame.UI
             }
 
             // Validate target using legal action service
+            if (_computerPlayer == null)
+            {
+                _computerPlayer = FindFirstObjectByType<ComputerPlayer>();
+            }
+
+            if (_computerPlayer == null)
+            {
+                _hudManager?.ShowError("No ComputerPlayer found for legal-action validation.");
+                Debug.LogWarning("[PlayerInputController] ComputerPlayer missing; cannot validate legal actions.");
+                return;
+            }
+
             bool targetIsLegal = false;
-            var legalActions = LegalActionService.Instance.GetLegalActions(_gameManager?.currentPlayer as FortGame.Computer.ComputerPlayer);
+            var legalActions = LegalActionService.Instance.GetLegalActions(_computerPlayer);
             
             foreach (var action in legalActions)
             {

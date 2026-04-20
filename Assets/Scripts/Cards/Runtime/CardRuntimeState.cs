@@ -55,7 +55,7 @@ public class CardRuntimeState
         }
 
         this.sourceCard = sourceCard;
-        currentMovementCapacity = sourceCard.MovementCapacity;
+        currentMovementCapacity = sourceCard.MovementCapacity.HasValue ? sourceCard.MovementCapacity.Value : 0;
         currentHp = OptionalInt.None;
         currentDamage = OptionalInt.None;
         currentRevenue = OptionalInt.None;
@@ -124,7 +124,9 @@ public class CardRuntimeState
     // Resets movement back to definition value, usually at start of turn.
     public void ResetMovementFromDefinition()
     {
-        currentMovementCapacity = sourceCard == null ? 0 : sourceCard.MovementCapacity;
+        currentMovementCapacity = sourceCard == null
+            ? 0
+            : (sourceCard.MovementCapacity.HasValue ? sourceCard.MovementCapacity.Value : 0);
     }
 
     // Updates attack readiness flag after combat or turn transitions.
