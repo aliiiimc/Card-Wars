@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     public bool mustDiscardAfterBuy;
     public bool isBuyDecisionPending; // State (when the hand is full) in which the player has to choose between confirming a buy and 
                                       //be forced to discard, or simply cancel the buy 
+    public CardRuntimeState selectedCardToDiscard;
 
 
 
@@ -103,22 +104,18 @@ public class GameManager : MonoBehaviour
     }
 
     public void EndTurn()
-    {
-        if (currentPhase != GamePhase.Play && currentPhase != GamePhase.Attack)
-        {
-            Debug.Log("You can only end turn from Play or Attack phase.");
+    {if (currentPhase != GamePhase.Play && currentPhase != GamePhase.Attack)
+        {Debug.Log("You can only end turn from Play or Attack phase.");
             return;
         }
 
         if (isBuyDecisionPending)
-        {
-            Debug.Log("Resolve the buy decision first before ending turn.");
+        {Debug.Log("Resolve the buy decision first before ending turn.");
             return;
         }
 
         if (mustDiscardAfterBuy)
-        {
-            Debug.Log("You must discard a card before ending turn.");
+        {Debug.Log("You must discard a card before ending turn.");
             return;
         }
 
@@ -139,6 +136,8 @@ public class GameManager : MonoBehaviour
 
         StartTurn();
     }
+
+
 
     private void SyncHandCount(PlayerState player)
     {
@@ -183,8 +182,7 @@ public class GameManager : MonoBehaviour
         }
 
         if (IsHandFull(currentPlayer))
-        {
-            isBuyDecisionPending = true;
+        {isBuyDecisionPending = true;
             Debug.Log(currentPlayer.playerName + " has a full hand. Confirm buy to buy anyway and be forced to discard, or cancel.");
             return;
         }
@@ -192,10 +190,10 @@ public class GameManager : MonoBehaviour
 
         currentPlayer.money -= gameConfig.buyCost;
 
+
         CardRuntimeState boughtCard = CreateRandomCardRuntimeState();
         if (boughtCard == null)
-        {
-            Debug.Log("Could not create a bought card.");
+        {Debug.Log("Could not create a bought card.");
             return;
         }
 
@@ -212,7 +210,7 @@ public class GameManager : MonoBehaviour
     }
     public void DiscardCard()
     {
-        if (currentPhase != GamePhase.Buy)
+        if(currentPhase != GamePhase.Buy)
         {
             Debug.Log("You can only discard during Buy phase.");
             return;

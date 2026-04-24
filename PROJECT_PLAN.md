@@ -23,6 +23,7 @@ Start with:
 
 - 2 Forts
 - a hex board
+- one unit maximum per tile
 - 3 card types: World Effect, Character, Spell
 - a small card set: about 12 to 15 cards
 - this turn order:
@@ -86,6 +87,7 @@ Main coding tasks:
 - build the hex grid
 - create the tile system
 - manage which tile is occupied and which is free
+- enforce the rule: one unit maximum per tile
 - place Forts on the board
 - place units on the board
 - code unit movement on hex tiles

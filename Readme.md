@@ -14,6 +14,11 @@ The match is played on one machine first, with gameplay quality taking priority 
 - If a Fort is destroyed, that player loses
 - Fort HP is part of the main game rules and balance
 
+### Board Occupancy
+- Each board tile may contain **one unit maximum**
+- A unit may not move onto or be summoned onto a tile that already has another unit
+- In v1, there is **no unit stacking** on the same tile
+
 ### Card System
 We start the game like this:
 
@@ -143,6 +148,7 @@ Suggested data in `GameConfig`:
 - Use a Tilemap or simple grid for the board
 - Each player's Fort is placed on the board
 - Define legal placement zones
+- Enforce `1 unit maximum per tile`
 
 ```text
 Scripts/

@@ -414,10 +414,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexGrid
   hexPrefab: {fileID: 6914111918059673649, guid: 4fba3e25e8558df418f0a6fa963bbf12, type: 3}
+  unitPrefab: {fileID: 7106110467106997786, guid: 515f55841c8020f4c8f087df7e501073, type: 3}
   gridWidth: 9
   gridHeight: 20
   hexSize: 0.65
-  unitPrefab: {fileID: 7106110467106997786, guid: 515f55841c8020f4c8f087df7e501073, type: 3}
 --- !u!4 &1988535892
 Transform:
   m_ObjectHideFlags: 0
@@ -426,13 +426,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1988535890}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 4.53252, y: 8.69464, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
