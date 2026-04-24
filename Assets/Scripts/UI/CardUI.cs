@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
+
 namespace FortGame.UI 
 {
     /// <summary>
@@ -16,6 +17,18 @@ namespace FortGame.UI
         public TextMeshProUGUI costText;
         public RectTransform rectTransform;
         public CanvasGroup canvasGroup;
+
+
+        //Ali F : 
+        public CardRuntimeState runtimeCard; //Cette variable sert à relier la carte affichée à l’écran avec la vraie carte du jeu.
+        // Avant CardUI affichait seulement du texte et une image , maintenant CardUI sait exactement quelle vraie carte elle représente
+        //kali
+        private GameManager _gameManager; //Cette variable sert à garder une référence vers GameManager
+        // Pourquoi : quand le joueur clique la carte, CardUI devra prévenir GameManager
+
+
+
+
 
         [Header("Selection Visuals")]
         public Color selectedColor = new Color(1f, 1f, 0f, 1f); // Yellow
@@ -40,6 +53,10 @@ namespace FortGame.UI
             {
                 _originalColor = _imageComponent.color;
             }
+            _gameManager = FindFirstObjectByType<GameManager>(); // Cette ligne cherche automatiquement le GameManager présent dans la scène.
+
+
+
         }
 
         public void SetSelected(bool selected)

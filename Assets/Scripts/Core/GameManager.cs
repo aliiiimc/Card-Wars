@@ -103,39 +103,7 @@ public class GameManager : MonoBehaviour
         LogStateSummary();
     }
 
-    public void EndTurn()
-    {if (currentPhase != GamePhase.Play && currentPhase != GamePhase.Attack)
-        {Debug.Log("You can only end turn from Play or Attack phase.");
-            return;
-        }
 
-        if (isBuyDecisionPending)
-        {Debug.Log("Resolve the buy decision first before ending turn.");
-            return;
-        }
-
-        if (mustDiscardAfterBuy)
-        {Debug.Log("You must discard a card before ending turn.");
-            return;
-        }
-
-        CheckGameOver();
-        if (currentPhase == GamePhase.GameOver)
-        {
-            return;
-        }
-
-        currentPhase = GamePhase.End;
-        Debug.Log("Ending turn for " + currentPlayer.playerName);
-
-        currentPlayer = currentPlayer == player1 ? player2 : player1;
-
-        Debug.Log("New current player: " + currentPlayer.playerName);
-        currentPhase = GamePhase.Income;
-        LogStateSummary();
-
-        StartTurn();
-    }
 
 
 
@@ -154,6 +122,26 @@ public class GameManager : MonoBehaviour
         return player.handCount >= player.maxHandSize;
     }
 
+
+
+    private void FillStartingHand(PlayerState player, int numberOfCards)
+    {
+        if (player == null)
+        { return; }
+
+        for (int i = 0; i < numberOfCards; i++)
+        {
+            CardRuntimeState card = CreateRandomCardRuntimeState();
+
+            if (card == null)
+            {
+                Debug.Log("Could not create a starting card.");
+                return;
+            }
+
+            AddCardToHand(player, card);
+        }
+    }
 
     public void BuyCard()
     {
@@ -182,7 +170,8 @@ public class GameManager : MonoBehaviour
         }
 
         if (IsHandFull(currentPlayer))
-        {isBuyDecisionPending = true;
+        {
+            isBuyDecisionPending = true;
             Debug.Log(currentPlayer.playerName + " has a full hand. Confirm buy to buy anyway and be forced to discard, or cancel.");
             return;
         }
@@ -193,7 +182,8 @@ public class GameManager : MonoBehaviour
 
         CardRuntimeState boughtCard = CreateRandomCardRuntimeState();
         if (boughtCard == null)
-        {Debug.Log("Could not create a bought card.");
+        {
+            Debug.Log("Could not create a bought card.");
             return;
         }
 
@@ -210,7 +200,7 @@ public class GameManager : MonoBehaviour
     }
     public void DiscardCard()
     {
-        if(currentPhase != GamePhase.Buy)
+        if (currentPhase != GamePhase.Buy)
         {
             Debug.Log("You can only discard during Buy phase.");
             return;
@@ -235,10 +225,20 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        currentPlayer.handCount -= 1;
+        if (selectedCardToDiscard == null)  // To make sure the player selected a card to discard 
+        {Debug.Log("Select a card to discard first.");
+            return;}
+
+        if (!currentPlayer.handCards.Contains(selectedCardToDiscard)) // To make sure the player selected a card he has to discard
+        {Debug.Log("The selected card is not in the current player's hand.");
+            return;}
+
+
+        RemoveCardFromHand(currentPlayer, selectedCardToDiscard);
         currentPlayer.discardCount += 1;
         currentPlayer.money += gameConfig.discardMoneyReward;
         discardCardsUsedThisTurn += 1;
+        ClearSelectedCardToDiscard();
 
         Debug.Log(currentPlayer.playerName + " discarded a card and gained " + gameConfig.discardMoneyReward + " money.");
         Debug.Log(currentPlayer.playerName + " money is now: " + currentPlayer.money);
@@ -253,6 +253,34 @@ public class GameManager : MonoBehaviour
         }
 
         LogStateSummary();
+    }
+
+
+
+    public void SelectCardToDiscard(CardRuntimeState card)
+    {
+        if (card == null){
+            Debug.Log("No card was selected for discard.");
+            return;
+        }
+        if (currentPlayer == null){
+            Debug.Log("There is no current player.");
+            return;
+        }
+
+        if (!currentPlayer.handCards.Contains(card)){
+            Debug.Log("You can only select a card from the current player's hand.");
+            return;
+        }   
+
+        selectedCardToDiscard = card;
+        Debug.Log("Selected a card to discard.");
+    }
+
+
+    public void ClearSelectedCardToDiscard()
+    {
+        selectedCardToDiscard = null;
     }
 
 
@@ -322,26 +350,7 @@ public class GameManager : MonoBehaviour
 
 
 
-    private void FillStartingHand(PlayerState player, int numberOfCards)
-    {
-        if (player == null)
-        {
-            return;
-        }
 
-        for (int i = 0; i < numberOfCards; i++)
-        {
-            CardRuntimeState card = CreateRandomCardRuntimeState();
-
-            if (card == null)
-            {
-                Debug.Log("Could not create a starting card.");
-                return;
-            }
-
-            AddCardToHand(player, card);
-        }
-    }
 
 
 
@@ -436,6 +445,48 @@ public class GameManager : MonoBehaviour
 
         EndTurn();
     }
+
+
+
+    public void EndTurn()
+    {
+        if (currentPhase != GamePhase.Play && currentPhase != GamePhase.Attack)
+        {
+            Debug.Log("You can only end turn from Play or Attack phase.");
+            return;
+        }
+
+        if (isBuyDecisionPending)
+        {
+            Debug.Log("Resolve the buy decision first before ending turn.");
+            return;
+        }
+
+        if (mustDiscardAfterBuy)
+        {
+            Debug.Log("You must discard a card before ending turn.");
+            return;
+        }
+
+        CheckGameOver();
+        if (currentPhase == GamePhase.GameOver)
+        {
+            return;
+        }
+
+        currentPhase = GamePhase.End;
+        Debug.Log("Ending turn for " + currentPlayer.playerName);
+
+        currentPlayer = currentPlayer == player1 ? player2 : player1;
+
+        Debug.Log("New current player: " + currentPlayer.playerName);
+        currentPhase = GamePhase.Income;
+        LogStateSummary();
+
+        StartTurn();
+    }
+
+
 
     private void CheckGameOver()
     {
