@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetValidator
@@ -19,22 +20,26 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
             return CardValidationResult.Invalid("NO_CARD", "Source card is missing.");
         }
 
-        if (target.type == CardTargetType.AllyUnit)
+        switch (target.type)
         {
-            return ValidateUnitTarget(context, target, shouldBeAlly: true);
-        }
+            case CardTargetType.AllyUnit:
+                return ValidateUnitTarget(context, target, shouldBeAlly: true);
 
-        if (target.type == CardTargetType.EnemyUnit)
-        {
-            return ValidateUnitTarget(context, target, shouldBeAlly: false);
-        }
+            case CardTargetType.EnemyUnit:
+                return ValidateUnitTarget(context, target, shouldBeAlly: false);
 
-        if (target.type == CardTargetType.Tile)
-        {
-            return ValidateTileTarget(context, target);
-        }
+            case CardTargetType.Tile:
+                return ValidateTileTarget(context, target);
 
-        return CardValidationResult.Invalid("UNSUPPORTED_TARGET", $"Target type '{target.type}' is not supported.");
+            case CardTargetType.AllyFort:
+                return ValidateFortTarget(context, target, shouldBeAlly: true);
+
+            case CardTargetType.EnemyFort:
+                return ValidateFortTarget(context, target, shouldBeAlly: false);
+
+            default:
+                return CardValidationResult.Invalid("UNSUPPORTED_TARGET", $"Target type '{target.type}' is not supported.");
+        }
     }
 
     private CardValidationResult ValidateTileTarget(CardValidationContext context, CardTarget target)
@@ -85,6 +90,44 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
             return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", shouldBeAlly
                 ? "Target unit is not allied."
                 : "Target unit is not an enemy.");
+        }
+
+        return CardValidationResult.Valid();
+    }
+
+    private CardValidationResult ValidateFortTarget(CardValidationContext context, CardTarget target, bool shouldBeAlly)
+    {
+        if (context.Board == null)
+        {
+            return CardValidationResult.Invalid("NO_BOARD", "Board state reader is missing.");
+        }
+
+        if (string.IsNullOrWhiteSpace(target.targetPlayerId))
+        {
+            return CardValidationResult.Invalid("MISSING_TARGET_PLAYER", "Fort target player id is required.");
+        }
+
+        string expectedPlayer = shouldBeAlly ? context.ActingPlayerKey : context.OpponentPlayerKey;
+        if (target.targetPlayerId != expectedPlayer)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", shouldBeAlly
+                ? "Target fort is not allied."
+                : "Target fort is not the enemy fort.");
+        }
+
+        if (!context.Board.IsTileValid(target.tile))
+        {
+            return CardValidationResult.Invalid("INVALID_TILE", "Fort target tile is outside board bounds.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(target.targetEntityId) && !string.Equals(target.targetEntityId, "fort", StringComparison.OrdinalIgnoreCase))
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_ENTITY", "Fort target entity id must be 'fort'.");
+        }
+
+        if (!context.Board.IsTileOccupied(target.tile))
+        {
+            return CardValidationResult.Invalid("FORT_NOT_PRESENT", "Fort tile is not occupied.");
         }
 
         return CardValidationResult.Valid();

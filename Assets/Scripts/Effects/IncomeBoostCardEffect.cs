@@ -9,14 +9,9 @@ public sealed class IncomeBoostCardEffect : MonoBehaviour, ICardEffect
 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
-        if (context == null)
+        if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
-            return CardEffectResult.Failure("NO_CONTEXT", "Effect context is missing.");
-        }
-
-        if (context.Writer == null)
-        {
-            return CardEffectResult.Failure("NO_WRITER", "State writer is missing.");
+            return failure;
         }
 
         if (string.IsNullOrWhiteSpace(context.ActingPlayerKey))

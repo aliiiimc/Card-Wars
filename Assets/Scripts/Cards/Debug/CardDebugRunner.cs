@@ -9,6 +9,11 @@ public sealed class CardDebugRunner : MonoBehaviour
     [SerializeField] private MonoBehaviour validatorBehaviour;
     [SerializeField] private MonoBehaviour effectBehaviour;
 
+    [Header("Runtime Integration")]
+    [SerializeField] private MonoBehaviour writerBehaviour;
+    [SerializeField] private HexGrid boardSource;
+    [SerializeField] private bool useCardPlayPipeline = true;
+
     [Header("Context")]
     [SerializeField] private string actingPlayerKey;
     [SerializeField] private string opponentPlayerKey;
@@ -71,13 +76,8 @@ public sealed class CardDebugRunner : MonoBehaviour
             targetCard = null
         };
 
-        FakeBoardStateReader board = new FakeBoardStateReader(boardWidth, boardHeight);
-        if (markTargetTileOccupied && board.IsTileValid(tile))
-        {
-            board.SetOccupied(tile, runtimeCard);
-        }
-
-        FakeCardStateWriter writer = new FakeCardStateWriter(actingPlayerKey, startingMoney);
+        IBoardStateReader board = CreateBoardReader(runtimeCard, tile);
+        ICardStateWriter writer = CreateWriter(actingPlayerKey, startingMoney);
 
         CardValidationContext validationContext = new CardValidationContext
         {
@@ -95,6 +95,35 @@ public sealed class CardDebugRunner : MonoBehaviour
         };
 
         Debug.Log($"[CardDebugRunner] Starting debug flow for card '{sourceCard.DisplayName}' with target {target.type} at {target.tile}.");
+
+        if (useCardPlayPipeline)
+        {
+            CardPlayPipeline pipeline = new CardPlayPipeline();
+            CardPlayRequest request = new CardPlayRequest
+            {
+                ActingPlayerId = actingPlayerKey,
+                OpponentPlayerId = opponentPlayerKey,
+                SourceCard = runtimeCard,
+                Target = target,
+                Board = board,
+                Writer = writer,
+                Validator = validator,
+                Effect = effect
+            };
+
+            CardPlayResult playResult = pipeline.Play(request);
+            if (!playResult.Succeeded)
+            {
+                Debug.LogWarning($"[CardDebugRunner] Play FAILED | code={playResult.ReasonCode} | message={playResult.Message}");
+            }
+            else
+            {
+                Debug.Log($"[CardDebugRunner] Play PASSED | zone={playResult.FinalZone} | costSpent={playResult.CostWasSpent} | damage={playResult.EffectResult.DamageDealt} | heal={playResult.EffectResult.HealApplied} | revenue={playResult.EffectResult.RevenueGained}");
+            }
+
+            DumpWriterState(writer, runtimeCard);
+            return;
+        }
 
         if (runValidation)
         {
@@ -125,21 +154,64 @@ public sealed class CardDebugRunner : MonoBehaviour
         DumpWriterState(writer, runtimeCard);
     }
 
-    private static void DumpWriterState(FakeCardStateWriter writer, CardRuntimeState runtimeCard)
+    private IBoardStateReader CreateBoardReader(CardRuntimeState runtimeCard, AxialCoord tile)
     {
-        string moneyPlayerId = string.Empty;
-        if (runtimeCard != null)
+        if (boardSource != null)
         {
-            moneyPlayerId = writer.LastActingPlayerId;
+            return new FortGame.Computer.HexGridBoardStateReader(boardSource);
         }
 
-        int money = writer.GetMoney(moneyPlayerId);
+        FakeBoardStateReader board = new FakeBoardStateReader(boardWidth, boardHeight);
+        if (markTargetTileOccupied && board.IsTileValid(tile))
+        {
+            board.SetOccupied(tile, runtimeCard);
+        }
+
+        return board;
+    }
+
+    private ICardStateWriter CreateWriter(string actingPlayerId, int initialMoney)
+    {
+        ICardStateWriter runtimeWriter = writerBehaviour as ICardStateWriter;
+        if (runtimeWriter != null)
+        {
+            return runtimeWriter;
+        }
+
+        return new FakeCardStateWriter(actingPlayerId, initialMoney);
+    }
+
+    private static void DumpWriterState(ICardStateWriter writer, CardRuntimeState runtimeCard)
+    {
+        string moneyPlayerId = string.Empty;
+        if (writer is FakeCardStateWriter fakeWriter)
+        {
+            moneyPlayerId = fakeWriter.LastActingPlayerId;
+        }
+        else if (writer is GameManagerCardStateWriter gameWriter)
+        {
+            moneyPlayerId = gameWriter.LastActingPlayerId;
+        }
+
+        int money = 0;
+        if (writer is FakeCardStateWriter fakeStateWriter)
+        {
+            money = fakeStateWriter.GetMoney(moneyPlayerId);
+        }
+        else if (writer is GameManagerCardStateWriter gameStateWriter)
+        {
+            money = gameStateWriter.GetMoney(moneyPlayerId);
+        }
+
         Debug.Log($"[CardDebugRunner] Final state | zone={runtimeCard.CurrentZone} | manifested={runtimeCard.IsManifestedOnBoard} | pos={runtimeCard.BoardPosition} | hp={(runtimeCard.CurrentHp.HasValue ? runtimeCard.CurrentHp.Value.ToString() : "n/a")} | money={money}");
 
-        IReadOnlyList<string> log = writer.ActionLog;
-        for (int i = 0; i < log.Count; i++)
+        if (writer is FakeCardStateWriter fakeLogWriter)
         {
-            Debug.Log($"[CardDebugRunner] Log[{i}] {log[i]}");
+            IReadOnlyList<string> log = fakeLogWriter.ActionLog;
+            for (int i = 0; i < log.Count; i++)
+            {
+                Debug.Log($"[CardDebugRunner] Log[{i}] {log[i]}");
+            }
         }
     }
 
@@ -187,7 +259,7 @@ public sealed class CardDebugRunner : MonoBehaviour
         }
     }
 
-    private sealed class FakeCardStateWriter : ICardStateWriter
+    private sealed class FakeCardStateWriter : CardStateWriterBase
     {
         private readonly Dictionary<string, int> moneyByPlayer = new Dictionary<string, int>();
         private readonly List<string> actionLog = new List<string>();
@@ -201,7 +273,7 @@ public sealed class CardDebugRunner : MonoBehaviour
         public IReadOnlyList<string> ActionLog => actionLog;
         public string LastActingPlayerId { get; private set; }
 
-        public bool TrySpendCost(string playerId, int amount)
+        public override bool TrySpendCost(string playerId, int amount)
         {
             LastActingPlayerId = playerId;
 
@@ -224,74 +296,10 @@ public sealed class CardDebugRunner : MonoBehaviour
             return true;
         }
 
-        public void MoveCardToZone(CardRuntimeState card, CardZone zone)
+        public override void AddRevenue(string playerId, int amount)
         {
-            if (card == null)
-            {
-                return;
-            }
+            LastActingPlayerId = playerId;
 
-            card.MoveToZone(zone);
-            actionLog.Add($"MoveCardToZone: {card.SourceCard.DisplayName} -> {zone}.");
-        }
-
-        public void ManifestCard(CardRuntimeState card, AxialCoord tile)
-        {
-            if (card == null)
-            {
-                return;
-            }
-
-            card.ManifestOnBoard(tile);
-            actionLog.Add($"ManifestCard: {card.SourceCard.DisplayName} at {tile}.");
-        }
-
-        public void ApplyDamage(CardRuntimeState card, int amount)
-        {
-            if (card == null)
-            {
-                return;
-            }
-
-            card.ApplyDamage(amount);
-            actionLog.Add($"ApplyDamage: {card.SourceCard.DisplayName} amount={Mathf.Max(0, amount)}.");
-        }
-
-        public void ApplyHeal(CardRuntimeState card, int amount)
-        {
-            if (card == null)
-            {
-                return;
-            }
-
-            card.ApplyHeal(amount);
-            actionLog.Add($"ApplyHeal: {card.SourceCard.DisplayName} amount={Mathf.Max(0, amount)}.");
-        }
-
-        public void ModifyDamage(CardRuntimeState card, int delta)
-        {
-            if (card == null)
-            {
-                return;
-            }
-
-            card.ModifyDamage(delta);
-            actionLog.Add($"ModifyDamage: {card.SourceCard.DisplayName} delta={delta}.");
-        }
-
-        public void ModifyMovement(CardRuntimeState card, int delta)
-        {
-            if (card == null)
-            {
-                return;
-            }
-
-            card.ModifyMovement(delta);
-            actionLog.Add($"ModifyMovement: {card.SourceCard.DisplayName} delta={delta}.");
-        }
-
-        public void AddRevenue(string playerId, int amount)
-        {
             if (string.IsNullOrWhiteSpace(playerId))
             {
                 return;
@@ -305,6 +313,11 @@ public sealed class CardDebugRunner : MonoBehaviour
             int add = Mathf.Max(0, amount);
             moneyByPlayer[playerId] = currentMoney + add;
             actionLog.Add($"AddRevenue: player='{playerId}' amount={add} total={moneyByPlayer[playerId]}.");
+        }
+
+        protected override void LogTransaction(string message)
+        {
+            actionLog.Add(message);
         }
 
         public int GetMoney(string playerId)

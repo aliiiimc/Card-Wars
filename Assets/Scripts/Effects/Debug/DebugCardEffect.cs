@@ -19,19 +19,14 @@ public sealed class DebugCardEffect : MonoBehaviour, ICardEffect
 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
-        if (context == null)
+        if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
-            return CardEffectResult.Failure("NO_CONTEXT", "Effect context is missing.");
+            return failure;
         }
 
-        if (context.Writer == null)
+        if (!CardEffectGuards.TryRequireSourceCard(sourceCard, out failure))
         {
-            return CardEffectResult.Failure("NO_WRITER", "State writer is missing.");
-        }
-
-        if (sourceCard == null || sourceCard.SourceCard == null)
-        {
-            return CardEffectResult.Failure("NO_CARD", "Source card is missing.");
+            return failure;
         }
 
         int safeAmount = Mathf.Max(0, amount);

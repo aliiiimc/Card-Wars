@@ -11,19 +11,14 @@ public sealed class DebuffCardEffect : MonoBehaviour, ICardEffect
 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
-        if (context == null)
+        if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
-            return CardEffectResult.Failure("NO_CONTEXT", "Effect context is missing.");
+            return failure;
         }
 
-        if (context.Writer == null)
+        if (!CardEffectGuards.TryRequireTargetCard(target, "Debuff", out failure))
         {
-            return CardEffectResult.Failure("NO_WRITER", "State writer is missing.");
-        }
-
-        if (target.targetCard == null)
-        {
-            return CardEffectResult.Failure("NO_TARGET_CARD", "Debuff effect needs a target card.");
+            return failure;
         }
 
         int safeDamage = Mathf.Max(0, damageAmount);
