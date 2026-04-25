@@ -1,18 +1,18 @@
 public sealed class CardValidationContext
 {
-    public string ActingPlayerId;
-    public string OpponentPlayerId;
+    public string ActingPlayerKey;
+    public string OpponentPlayerKey;
     public IBoardStateReader Board;
 
-    public string ActingPlayerKey
+    public string ActingPlayerId
     {
-        get => ActingPlayerId;
-        set => ActingPlayerId = value;
+        get => ActingPlayerKey;
+        set => ActingPlayerKey = value;
     }
 
-    public string OpponentPlayerKey
+    public string OpponentPlayerId
     {
-        get => OpponentPlayerId;
-        set => OpponentPlayerId = value;
+        get => OpponentPlayerKey;
+        set => OpponentPlayerKey = value;
     }
 }
