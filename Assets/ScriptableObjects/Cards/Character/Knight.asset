@@ -17,6 +17,8 @@ MonoBehaviour:
   handDeckSprite: {fileID: 21300000, guid: 7006ea0479b8b0945a0e47e0c3911bbd, type: 3}
   manifestedSprite: {fileID: 21300000, guid: 4d62fa01d61d01049bf9b88c48db9f5c, type: 3}
   description: 
+  validatorId: target.rules.reusable
+  effectId: effect.summon
   maxHp: 5
   attackDamage: 1
   startsReadyToAttack: 1
