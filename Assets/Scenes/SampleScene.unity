@@ -252,6 +252,76 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 114665863}
   m_CullTransparentMesh: 1
+--- !u!1 &172819102
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 172819106}
+  - component: {fileID: 172819105}
+  - component: {fileID: 172819104}
+  - component: {fileID: 172819103}
+  m_Layer: 0
+  m_Name: CardInteractionManagers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &172819103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172819102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd42d9ccf65e7fc4fbc1f0ad1f6abe10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FortGame.UI.PlayerInputController
+--- !u!114 &172819104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172819102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b1aace1bcd58714192a6d1a0c3814f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FortGame.UI.TargetSelectionManager
+--- !u!114 &172819105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172819102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c4d472a78c9e94596d0f18a5d9f920, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FortGame.UI.CardSelectionManager
+--- !u!4 &172819106
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172819102}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 9.24488, y: 6.25977, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &199299486
 GameObject:
   m_ObjectHideFlags: 0
@@ -720,12 +790,14 @@ GameObject:
   m_Component:
   - component: {fileID: 961893402}
   - component: {fileID: 961893401}
+  - component: {fileID: 961893404}
+  - component: {fileID: 961893403}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!114 &961893401
 MonoBehaviour:
@@ -741,9 +813,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   gameConfig: {fileID: 11400000, guid: 59e710db4ae71014c8b6817b25162ff2, type: 2}
   cardLibrary: {fileID: 11400000, guid: 3c8b6bfd71b222746bc1483537a8ac4a, type: 2}
+  hudManager: {fileID: 0}
+  computerPlayer: {fileID: 0}
   player1:
     playerName: 
-    money: 0
+    money: 50
     fortHp: 0
     discardCount: 0
     handCount: 0
@@ -759,7 +833,7 @@ MonoBehaviour:
     deckCount: 0
     maxHandSize: 0
     handCards: []
-  currentPhase: 2
+  currentPhase: 3
   currentPlayer:
     playerName: 
     money: 0
@@ -777,7 +851,6 @@ MonoBehaviour:
   selectedCardToDiscard:
     sourceCard: {fileID: 0}
     currentZone: 0
-    isManifestedOnBoard: 0
     boardPosition:
       q: 0
       r: 0
@@ -815,6 +888,40 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &961893403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 961893400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8ca4a3820ba48b5a9ca39f1f8f12db0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManagerCardStateWriter
+  gameManager: {fileID: 0}
+  autoResolveGameManager: 1
+  logTransactions: 1
+  player1Key: player
+  player2Key: enemy
+  boardSource: {fileID: 0}
+--- !u!114 &961893404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 961893400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c943d8f35bb84262b1a1e9f8f3cf4e91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardPlayService
+  gameManager: {fileID: 0}
+  boardSource: {fileID: 0}
+  writer: {fileID: 0}
+  autoResolveDependencies: 1
 --- !u!1 &1032293581
 GameObject:
   m_ObjectHideFlags: 0
@@ -1682,3 +1789,4 @@ SceneRoots:
   - {fileID: 199299490}
   - {fileID: 1489315038}
   - {fileID: 2093726761}
+  - {fileID: 172819106}
