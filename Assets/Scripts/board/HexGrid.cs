@@ -105,4 +105,103 @@ public class HexGrid : MonoBehaviour
         float y = hexSize * (1.5f * coord.r);
         return new Vector3(x, y, 0f);
     }
+
+
+
+
+    //ALI : Khdemt 3la Spawn system + other functions used lih 
+
+
+
+    public int AxialToOffsetColumn(AxialCoord coord) // Function to convert the tile from axial coordinates into a visual grid column 
+    {
+        return coord.q + (coord.r - (coord.r & 1)) / 2;  //coord.r & 1 verifie si ligne pair ou impair
+
+    }
+
+
+    public bool IsInPlayerDeploymentZone(AxialCoord coord, string playerKey)//checks whether a tile is inside the 2-column deployment area for a given side
+    // cuz lcharacters hay spawniw f 2 lines lwlin dial lpartie dial lplayer fl board
+    {
+        int col = AxialToOffsetColumn(coord);
+
+        if (playerKey == PlayerKeyResolver.PlayerOneKey) // si joueur 1, autorise juste lignes 1 et 2 
+        {
+            return col >= 0 && col < 2;
+        }
+
+        if (playerKey == PlayerKeyResolver.PlayerTwoKey) // si AI, autorise lignes 7 et 8
+        {
+            return col >= gridWidth - 2 && col < gridWidth;
+        }
+
+        return false;
+    }
+
+    public bool IsInPlayerHalf(AxialCoord coord, string playerKey) // Pour verifier si joueur dans sa moitié du board
+    {
+        int col = AxialToOffsetColumn(coord);
+        int middle = gridWidth / 2;
+
+        if (playerKey == PlayerKeyResolver.PlayerOneKey)
+        {
+            return col < middle;
+        }
+
+        if (playerKey == PlayerKeyResolver.PlayerTwoKey)
+        {
+            return col >= middle;
+        }
+
+        return false;
+    }
+
+
+    public Unit SpawnUnitFromCard(HexTile tile, string owner, CardRuntimeState card) //Spawn
+    {
+        if (tile == null || card == null || !tile.IsEmpty()) //Basic verification
+        {
+            return null;
+        }
+
+        Unit unit = SpawnUnit(unitPrefab, tile, owner);
+        //SpawnUnit: instancie le prefab Unit, le place sur la case
+        //met l’owner, met à jour la tile avec tileType = "unit"
+        if (unit == null)
+        {
+            return null;
+        }
+
+        CharacterCardData characterCard = card.SourceCard as CharacterCardData; // essaie de convertir la carte en CharacterCardData
+        if (characterCard == null) //Si la carte n’est pas une carte personnage.
+        {
+            return unit;
+        }
+
+        SpriteRenderer spriteRenderer = unit.GetComponent<SpriteRenderer>(); //récupère le composant qui affiche l’image de l’unité sur le board.
+        if (spriteRenderer != null && characterCard.manifestedSprite != null)
+        {
+            spriteRenderer.sprite = characterCard.manifestedSprite; //remplace le sprite du prefab par le sprite de la carte.
+        }
+
+        //Generate base stats when a card spawns
+        unit.health = characterCard.maxHp;
+        unit.attack = characterCard.attackDamage;
+
+        if (card.CurrentMovementCapacity.HasValue)
+        {
+            unit.moveRange = card.CurrentMovementCapacity.Value;
+        }
+        else if (characterCard.unitMovementCapacity.HasValue)
+        {
+            unit.moveRange = characterCard.unitMovementCapacity.Value;
+        }
+
+        return unit;
+    }
+    //Ali end.
 }
+
+
+
+

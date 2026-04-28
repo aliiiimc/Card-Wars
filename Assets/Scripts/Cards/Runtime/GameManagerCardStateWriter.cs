@@ -7,6 +7,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
     [SerializeField] private bool logTransactions = true;
     [SerializeField] private string player1Key = "player";
     [SerializeField] private string player2Key = "enemy";
+    [SerializeField] private HexGrid boardSource;//Ali : référence vers le board
+    // [SerializeField] : variable privée dans le code, mais visible dans l’Inspector Unity.
+
 
     public string LastActingPlayerId { get; private set; }
 
@@ -16,6 +19,12 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         {
             gameManager = FindFirstObjectByType<GameManager>();
         }
+        //Ali: Load the hexgrid variable
+        if (boardSource == null)
+        {
+            boardSource = FindFirstObjectByType<HexGrid>();
+        }
+
     }
 
     public bool TrySpendCost(string playerId, int amount)
@@ -76,6 +85,25 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         }
 
         card.ManifestOnBoard(tile);
+
+        //Ali:
+
+        if (boardSource == null)
+        {
+            boardSource = FindFirstObjectByType<HexGrid>();
+        }
+
+        HexTile targetTile = boardSource != null ? boardSource.GetTile(tile) : null;
+        string owner = LastActingPlayerId == PlayerKeyResolver.PlayerTwoKey //décide à qui appartient l’unité créée
+            ? PlayerKeyResolver.PlayerTwoKey
+            : PlayerKeyResolver.PlayerOneKey;
+
+        if (card.SourceCard is CharacterCardData && targetTile != null)
+        {
+            boardSource.SpawnUnitFromCard(targetTile, owner, card);
+        }
+
+
         LogTransaction($"ManifestCard: {card.SourceCard.DisplayName} at {tile}.");
     }
 

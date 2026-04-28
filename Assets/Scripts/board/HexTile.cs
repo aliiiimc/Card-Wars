@@ -10,6 +10,9 @@ public class HexTile : MonoBehaviour
     private Color baseColor;
     private Color originalColor;
 
+    private bool isHighlighted; //Ali : variable bach nt7ekmo f selection dial cards 
+
+
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -68,11 +71,13 @@ public class HexTile : MonoBehaviour
 
     public void Highlight(Color color)
     {
+        isHighlighted = true; //Ali
         spriteRenderer.color = color;
     }
 
     public void ResetColor()
     {
+        isHighlighted = false; //Ali
         spriteRenderer.color = originalColor;
     }
 
@@ -89,6 +94,11 @@ public class HexTile : MonoBehaviour
 
     void OnMouseEnter()
     {
+        if (isHighlighted)//Ali 
+        {
+            return;
+        }
+
         if (tileType != "fort")
         {
             spriteRenderer.color = Color.cyan;
@@ -97,6 +107,10 @@ public class HexTile : MonoBehaviour
 
     void OnMouseExit()
     {
+        if (isHighlighted) //Ali
+        {
+            return;
+        }
         spriteRenderer.color = originalColor;
     }
 }

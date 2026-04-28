@@ -27,7 +27,7 @@ Start with:
 - 3 card types: World Effect, Character, Spell
 - a small card set: about 12 to 15 cards
 - this turn order:
-  - draw
+  - income
   - optional buy or discard
   - play cards
   - attack
@@ -50,6 +50,36 @@ Keep the card ideas simple at first:
   - buff
   - debuff
 
+### Card placement and targeting rules for v1
+
+These rules define what counts as a valid target when a player clicks a card.
+The UI should only highlight valid targets, but the real validation must also be enforced in code.
+
+- Character cards:
+  - spawn only on an empty tile
+  - cannot spawn on a Fort
+  - cannot spawn on another unit
+  - Player 1 can spawn only in the first 2 columns on the blue side
+  - Player 2 can spawn only in the last 2 columns on the red side
+  - spawned units use the card's board sprite and movement value
+- World Effect cards:
+  - building/resource/hazard placement must be on an empty tile
+  - v1 buildings and resource fields can be placed anywhere in the owner's half of the board
+  - later hazard/weather cards may get special placement rules if needed
+- Spell cards:
+  - spells do not use empty-tile placement by default
+  - heal targets an allied unit or allied Fort
+  - buff targets an allied unit
+  - direct damage targets an enemy unit or enemy Fort
+  - debuff targets an enemy unit
+  - utility cards define their target by effect
+
+Movement rule note:
+
+- Character cards already have `unitMovementCapacity` in data.
+- Runtime cards already copy movement into `CardRuntimeState.CurrentMovementCapacity`.
+- Board movement still uses `Unit.moveRange`, so the next integration step is to copy card movement into the spawned `Unit`.
+
 ## 3. Team Roles
 
 ### Ali - Game Logic and Balancing Lead
@@ -59,7 +89,7 @@ Main coding tasks:
 
 - build the main game flow
 - manage turns from start to finish
-- manage player money, Fort HP, hand size, and draw rules
+- manage player money, Fort HP, hand size, buy rules, and discard rules
 - control when a card can be played and when a turn can end
 - manage win and lose conditions
 - balance card costs, unit stats, Fort HP, money gain, and card effects
@@ -213,22 +243,23 @@ Goal: build the base structure.
 Goal: get the board and cards connected.
 
 - Ali:
-  - draw rules
-  - discard rules
   - buy rules
+  - discard rules
   - money rules
 - Abdo:
   - placement rules
   - occupied tile rules
+  - card placement zones for Characters and World Effects
 - Rabie:
   - read legal actions from the game state
   - player input
   - target selection
   - highlight valid targets
 - Fatine:
-  - apply effect pipeline
-  - target validation
-  - first real card effects
+- apply effect pipeline
+- target validation
+- first real card effects
+- connect card movement values to spawned units
 
 ### Week 3
 Goal: make units work.
@@ -293,9 +324,13 @@ Before adding extra ideas, these must work:
 Use this checklist often.
 
 - starting hand always has the right card types
-- drawing cards does not break the deck
+- bought cards are added to hand correctly
 - buying and discarding work correctly
 - cards cannot be played on wrong targets
+- Character cards only spawn in the owner's deployment zone
+- World Effect buildings only place in the owner's half of the board
+- Spell cards only target valid units or Forts for their effect type
+- spawned units use the Character card's movement value
 - units cannot move to illegal hexes
 - attacks only happen in valid range
 - dead units are removed correctly

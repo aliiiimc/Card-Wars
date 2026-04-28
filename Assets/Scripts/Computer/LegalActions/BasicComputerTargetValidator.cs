@@ -1,4 +1,6 @@
+using UnityEngine;
 namespace FortGame.Computer
+
 {
     /// <summary>
     /// Baseline validator used by the AI legal-action reader until full validator routing is available.
@@ -35,6 +37,19 @@ namespace FortGame.Computer
                     if (context.Board.IsTileOccupied(target.tile))
                     {
                         return CardValidationResult.Invalid("OCCUPIED_TILE", "Target tile is occupied.");
+                    }
+
+                    //Ali : added more rules when spawning characters.
+                    if (sourceCard.SourceCard is CharacterCardData)
+                    {
+                        HexGrid grid = Object.FindFirstObjectByType<HexGrid>();
+
+                        if (!BoardPlacementRules.CanPlaceCharacter(target.tile, context.ActingPlayerKey, grid))
+                        {
+                            return CardValidationResult.Invalid(
+                                "OUTSIDE_DEPLOYMENT_ZONE",
+                                "Character must be placed in deployment zone.");
+                        }
                     }
 
                     return CardValidationResult.Valid();

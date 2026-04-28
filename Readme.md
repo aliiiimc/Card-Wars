@@ -19,6 +19,35 @@ The match is played on one machine first, with gameplay quality taking priority 
 - A unit may not move onto or be summoned onto a tile that already has another unit
 - In v1, there is **no unit stacking** on the same tile
 
+### Placement And Targeting Rules
+Valid targets are part of the game rules, not only UI polish.
+The UI should highlight valid targets, but the code must also reject invalid targets.
+
+#### Character Cards
+- Character cards spawn units onto the board
+- The target tile must be empty
+- The target tile cannot be a Fort tile
+- Player 1 can spawn Characters only in the first 2 columns on the blue side
+- Player 2 can spawn Characters only in the last 2 columns on the red side
+- A spawned unit should use:
+  - `CharacterCardData.manifestedSprite` for the board sprite
+  - `CharacterCardData.maxHp` for health
+  - `CharacterCardData.attackDamage` for attack
+  - `CharacterCardData.unitMovementCapacity` for movement range
+
+#### World Effect Cards
+- Buildings and resource fields must be placed on empty tiles
+- In v1, buildings and resource fields can be placed anywhere in the owner's half of the board
+- Hazard/weather cards may later get special placement rules
+
+#### Spell Cards
+- Spells usually target an existing unit or Fort, not an empty tile
+- Heal targets an allied unit or allied Fort
+- Buff targets an allied unit
+- Direct damage targets an enemy unit or enemy Fort
+- Debuff targets an enemy unit
+- Utility effects define their own target rules
+
 ### Card System
 We start the game like this:
 
@@ -43,6 +72,14 @@ We start the game like this:
 
 ### Win Condition
 Destroy the opponent's Fort.
+
+### Movement Values
+Movement is already represented in card data, but it still needs final board integration.
+
+- Character cards use `unitMovementCapacity`
+- Runtime cards copy that value into `CardRuntimeState.CurrentMovementCapacity`
+- Board units currently move through `Unit.moveRange`
+- The next integration step is to copy the Character card movement value into the spawned `Unit.moveRange`
 
 ---
 
@@ -148,6 +185,8 @@ Suggested data in `GameConfig`:
 - Use a Tilemap or simple grid for the board
 - Each player's Fort is placed on the board
 - Define legal placement zones
+- Character deployment zone: first 2 columns for Player 1, last 2 columns for Player 2
+- World Effect zone: owner's half of the board for v1 buildings/resource fields
 - Enforce `1 unit maximum per tile`
 
 ```text
@@ -193,10 +232,28 @@ Each turn:
 Suggested effect pipeline:
 
 1. Select a card
-2. Validate the target
+2. Validate the target by card type and owner zone
 3. Spend the cost if needed
 4. Apply the effect
 5. Move the card to the correct pile if needed
+
+Character card play target:
+
+```text
+Click Character card -> highlight valid deployment tiles -> click empty valid tile -> spawn unit -> remove card from hand
+```
+
+World Effect card play target:
+
+```text
+Click World Effect card -> highlight valid tiles in owner's half -> click empty valid tile -> place effect/building
+```
+
+Spell card play target:
+
+```text
+Click Spell card -> highlight valid units/Forts for that effect -> click target -> apply spell
+```
 
 ### Phase 5: Local Play First
 
@@ -291,6 +348,11 @@ Assets/
 - [ ] Fort placed, has HP, and can take damage
 - [ ] Turn system working in local play
 - [ ] Cards can be played onto the board
+- [ ] Character cards can spawn units only in the owner's deployment zone
+- [ ] Spawned units use the card's chibi board sprite
+- [ ] Spawned units use the card's movement value
+- [ ] World Effect buildings place only in the owner's half
+- [ ] Spell cards validate correct unit/Fort targets
 - [ ] Character units move and attack
 - [ ] World effect cards work
 - [ ] Spell effects work

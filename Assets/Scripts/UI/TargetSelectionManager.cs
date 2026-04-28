@@ -64,11 +64,14 @@ namespace FortGame.UI
             }
 
             string actingPlayerKey = ResolveCurrentPlayerKey();
-            for (int r = 0; r < _hexGrid.gridHeight; r++)
+            //Ali changed this function, fixed coordinates.
+            for (int row = 0; row < _hexGrid.gridHeight; row++)
             {
-                for (int q = 0; q < _hexGrid.gridWidth; q++)
+                for (int col = 0; col < _hexGrid.gridWidth; col++)
                 {
-                    HexTile tile = _hexGrid.GetTile(new AxialCoord(q, r));
+                    AxialCoord coord = HexGrid.OffsetToAxial(col, row);
+                    HexTile tile = _hexGrid.GetTile(coord);
+
                     if (tile == null)
                     {
                         continue;

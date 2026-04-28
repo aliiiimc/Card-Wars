@@ -634,8 +634,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             Debug.Log("Game is already over. Fort damage ignored.");
             return;
         }
-
-        targetPlayer.fortHp -= damage;
+        
+        targetPlayer.fortHp = Mathf.Max(0, targetPlayer.fortHp - damage);
         Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
 
         CheckGameOver();
