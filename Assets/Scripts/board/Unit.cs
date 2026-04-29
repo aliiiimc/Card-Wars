@@ -8,20 +8,48 @@ public class Unit : MonoBehaviour
     public int attack = 3;
     public string owner = "player";
     public HexTile currentTile;
+    public bool hasMovedThisTurn;
+    public bool hasAttackedThisTurn;
+
+    public bool CanMove()
+    {
+        return !hasMovedThisTurn && !hasAttackedThisTurn;
+    }
+
+    public bool CanAttack()
+    {
+        return !hasAttackedThisTurn;
+    }
+
+    public void MarkMoved()
+    {
+        hasMovedThisTurn = true;
+    }
+
+    public void MarkAttacked()
+    {
+        hasAttackedThisTurn = true;
+    }
+
+    public void ResetTurnActions()
+    {
+        hasMovedThisTurn = false;
+        hasAttackedThisTurn = false;
+    }
 
     public void PlaceOnTile(HexTile tile)
-{
-    currentTile = tile;
-    tile.tileType = "unit";
-    tile.owner = owner;
-    transform.position = tile.transform.position;
+    {
+        currentTile = tile;
+        tile.tileType = "unit";
+        tile.owner = owner;
+        transform.position = tile.transform.position;
 
-    SpriteRenderer sr = GetComponent<SpriteRenderer>();
-    if (owner == "player")
-        sr.color =  Color.white; // blue
-    else
-        sr.color = new Color(1f, 0.3f, 0.3f);  // red
-}
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (owner == "player")
+            sr.color =  Color.white; // blue
+        else
+            sr.color = new Color(1f, 0.3f, 0.3f);  // red
+    }
 
     public void Die()
     {

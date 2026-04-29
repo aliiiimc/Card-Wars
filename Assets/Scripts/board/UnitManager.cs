@@ -9,17 +9,21 @@ public class UnitManager : MonoBehaviour
     private HexGrid grid;
 
     private GameManager gameManager; //Ali
+    private string lastActiveOwner = "";
 
 
     void Start()
     {
         gameManager = FindFirstObjectByType<GameManager>(); //Def de GameManager
         grid = FindFirstObjectByType<HexGrid>();
+        ResetUnitsForActiveOwnerIfNeeded();
     }
 
 
     void Update()
     {
+        ResetUnitsForActiveOwnerIfNeeded();
+
         if (Input.GetMouseButtonDown(0))
         {
             Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -32,8 +36,8 @@ public class UnitManager : MonoBehaviour
 
             if (selectedUnit == null)
             {
-                // Select a player unit
-                if (clickedTile.tileType == "unit" && clickedTile.owner == "player")
+                // Select one of the current player's units.
+                if (clickedTile.tileType == "unit" && clickedTile.owner == GetActiveOwner())
                 {
                     SelectUnit(clickedTile);
                 }
@@ -41,7 +45,7 @@ public class UnitManager : MonoBehaviour
             else
             {
                 // Attack an enemy in attack range
-                if (attackTiles.Contains(clickedTile) && clickedTile.owner == "enemy")
+                if (attackTiles.Contains(clickedTile) && IsEnemyTarget(clickedTile))
                 {
                     AttackTarget(clickedTile);
                 }
@@ -64,32 +68,51 @@ public class UnitManager : MonoBehaviour
         if (selectedUnit == null) return;
 
         // Movement range (green)
-        moveTiles = HexUtils.GetTilesInRange(tile, selectedUnit.moveRange, grid);
-        foreach (HexTile t in moveTiles)
+        if (selectedUnit.CanMove())
         {
-            if (t.IsEmpty())
-                t.Highlight(Color.green);
+            moveTiles = HexUtils.GetTilesInRange(tile, selectedUnit.moveRange, grid);
+            foreach (HexTile t in moveTiles)
+            {
+                if (t.IsEmpty())
+                    t.Highlight(Color.green);
+            }
         }
 
         // Attack range (red) — highlight enemies within attackRange
-        attackTiles = HexUtils.GetTilesInRange(tile, selectedUnit.attackRange, grid);
-        foreach (HexTile t in attackTiles)
+        if (selectedUnit.CanAttack())
         {
-            if (t.owner == "enemy")
-                t.Highlight(Color.red);
+            attackTiles = HexUtils.GetTilesInRange(tile, selectedUnit.attackRange, grid);
+            foreach (HexTile t in attackTiles)
+            {
+                if (IsEnemyTarget(t))
+                    t.Highlight(Color.red);
+            }
         }
     }
 
     void MoveUnit(HexTile targetTile)
     {
+        if (selectedUnit == null || !selectedUnit.CanMove())
+        {
+            DeselectUnit();
+            return;
+        }
+
         selectedUnit.currentTile.RemoveUnit();
         selectedUnit.PlaceOnTile(targetTile);
         selectedUnit.transform.position = targetTile.transform.position;
+        selectedUnit.MarkMoved();
         DeselectUnit();
     }
 
     void AttackTarget(HexTile targetTile)
     {
+        if (selectedUnit == null || !selectedUnit.CanAttack())
+        {
+            DeselectUnit();
+            return;
+        }
+
         Unit target = FindUnitOnTile(targetTile);
         if (target != null)
         {
@@ -123,6 +146,7 @@ public class UnitManager : MonoBehaviour
         }
 
 
+        selectedUnit.MarkAttacked();
         DeselectUnit();
     }
 
@@ -144,5 +168,53 @@ public class UnitManager : MonoBehaviour
                 return u;
         }
         return null;
+    }
+
+    void ResetUnitsForActiveOwnerIfNeeded()
+    {
+        string activeOwner = GetActiveOwner();
+        if (string.IsNullOrEmpty(activeOwner) || activeOwner == lastActiveOwner)
+        {
+            return;
+        }
+
+        Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        foreach (Unit unit in allUnits)
+        {
+            if (unit != null && unit.owner == activeOwner)
+            {
+                unit.ResetTurnActions();
+            }
+        }
+
+        lastActiveOwner = activeOwner;
+    }
+
+    string GetActiveOwner()
+    {
+        if (gameManager == null)
+        {
+            gameManager = FindFirstObjectByType<GameManager>();
+        }
+
+        if (gameManager == null || gameManager.currentPlayer == null)
+        {
+            return "player";
+        }
+
+        if (ReferenceEquals(gameManager.currentPlayer, gameManager.player2))
+        {
+            return "enemy";
+        }
+
+        return "player";
+    }
+
+    bool IsEnemyTarget(HexTile tile)
+    {
+        return tile != null
+            && tile.owner != "none"
+            && tile.owner != GetActiveOwner()
+            && (tile.tileType == "unit" || tile.tileType == "fort");
     }
 }
