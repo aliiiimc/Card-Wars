@@ -5,6 +5,12 @@ public interface ICardStateWriter
     void ManifestCard(CardRuntimeState card, AxialCoord tile);
     void ApplyDamage(CardRuntimeState card, int amount);
     void ApplyHeal(CardRuntimeState card, int amount);
+    
+    //Ali:
+    void ApplyFortDamage(string playerId, int amount);
+    void ApplyFortHeal(string playerId, int amount);
+
+
     void ModifyDamage(CardRuntimeState card, int delta);
     void ModifyMovement(CardRuntimeState card, int delta);
     void AddRevenue(string playerId, int amount);

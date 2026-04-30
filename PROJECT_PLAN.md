@@ -75,6 +75,13 @@ The UI should only highlight valid targets, but the real validation must also be
   - debuff targets an enemy unit
   - utility cards define their target by effect
 
+Current repo note as of `2026-04-30`:
+
+- reusable runtime validation now enforces Character deployment-zone rules and World Effect owner-half rules
+- target selection can now build `Tile`, `Ally/EnemyUnit`, and `Ally/EnemyFort` targets before card-play validation
+- damage/heal card effects can now route valid Fort targets through the card pipeline
+- effect-specific spell restrictions still need follow-up and Unity verification
+
 Movement rule note:
 
 - Character cards already have `unitMovementCapacity` in data.

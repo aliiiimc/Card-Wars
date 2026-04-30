@@ -29,7 +29,7 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
                 return ValidateUnitTarget(context, target, shouldBeAlly: false);
 
             case CardTargetType.Tile:
-                return ValidateTileTarget(context, target);
+                return ValidateTileTarget(context, sourceCard, target); //Ali: tile validation now depends on the source card type.
 
             case CardTargetType.AllyFort:
                 return ValidateFortTarget(context, target, shouldBeAlly: true);
@@ -42,16 +42,63 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
         }
     }
 
-    private CardValidationResult ValidateTileTarget(CardValidationContext context, CardTarget target)
+    //Ali: validate tile targets with card-specific rules for Character, World Effect, and Spell cards.
+    private CardValidationResult ValidateTileTarget(CardValidationContext context, CardRuntimeState sourceCard, CardTarget target)
     {
         if (context.Board == null)
         {
             return CardValidationResult.Invalid("NO_BOARD", "Board state reader is missing.");
         }
 
+
         if (!context.Board.IsTileValid(target.tile))
         {
             return CardValidationResult.Invalid("INVALID_TILE", "Tile is outside board bounds.");
+        }
+
+        //Ali: HexGrid is needed for deployment-zone and half-board rule checks.
+        HexGrid grid = FindFirstObjectByType<HexGrid>();
+        if (grid == null)
+        {
+            return CardValidationResult.Invalid("NO_GRID", "HexGrid is missing.");
+        }
+
+        //Ali: Character cards must target an empty tile inside the acting player's deployment zone.
+        if (sourceCard.SourceCard is CharacterCardData)
+        {
+            if (context.Board.IsTileOccupied(target.tile))
+            {
+                return CardValidationResult.Invalid("TILE_OCCUPIED", "Character must be placed on an empty tile.");
+            }
+
+            if (!grid.IsInPlayerDeploymentZone(target.tile, context.ActingPlayerKey))
+            {
+                return CardValidationResult.Invalid("OUTSIDE_DEPLOYMENT_ZONE", "Character must be placed in the owner's 2-column deployment zone.");
+            }
+
+            return CardValidationResult.Valid();
+        }
+
+        //Ali: World Effect cards must target an empty tile inside the acting player's half of the board.
+        if (sourceCard.SourceCard is WorldEffectCardData)
+        {
+            if (context.Board.IsTileOccupied(target.tile))
+            {
+                return CardValidationResult.Invalid("TILE_OCCUPIED", "World Effect must be placed on an empty tile.");
+            }
+
+            if (!grid.IsInPlayerHalf(target.tile, context.ActingPlayerKey))
+            {
+                return CardValidationResult.Invalid("OUTSIDE_OWNER_HALF", "World Effect must be placed in the owner's half of the board.");
+            }
+
+            return CardValidationResult.Valid();
+        }
+
+        //Ali: Spells do not target empty tiles by default in v1; they should target units or forts.
+        if (sourceCard.SourceCard is SpellCardData)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Spell cards do not target empty tiles by default in v1.");
         }
 
         if (requireFreeTile && context.Board.IsTileOccupied(target.tile))
@@ -61,6 +108,7 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
 
         return CardValidationResult.Valid();
     }
+
 
     private static CardValidationResult ValidateUnitTarget(CardValidationContext context, CardTarget target, bool shouldBeAlly)
     {
@@ -125,12 +173,26 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
             return CardValidationResult.Invalid("WRONG_TARGET_ENTITY", "Fort target entity id must be 'fort'.");
         }
 
-        if (!context.Board.IsTileOccupied(target.tile))
+        //Ali: fort validation now checks the real board tile type and owner, not only generic occupancy.
+        HexGrid grid = FindFirstObjectByType<HexGrid>();
+        if (grid == null)
         {
-            return CardValidationResult.Invalid("FORT_NOT_PRESENT", "Fort tile is not occupied.");
+            return CardValidationResult.Invalid("NO_GRID", "HexGrid is missing.");
+        }
+
+        HexTile fortTile = grid.GetTile(target.tile);
+        if (fortTile == null || fortTile.tileType != "fort")
+        {
+            return CardValidationResult.Invalid("FORT_NOT_PRESENT", "Target tile does not contain a fort.");
+        }
+
+        if (fortTile.owner != target.targetPlayerId)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Fort owner does not match target player.");
         }
 
         return CardValidationResult.Valid();
+
     }
 
 }

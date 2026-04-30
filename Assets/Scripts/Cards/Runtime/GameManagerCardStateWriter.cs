@@ -129,6 +129,64 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         LogTransaction($"ApplyHeal: {card.SourceCard.DisplayName} amount={Mathf.Max(0, amount)}.");
     }
 
+    //Ali:
+    public void ApplyFortDamage(string playerId, int amount)
+    {
+        if (gameManager == null || string.IsNullOrWhiteSpace(playerId))
+        {
+            return;
+        }
+
+        int safeAmount = Mathf.Max(0, amount);// On prend la plus grande valeur entre 0 et amount, On veut empêcher des valeurs négatives de passer.
+
+        if (safeAmount <= 0)
+        {
+            return;
+        }
+
+        if (playerId == player1Key || (gameManager.player1 != null && playerId == gameManager.player1.playerName))
+        {
+            gameManager.DamagePlayer1Fort(safeAmount);
+            LogTransaction($"ApplyFortDamage: player='{playerId}' amount={safeAmount}.");
+            return;
+        }
+
+        if (playerId == player2Key || (gameManager.player2 != null && playerId == gameManager.player2.playerName))
+        {
+            gameManager.DamagePlayer2Fort(safeAmount);
+            LogTransaction($"ApplyFortDamage: player='{playerId}' amount={safeAmount}.");
+        }
+    }
+
+    //Ali:
+    public void ApplyFortHeal(string playerId, int amount)
+    {
+        if (gameManager == null || string.IsNullOrWhiteSpace(playerId))
+        {
+            return;
+        }
+
+        int safeAmount = Mathf.Max(0, amount);
+        if (safeAmount <= 0)
+        {
+            return;
+        }
+
+        if (playerId == player1Key || (gameManager.player1 != null && playerId == gameManager.player1.playerName))
+        {
+            gameManager.HealPlayer1Fort(safeAmount);
+            LogTransaction($"ApplyFortHeal: player='{playerId}' amount={safeAmount}.");
+            return;
+        }
+
+        if (playerId == player2Key || (gameManager.player2 != null && playerId == gameManager.player2.playerName))
+        {
+            gameManager.HealPlayer2Fort(safeAmount);
+            LogTransaction($"ApplyFortHeal: player='{playerId}' amount={safeAmount}.");
+        }
+    }
+
+
     public void ModifyDamage(CardRuntimeState card, int delta)
     {
         if (card == null)

@@ -73,7 +73,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         player2.handCards.Clear();
 
 
-        
+
         winnerName = string.Empty;
 
         player1.money = gameConfig.startingMoney;
@@ -589,6 +589,18 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         ApplyFortDamage(player2, damage);
     }
 
+    public void HealPlayer1Fort(int amount)
+    {
+        ApplyFortHeal(player1, amount);
+    }
+
+    public void HealPlayer2Fort(int amount)
+    {
+        ApplyFortHeal(player2, amount);
+    }
+
+
+
     public string GetStateSummary()
     {
         string winnerText = string.IsNullOrEmpty(winnerName) ? "None" : winnerName;
@@ -634,11 +646,31 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             Debug.Log("Game is already over. Fort damage ignored.");
             return;
         }
-        
+
         targetPlayer.fortHp = Mathf.Max(0, targetPlayer.fortHp - damage);
         Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
 
         CheckGameOver();
+        LogStateSummary();
+    }
+
+    private void ApplyFortHeal(PlayerState targetPlayer, int amount)
+    {
+        if (amount <= 0)
+        {
+            Debug.Log("Heal amount must be greater than zero.");
+            return;
+        }
+
+        if (currentPhase == GamePhase.GameOver)
+        {
+            Debug.Log("Game is already over. Fort heal ignored.");
+            return;
+        }
+
+        targetPlayer.fortHp += amount;
+        Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
+
         LogStateSummary();
     }
 

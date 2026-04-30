@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+//Ali : needed to read runtime cards from board tiles when a spell targets a unit.
+using FortGame.Computer;
+
 
 namespace FortGame.UI
 {
@@ -77,11 +80,12 @@ namespace FortGame.UI
                         continue;
                     }
 
-                    CardTarget target = new CardTarget
+                    //Ali : build the real target type from the clicked tile instead of always assuming Tile.
+                    if (!TryBuildTargetFromTile(card.runtimeCard, tile, actingPlayerKey, out CardTarget target))
                     {
-                        type = CardTargetType.Tile,
-                        tile = new AxialCoord(tile.coord.q, tile.coord.r)
-                    };
+                        continue;
+                    }
+
 
                     // Rabie: highlight only targets that the real card play pipeline says are legal.
                     CardPlayResult result = _cardPlayService.CanPlayCard(card.runtimeCard, actingPlayerKey, target);
@@ -122,6 +126,8 @@ namespace FortGame.UI
             {
                 return false;
             }
+            CardUI selectedCard = selectionMgr.SelectedCard;
+
 
             if (!_highlightedTiles.Contains(targetTile))
             {
@@ -134,11 +140,14 @@ namespace FortGame.UI
                 return false;
             }
 
-            CardTarget target = new CardTarget
+            string actingPlayerKey = ResolveCurrentPlayerKey();
+            //Ali : rebuild the exact target from the clicked tile so spells can target units or forts.
+            if (!TryBuildTargetFromTile(selectedCard.runtimeCard, targetTile, actingPlayerKey, out CardTarget target))
             {
-                type = CardTargetType.Tile,
-                tile = new AxialCoord(targetTile.coord.q, targetTile.coord.r)
-            };
+                _hudManager?.ShowError("Could not build target from clicked tile.");
+                return false;
+            }
+
 
             selectionMgr.ConfirmSelection(target);
             // Rabie: send the confirmed tile to PlayerInputController so the selected card is actually played.
@@ -157,6 +166,75 @@ namespace FortGame.UI
         public void OnSelectionCancelled()
         {
             ClearHighlights();
+        }
+
+
+
+        //Ali:
+        private bool TryBuildTargetFromTile(CardRuntimeState sourceCard, HexTile tile, string actingPlayerKey, out CardTarget target)
+        {
+            //Ali : converts one clicked board tile into the target shape expected by the card pipeline.
+            target = default;
+
+            if (sourceCard == null || sourceCard.SourceCard == null || tile == null)
+            {
+                return false;
+            }
+
+            AxialCoord coord = new AxialCoord(tile.coord.q, tile.coord.r);
+
+            if (sourceCard.SourceCard is CharacterCardData || sourceCard.SourceCard is WorldEffectCardData)
+            {
+                //Ali : board-placement cards still target an empty tile directly.
+                target = new CardTarget
+                {
+                    type = CardTargetType.Tile,
+                    tile = coord
+                };
+                return true;
+            }
+
+            if (sourceCard.SourceCard is SpellCardData)
+            {
+                if (tile.tileType == "fort")
+                {
+                    //Ali : spells can target allied or enemy forts, so we encode fort ownership here.
+                    bool isAllyFort = tile.owner == actingPlayerKey;
+
+                    target = new CardTarget
+                    {
+                        type = isAllyFort ? CardTargetType.AllyFort : CardTargetType.EnemyFort,
+                        tile = coord,
+                        targetPlayerId = tile.owner,
+                        targetEntityId = "fort"
+                    };
+                    return true;
+                }
+
+                CardRuntimeState runtimeTarget = GetRuntimeCardOnTile(coord);
+                if (runtimeTarget != null)
+                {
+                    //Ali : spells that hit units need the runtime card reference plus ally/enemy ownership.
+                    bool isAllyUnit = tile.owner == actingPlayerKey;
+
+                    target = new CardTarget
+                    {
+                        type = isAllyUnit ? CardTargetType.AllyUnit : CardTargetType.EnemyUnit,
+                        tile = coord,
+                        targetCard = runtimeTarget,
+                        targetPlayerId = tile.owner
+                    };
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private CardRuntimeState GetRuntimeCardOnTile(AxialCoord coord)
+        {
+            //Ali : ask the board reader for the manifested runtime card on this tile.
+            return new HexGridBoardStateReader(_hexGrid).GetCardAt(coord);
         }
 
         private string ResolveCurrentPlayerKey()

@@ -250,7 +250,10 @@ Current v1 status:
 - the same Character placement rule is shared with the AI validator
 - valid hover highlights stay visible while the mouse passes over a highlighted tile
 - playing a Character card on a valid tile creates a visible unit using the card's chibi board sprite
-- next checks: spawned unit HP, attack, movement, owner, and summon attack readiness
+- reusable runtime validation now also enforces World Effect owner-half placement rules
+- target selection can now build `Tile`, `Ally/EnemyUnit`, and `Ally/EnemyFort` targets before card-play validation
+- direct damage and heal spell effects now have a Fort-target path through the card pipeline
+- next checks: spawned unit HP, attack, movement, owner, summon attack readiness, and effect-specific spell target restrictions
 
 World Effect card play target:
 
@@ -362,6 +365,7 @@ Assets/
 - [ ] Spawned units use the card's movement value
 - [ ] World Effect buildings place only in the owner's half
 - [ ] Spell cards validate correct unit/Fort targets
+  Note: runtime target construction and basic Fort routing are connected in code; final effect-specific restrictions still need Unity verification.
 - [ ] Character units move and attack
 - [ ] World effect cards work
 - [ ] Spell effects work
