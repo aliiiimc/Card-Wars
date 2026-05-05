@@ -94,9 +94,7 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         }
 
         HexTile targetTile = boardSource != null ? boardSource.GetTile(tile) : null;
-        string owner = LastActingPlayerId == PlayerKeyResolver.PlayerTwoKey //décide à qui appartient l’unité créée
-            ? PlayerKeyResolver.PlayerTwoKey
-            : PlayerKeyResolver.PlayerOneKey;
+        string owner = ResolveOwnerForManifestedCard();
 
         if (card.SourceCard is CharacterCardData && targetTile != null)
         {
@@ -238,6 +236,34 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         }
 
         return null;
+    }
+
+    private string ResolveOwnerForManifestedCard()
+    {
+        if (LastActingPlayerId == PlayerKeyResolver.PlayerTwoKey || LastActingPlayerId == player2Key)
+        {
+            return PlayerKeyResolver.PlayerTwoKey;
+        }
+
+        if (LastActingPlayerId == PlayerKeyResolver.PlayerOneKey || LastActingPlayerId == player1Key)
+        {
+            return PlayerKeyResolver.PlayerOneKey;
+        }
+
+        if (gameManager != null && gameManager.currentPlayer != null)
+        {
+            if (ReferenceEquals(gameManager.currentPlayer, gameManager.player2))
+            {
+                return PlayerKeyResolver.PlayerTwoKey;
+            }
+
+            if (ReferenceEquals(gameManager.currentPlayer, gameManager.player1))
+            {
+                return PlayerKeyResolver.PlayerOneKey;
+            }
+        }
+
+        return PlayerKeyResolver.PlayerOneKey;
     }
 
     private void LogTransaction(string message)

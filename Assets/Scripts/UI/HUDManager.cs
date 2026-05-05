@@ -13,6 +13,8 @@ namespace FortGame.UI
         public TextMeshProUGUI fortHpText;
         public TextMeshProUGUI moneyText;
         public TextMeshProUGUI turnStatusText;
+        public TextMeshProUGUI selectedCardText;
+        public TextMeshProUGUI infoMessageText;
         public TextMeshProUGUI errorMessageText;
         public float errorMessageDuration = 3f;
 
@@ -59,6 +61,49 @@ namespace FortGame.UI
             }
         }
 
+        public void SetSelectedCard(string cardName)
+        {
+            if (selectedCardText != null)
+            {
+                selectedCardText.text = string.IsNullOrWhiteSpace(cardName)
+                    ? ""
+                    : $"Selected: {cardName}";
+            }
+        }
+
+        public void ShowInfo(string message)
+        {
+            if (infoMessageText != null)
+            {
+                infoMessageText.text = message;
+            }
+            else if (errorMessageText != null)
+            {
+                errorMessageText.text = message;
+                _errorMessageTimer = 0f;
+            }
+
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                Debug.Log($"[HUDManager] Info: {message}");
+            }
+        }
+
+        public void ClearFeedback()
+        {
+            if (infoMessageText != null)
+            {
+                infoMessageText.text = "";
+            }
+
+            if (errorMessageText != null)
+            {
+                errorMessageText.text = "";
+            }
+
+            _errorMessageTimer = 0f;
+        }
+
         /// <summary>
         /// Display an error message to the player.
         /// </summary>
@@ -67,8 +112,12 @@ namespace FortGame.UI
             if (errorMessageText != null)
             {
                 errorMessageText.text = message;
-                _errorMessageTimer = errorMessageDuration;
-                Debug.Log($"[HUDManager] Error: {message}");
+                _errorMessageTimer = string.IsNullOrWhiteSpace(message) ? 0f : errorMessageDuration;
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    Debug.Log($"[HUDManager] Error: {message}");
+                }
             }
         }
     }

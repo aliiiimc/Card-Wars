@@ -87,7 +87,17 @@ namespace FortGame.Computer
                 return true;
             }
 
-            tile.PlaceUnit(snapshot.ActingPlayerKey);
+            if (!(action.sourceCard?.SourceCard is CharacterCardData))
+            {
+                return false;
+            }
+
+            Unit spawnedUnit = snapshot.HexGrid.SpawnUnitFromCard(tile, snapshot.ActingPlayerKey, action.sourceCard);
+            if (spawnedUnit == null)
+            {
+                return false;
+            }
+
             action.sourceCard?.ManifestOnBoard(action.target.tile);
             return true;
         }

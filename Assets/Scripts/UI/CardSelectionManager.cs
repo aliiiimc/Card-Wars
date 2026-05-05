@@ -13,6 +13,7 @@ namespace FortGame.UI
         private CardSelectionState _currentState = CardSelectionState.Idle;
         private CardUI _selectedCard;
         private GameManager _gameManager;
+        private HUDManager _hudManager;
 
         public CardSelectionState CurrentState => _currentState;
         public CardUI SelectedCard => _selectedCard;
@@ -28,6 +29,7 @@ namespace FortGame.UI
 
             Instance = this;
             _gameManager = FindFirstObjectByType<GameManager>();
+            _hudManager = FindFirstObjectByType<HUDManager>();
         }
 
         /// <summary>
@@ -43,6 +45,7 @@ namespace FortGame.UI
             // Check phase gate
             if (_gameManager != null && _gameManager.currentPhase != GamePhase.Play)
             {
+                _hudManager?.ShowError("Cards can only be played during the Play phase.");
                 Debug.Log("[CardSelectionManager] Cannot select cards outside Play phase.");
                 return false;
             }
@@ -63,6 +66,8 @@ namespace FortGame.UI
             _selectedCard = card;
             _currentState = CardSelectionState.CardSelected;
             card.SetSelected(true);
+            _hudManager?.SetSelectedCard(card.CardName);
+            _hudManager?.ShowInfo($"Choose a target for {card.CardName}.");
 
             Debug.Log($"[CardSelectionManager] Card selected: {card.CardName}");
 
@@ -82,6 +87,8 @@ namespace FortGame.UI
 
             _selectedCard = null;
             _currentState = CardSelectionState.Idle;
+            _hudManager?.SetSelectedCard("");
+            _hudManager?.ShowInfo("Card selection cancelled.");
         }
 
         /// <summary>
@@ -96,6 +103,7 @@ namespace FortGame.UI
             }
 
             _currentState = CardSelectionState.WaitingForTarget;
+            _hudManager?.ShowInfo($"Choose a highlighted target for {_selectedCard.CardName}.");
             Debug.Log("[CardSelectionManager] Waiting for target...");
         }
 
@@ -110,6 +118,7 @@ namespace FortGame.UI
             }
 
             _currentState = CardSelectionState.Confirmed;
+            _hudManager?.ShowInfo($"Target selected: {target.type}.");
             Debug.Log($"[CardSelectionManager] Selection confirmed with target: {target.type}");
         }
 

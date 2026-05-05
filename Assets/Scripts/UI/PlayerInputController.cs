@@ -42,6 +42,7 @@ namespace FortGame.UI
                 {
                     _cardSelectionMgr.ClearSelection();
                     _targetSelectionMgr?.OnSelectionCancelled();
+                    _hudManager?.ShowInfo("Selection cleared because the phase changed.");
                 }
             }
 
@@ -52,6 +53,7 @@ namespace FortGame.UI
                 {
                     _cardSelectionMgr.CancelSelection();
                     _targetSelectionMgr?.OnSelectionCancelled();
+                    _hudManager?.ShowInfo("Selection cancelled.");
                     Debug.Log("[PlayerInputController] Selection cancelled by ESC.");
                 }
             }
@@ -128,12 +130,13 @@ namespace FortGame.UI
                 _gameManager.handUI.RemoveCardFromHand(runtimeCard);
             }
 
-            _hudManager?.ShowError("");
-            _hudManager?.UpdateHUD(actingPlayer);
-            Debug.Log($"[PlayerInputController] Played {runtimeCard.SourceCard.DisplayName} on {target.type}.");
-
             _cardSelectionMgr.ClearSelection();
             _targetSelectionMgr?.OnSelectionCancelled();
+
+            _hudManager?.ClearFeedback();
+            _hudManager?.UpdateHUD(actingPlayer);
+            _hudManager?.ShowInfo($"{runtimeCard.SourceCard.DisplayName} played.");
+            Debug.Log($"[PlayerInputController] Played {runtimeCard.SourceCard.DisplayName} on {target.type}.");
         }
 
         private string ResolveCurrentPlayerKey()
@@ -177,12 +180,6 @@ namespace FortGame.UI
             if (runtimeCard.SourceCard is WorldEffectCardData)
             {
                 tile.PlaceWorldEffect(actingPlayerKey);
-                return;
-            }
-
-            if (runtimeCard.SourceCard is CharacterCardData)
-            {
-                tile.PlaceUnit(actingPlayerKey);
             }
         }
     }

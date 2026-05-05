@@ -98,6 +98,15 @@ namespace FortGame.UI
             }
 
             Debug.Log($"[TargetSelectionManager] Showing {_highlightedTiles.Count} valid targets for {card.CardName}");
+
+            if (_highlightedTiles.Count == 0)
+            {
+                _hudManager?.ShowError($"No valid targets for {card.CardName}.");
+            }
+            else
+            {
+                _hudManager?.ShowInfo($"{_highlightedTiles.Count} valid target(s) highlighted.");
+            }
         }
 
         /// <summary>
@@ -131,10 +140,7 @@ namespace FortGame.UI
 
             if (!_highlightedTiles.Contains(targetTile))
             {
-                if (_hudManager != null)
-                {
-                    _hudManager.ShowError("Invalid target selected.");
-                }
+                _hudManager?.ShowError("Invalid target. Choose a highlighted tile or press Esc to cancel.");
 
                 Debug.Log("[TargetSelectionManager] Target not in valid targets list.");
                 return false;
@@ -166,6 +172,7 @@ namespace FortGame.UI
         public void OnSelectionCancelled()
         {
             ClearHighlights();
+            _hudManager?.ShowInfo("Selection cancelled.");
         }
 
 
