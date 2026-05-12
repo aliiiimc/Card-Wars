@@ -20,6 +20,17 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
             return CardValidationResult.Invalid("NO_CARD", "Source card is missing.");
         }
 
+        // Ali: enforce spell-specific target rules so each spell effect type can only hit its allowed target category.
+        if (sourceCard.SourceCard is SpellCardData spellCard)
+        {
+            CardValidationResult spellRuleResult = ValidateSpellTargetRules(spellCard, target);
+            if (!spellRuleResult.IsValid)
+            {
+                return spellRuleResult;
+            }
+        }
+
+
         switch (target.type)
         {
             case CardTargetType.AllyUnit:
@@ -79,21 +90,24 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
             return CardValidationResult.Valid();
         }
 
-        //Ali: World Effect cards must target an empty tile inside the acting player's half of the board.
+        // Ali: reuse the shared World Effect placement helper so player and AI rules stay identical.  
+        //World Effect cards must target an empty tile inside the acting player's half of the board.
         if (sourceCard.SourceCard is WorldEffectCardData)
         {
-            if (context.Board.IsTileOccupied(target.tile))
+            if (!BoardPlacementRules.CanPlaceWorldEffect(target.tile, context.ActingPlayerKey, grid))
             {
-                return CardValidationResult.Invalid("TILE_OCCUPIED", "World Effect must be placed on an empty tile.");
-            }
+                HexTile targetTile = grid.GetTile(target.tile);
+                if (targetTile != null && !targetTile.IsEmpty())
+                {
+                    return CardValidationResult.Invalid("TILE_OCCUPIED", "World Effect must be placed on an empty tile.");
+                }
 
-            if (!grid.IsInPlayerHalf(target.tile, context.ActingPlayerKey))
-            {
                 return CardValidationResult.Invalid("OUTSIDE_OWNER_HALF", "World Effect must be placed in the owner's half of the board.");
             }
 
             return CardValidationResult.Valid();
         }
+
 
         //Ali: Spells do not target empty tiles by default in v1; they should target units or forts.
         if (sourceCard.SourceCard is SpellCardData)
@@ -107,6 +121,62 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
         }
 
         return CardValidationResult.Valid();
+    }
+
+
+
+    // Ali: centralize spell targeting rules here so UI highlights and runtime validation stay aligned.
+    private static CardValidationResult ValidateSpellTargetRules(SpellCardData spellCard, CardTarget target)
+    {
+        if (spellCard == null)
+        {
+            return CardValidationResult.Invalid("NO_SPELL_CARD", "Spell card data is missing.");
+        }
+
+        switch (spellCard.effectType)
+        {
+            case SpellEffectType.Buff:
+            case SpellEffectType.Boost:
+                if (target.type != CardTargetType.AllyUnit)
+                {
+                    return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Buff and boost spells can only target allied units.");
+                }
+                return CardValidationResult.Valid();
+
+            case SpellEffectType.Heal:
+                if (target.type != CardTargetType.AllyUnit && target.type != CardTargetType.AllyFort)
+                {
+                    return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Heal spells can only target allied units or the allied fort.");
+                }
+                return CardValidationResult.Valid();
+
+            case SpellEffectType.Damage:
+                if (target.type != CardTargetType.EnemyUnit && target.type != CardTargetType.EnemyFort)
+                {
+                    return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Damage spells can only target enemy units or the enemy fort.");
+                }
+                return CardValidationResult.Valid();
+
+            case SpellEffectType.Debuff:
+                if (target.type != CardTargetType.EnemyUnit)
+                {
+                    return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Debuff spells can only target enemy units.");
+                }
+                return CardValidationResult.Valid();
+
+            case SpellEffectType.Utility:
+                if (target.type != CardTargetType.AllyUnit)
+                {
+                    return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Utility spells can only target allied units in v1.");
+                }
+                return CardValidationResult.Valid();
+
+            case SpellEffectType.Summon:
+                return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Summon-type spells are not part of the current v1 spell targeting rules.");
+
+            default:
+                return CardValidationResult.Invalid("UNSUPPORTED_SPELL_EFFECT", $"Spell effect type '{spellCard.effectType}' is not supported.");
+        }
     }
 
 

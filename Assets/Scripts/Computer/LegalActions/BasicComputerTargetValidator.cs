@@ -51,6 +51,19 @@ namespace FortGame.Computer
                                 "Character must be placed in deployment zone.");
                         }
                     }
+                    // Ali: use the shared World Effect placement helper so AI follows the same placement rule as the player.
+                    if (sourceCard.SourceCard is WorldEffectCardData)
+                    {
+                        HexGrid grid = Object.FindFirstObjectByType<HexGrid>();
+
+                        if (!BoardPlacementRules.CanPlaceWorldEffect(target.tile, context.ActingPlayerKey, grid))
+                        {
+                            return CardValidationResult.Invalid(
+                                "OUTSIDE_OWNER_HALF",
+                                "World Effect must be placed in the owner's half.");
+                        }
+                    }
+
 
                     return CardValidationResult.Valid();
 
