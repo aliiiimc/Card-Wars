@@ -19,6 +19,25 @@ namespace FortGame.Computer
                 return false;
             }
 
+            //Ali: AI tries shared card play first. If no service exists, old manual code still runs.
+            CardPlayService cardPlayService = ResolveCardPlayService(snapshot);
+            if (cardPlayService != null && IsCardPlayAction(action.type)) // Prefer the shared card play service for AI card actions so AI and player use the same rules.
+
+            {
+                string actingPlayerId = string.IsNullOrWhiteSpace(action.actingPlayerId)
+                    ? snapshot.ActingPlayerKey
+                    : action.actingPlayerId;
+
+                CardPlayResult playResult = cardPlayService.PlayCard(action.sourceCard, actingPlayerId, action.target);
+                if (!playResult.Succeeded)
+                {
+                    Debug.LogWarning($"[ComputerActionExecutor] CardPlayService failed {action.actionName}: {playResult.ReasonCode} - {playResult.Message}");
+                    return false;
+                }
+
+                return true;
+
+            }
             int actionCost = action.cost;
             if (snapshot.ActingPlayer.money < actionCost)
             {
@@ -69,6 +88,30 @@ namespace FortGame.Computer
                 : Mathf.Max(0, snapshot.ActingPlayer.handCount - 1);
 
             return true;
+        }
+
+
+        //Ali : AI can find the same CardPlayService used by player card play with this.
+        private static CardPlayService ResolveCardPlayService(ComputerGameSnapshot snapshot)
+        {
+            if (snapshot?.GameManager != null)
+            {
+                CardPlayService serviceOnGameManager = snapshot.GameManager.GetComponent<CardPlayService>();
+                if (serviceOnGameManager != null)
+                {
+                    return serviceOnGameManager;
+                }
+            }
+
+            return Object.FindFirstObjectByType<CardPlayService>();
+        }
+
+        //Ali : Only card-play actions can safely use CardPlayService; other AI actions stay on their own execution path.
+        private static bool IsCardPlayAction(ActionType actionType)
+        {
+            return actionType == ActionType.PlayUnitCard
+                || actionType == ActionType.PlayWorldEffectCard
+                || actionType == ActionType.PlaySpellCard;
         }
 
         private static bool ExecutePlacementAction(ComputerAction action, ComputerGameSnapshot snapshot)
