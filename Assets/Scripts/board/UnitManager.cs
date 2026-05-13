@@ -144,6 +144,14 @@ public class UnitManager : MonoBehaviour
                 gameManager.DamagePlayer1Fort(selectedUnit.attack);
             }
         }
+        // Ali: colonization rule - special units can convert enemy world effects instead of dealing damage.
+        else if (targetTile.tileType == "worldEffect"
+                 && selectedUnit.canColonizeEnemyWorldEffects
+                 && targetTile.owner != GetActiveOwner())
+        {
+            targetTile.PlaceWorldEffect(GetActiveOwner());
+            Debug.Log("Colonized enemy world effect.");
+        }
 
 
         selectedUnit.MarkAttacked();
@@ -212,9 +220,15 @@ public class UnitManager : MonoBehaviour
 
     bool IsEnemyTarget(HexTile tile)
     {
+        // Ali: special units can target enemy world effects for colonization, while normal units keep classic unit/fort targeting.
+        bool canTargetEnemyWorldEffect = selectedUnit != null
+            && selectedUnit.canColonizeEnemyWorldEffects
+            && tile != null
+            && tile.tileType == "worldEffect";
+
         return tile != null
             && tile.owner != "none"
             && tile.owner != GetActiveOwner()
-            && (tile.tileType == "unit" || tile.tileType == "fort");
+            && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect);
     }
 }

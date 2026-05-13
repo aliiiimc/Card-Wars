@@ -121,7 +121,6 @@ namespace FortGame.UI
                 return;
             }
 
-            ApplyBoardVisual(runtimeCard, actingPlayerKey, target);
 
             if (_gameManager.handUI != null)
             {
@@ -157,28 +156,8 @@ namespace FortGame.UI
             return _gameManager.currentPlayer.playerName;
         }
 
-        private void ApplyBoardVisual(CardRuntimeState runtimeCard, string actingPlayerKey, CardTarget target)
-        {
-            if (target.type != CardTargetType.Tile || runtimeCard?.SourceCard == null)
-            {
-                return;
-            }
+        // Ali: deleted ApplyBoardVisual because World Effect board manifestation now happens through the writer/pipeline path,
+        //  so PlayerInputController no longer applies a duplicate visual board update.
 
-            if (_hexGrid == null)
-            {
-                _hexGrid = FindFirstObjectByType<HexGrid>();
-            }
-
-            HexTile tile = _hexGrid != null ? _hexGrid.GetTile(target.tile) : null;
-            if (tile == null)
-            {
-                return;
-            }
-
-            if (runtimeCard.SourceCard is WorldEffectCardData)
-            {
-                tile.PlaceWorldEffect(actingPlayerKey);
-            }
-        }
     }
 }

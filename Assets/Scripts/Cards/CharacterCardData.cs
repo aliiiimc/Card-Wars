@@ -15,4 +15,8 @@ public class CharacterCardData : CardData
     public OptionalInt unitMovementCapacity;
 
     public override OptionalInt MovementCapacity => unitMovementCapacity;
+    
+    // Ali: allows special characters (like European King) to capture enemy world effects.
+    public bool canColonizeEnemyWorldEffects;
+
 }

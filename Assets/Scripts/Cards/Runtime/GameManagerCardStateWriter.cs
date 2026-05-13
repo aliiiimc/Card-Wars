@@ -96,9 +96,19 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         HexTile targetTile = boardSource != null ? boardSource.GetTile(tile) : null;
         string owner = ResolveOwnerForManifestedCard();
 
-        if (card.SourceCard is CharacterCardData && targetTile != null)
+
+        // Ali: keep board manifestation inside the writer so Character and World Effect cards follow the same pipeline path.
+        // Ali: the writer is the runtime layer that applies the real board result of a card play, so Character and World Effect manifestation should both happen here.
+        if (targetTile != null)
         {
-            boardSource.SpawnUnitFromCard(targetTile, owner, card);
+            if (card.SourceCard is CharacterCardData)
+            {
+                boardSource.SpawnUnitFromCard(targetTile, owner, card);
+            }
+            else if (card.SourceCard is WorldEffectCardData)
+            {
+                targetTile.PlaceWorldEffect(owner);
+            }
         }
 
 

@@ -188,6 +188,14 @@ public class HexGrid : MonoBehaviour
         unit.health = characterCard.maxHp;
         unit.attack = characterCard.attackDamage;
 
+        // Ali: copy special capture capability from card definition to spawned unit.
+        unit.canColonizeEnemyWorldEffects = characterCard.canColonizeEnemyWorldEffects;
+
+
+        // Ali: copy summon attack readiness from the card definition so spawned units follow the intended v1 rule.
+        unit.isReadyToAttack = characterCard.startsReadyToAttack;
+
+
         if (card.CurrentMovementCapacity.HasValue)
         {
             unit.moveRange = card.CurrentMovementCapacity.Value;
