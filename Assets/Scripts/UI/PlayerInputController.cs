@@ -103,14 +103,6 @@ namespace FortGame.UI
                 return;
             }
 
-            int cardCost = runtimeCard.SourceCard.cost;
-            if (actingPlayer.money < cardCost)
-            {
-                _hudManager?.ShowError("Not enough money to play this card.");
-                Debug.Log("[PlayerInputController] Current player has insufficient money.");
-                return;
-            }
-
             // Rabie: play the selected UI card through the real card pipeline for the current player.
             string actingPlayerKey = ResolveCurrentPlayerKey();
             CardPlayResult result = _cardPlayService.PlayCard(runtimeCard, actingPlayerKey, target);

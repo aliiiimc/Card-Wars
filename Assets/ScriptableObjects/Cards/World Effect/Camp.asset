@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d10e72179da00f74cb4561cda13856f7, type: 3}
-  m_Name: Corn field
+  m_Name: Camp
   m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: 0}
-  manifestedSprite: {fileID: 0}
+  handDeckSprite: {fileID: -8765846003301459409, guid: 8709c62bb507cdb4c8db9fbf90267be3, type: 3}
   description: 
   validatorId: target.rules.reusable
-  effectId: effect.summon
-  category: 0
+  effectId: 
+  manifestedSprite: {fileID: -7849992999706883352, guid: e55ba832f9bbd014f8c116a63926a7e7, type: 3}
+  category: 1
   structureHp:
     hasValue: 0
     value: 0
@@ -36,4 +36,6 @@ MonoBehaviour:
     hasValue: 0
     value: 0
   durationTurns: 0
-  worldEffectMovementCapacity: 0
+  worldEffectMovementCapacity:
+    hasValue: 1
+    value: 4

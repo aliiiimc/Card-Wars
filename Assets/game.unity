@@ -289,20 +289,20 @@ MonoBehaviour:
   sourceCard: {fileID: 11400000, guid: 3346697d0c1565a48985f7875420fd04, type: 2}
   validatorBehaviour: {fileID: 669885988}
   effectBehaviour: {fileID: 777541298}
-  writerBehaviour: {fileID: 0}
-  boardSource: {fileID: 0}
+  writerBehaviour: {fileID: 1727623639}
+  boardSource: {fileID: 680960799}
   useCardPlayPipeline: 1
   actingPlayerKey: player
   opponentPlayerKey: enemy
   startingMoney: 10
   targetType: 5
-  targetQ: 1
-  targetR: 0
+  targetQ: 2
+  targetR: 5
   targetPlayerId: 
   targetEntityId: 
   useDummyTargetCard: 0
   dummyTargetCardData: {fileID: 11400000, guid: 8ca15aba003050347bd1fb44e58f740c, type: 2}
-  dummyTargetOnBoard: 1
+  dummyTargetOnBoard: 0
   dummyTargetQ: 0
   dummyTargetR: 0
   dummyTargetPlayerId: player
