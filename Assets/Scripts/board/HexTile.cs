@@ -7,6 +7,7 @@ public class HexTile : MonoBehaviour
     public string owner = "none";     // none, player, enemy
 
     private SpriteRenderer spriteRenderer;
+    private SpriteRenderer worldEffectRenderer;
     private Color baseColor;
     private Color originalColor;
 
@@ -48,25 +49,74 @@ public class HexTile : MonoBehaviour
     {
         tileType = "unit";
         owner = unitOwner;
+        ClearWorldEffectVisual();
         originalColor = unitOwner == "player" ? new Color(0.2f, 0.4f, 1f) : new Color(1f, 0.3f, 0.3f);
         spriteRenderer.color = originalColor;
     }
 
-    public void PlaceWorldEffect(string effectOwner)
+    public void PlaceWorldEffect(string effectOwner, Sprite effectSprite = null)
     {
         // Rabie: world effect cards reserve the tile without pretending to be units.
         tileType = "worldEffect";
         owner = effectOwner;
-        originalColor = new Color(0.4f, 0.8f, 0.3f);
-        spriteRenderer.color = originalColor;
+
+        if (effectSprite != null)
+        {
+            SetWorldEffectVisual(effectSprite);
+            originalColor = baseColor;
+            spriteRenderer.color = baseColor;
+            return;
+        }
+
+        if (worldEffectRenderer == null || worldEffectRenderer.sprite == null)
+        {
+            originalColor = new Color(0.4f, 0.8f, 0.3f);
+            spriteRenderer.color = originalColor;
+        }
+        else
+        {
+            originalColor = baseColor;
+            spriteRenderer.color = baseColor;
+        }
     }
 
     public void RemoveUnit()
     {
         tileType = "empty";
         owner = "none";
+        ClearWorldEffectVisual();
         originalColor = baseColor;
         spriteRenderer.color = baseColor;
+    }
+
+    private void SetWorldEffectVisual(Sprite effectSprite)
+    {
+        if (worldEffectRenderer == null)
+        {
+            GameObject visualObject = new GameObject("WorldEffectVisual");
+            visualObject.transform.SetParent(transform, false);
+            visualObject.transform.localPosition = Vector3.zero;
+            visualObject.transform.localRotation = Quaternion.identity;
+            visualObject.transform.localScale = Vector3.one;
+
+            worldEffectRenderer = visualObject.AddComponent<SpriteRenderer>();
+            worldEffectRenderer.sortingLayerID = spriteRenderer.sortingLayerID;
+            worldEffectRenderer.sortingOrder = spriteRenderer.sortingOrder + 1;
+        }
+
+        worldEffectRenderer.sprite = effectSprite;
+        worldEffectRenderer.enabled = true;
+    }
+
+    private void ClearWorldEffectVisual()
+    {
+        if (worldEffectRenderer == null)
+        {
+            return;
+        }
+
+        worldEffectRenderer.sprite = null;
+        worldEffectRenderer.enabled = false;
     }
 
     public void Highlight(Color color)

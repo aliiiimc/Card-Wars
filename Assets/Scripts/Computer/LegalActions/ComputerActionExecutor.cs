@@ -124,8 +124,13 @@ namespace FortGame.Computer
 
             if (action.type == ActionType.PlayWorldEffectCard)
             {
+                if (!(action.sourceCard?.SourceCard is WorldEffectCardData worldEffectCard))
+                {
+                    return false;
+                }
+
                 // Rabie: world effects mark the tile as an effect, not as a normal unit.
-                tile.PlaceWorldEffect(snapshot.ActingPlayerKey);
+                tile.PlaceWorldEffect(snapshot.ActingPlayerKey, worldEffectCard.manifestedSprite);
                 action.sourceCard?.ManifestOnBoard(action.target.tile);
                 return true;
             }

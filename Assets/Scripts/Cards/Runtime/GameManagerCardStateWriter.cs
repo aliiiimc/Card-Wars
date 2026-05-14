@@ -105,9 +105,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             {
                 boardSource.SpawnUnitFromCard(targetTile, owner, card);
             }
-            else if (card.SourceCard is WorldEffectCardData)
+            else if (card.SourceCard is WorldEffectCardData worldEffectCard)
             {
-                targetTile.PlaceWorldEffect(owner);
+                targetTile.PlaceWorldEffect(owner, worldEffectCard.manifestedSprite);
             }
         }
 
