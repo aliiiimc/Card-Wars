@@ -75,7 +75,7 @@ namespace FortGame.Computer
             else if (action.isDefensiveMove)
             {
                 // Minor points for defending if not in critical danger, just to be safe
-                score += 20f;
+                score += 40f;
             }
 
             // 3. Favorable Unit Trades (+100 to +300)
@@ -98,7 +98,8 @@ namespace FortGame.Computer
             // 4. Board Control / Pushing Forward
             if (action.movesCloserToEnemyFort)
             {
-                score += 50f;
+                //Ali: Changed what was here before, so now if the AI fort is low, going forward is "still" possible, but is less prioritary than defending.
+                score += myState != null && myState.fortHp < 8 ? 15f : 50f;
             }
             if (action.movesBackward)
             {

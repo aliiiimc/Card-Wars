@@ -86,6 +86,24 @@ public sealed class FallbackTargetValidator : ICardTargetValidator
                 return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Target player is not the current opponent.");
             }
 
+            //Ali:
+            HexGrid grid = UnityEngine.Object.FindFirstObjectByType<HexGrid>();
+            if (grid == null)
+            {
+                return CardValidationResult.Invalid("NO_GRID", "HexGrid is missing.");
+            }
+
+            HexTile fortTile = grid.GetTile(target.tile);
+            if (fortTile == null || fortTile.tileType != "fort")
+            {
+                return CardValidationResult.Invalid("FORT_NOT_PRESENT", "Target tile does not contain a fort.");
+            }
+
+            if (fortTile.owner != target.targetPlayerId)
+            {
+                return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Fort owner does not match target player.");
+            }
+    
             return CardValidationResult.Valid();
         }
 

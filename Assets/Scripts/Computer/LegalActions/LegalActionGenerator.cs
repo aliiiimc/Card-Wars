@@ -93,11 +93,25 @@ namespace FortGame.Computer
                 return;
             }
 
+            if (!TryGetOpponentFortTile(snapshot, out AxialCoord fortTile))
+            {
+                return;
+            }
+
+            //Ali :enemy Fort targeting is only valid for damage spells in v1.
+            if (!(runtimeCard.SourceCard is SpellCardData spellCard) || spellCard.effectType != SpellEffectType.Damage)
+            {
+                return;
+            }
+
             CardTarget target = new CardTarget
             {
                 type = CardTargetType.EnemyFort,
                 targetPlayerId = snapshot.OpponentPlayerKey,
-                targetEntityId = "fort"
+                targetEntityId = "fort",
+                tile = fortTile
+
+
             };
 
             CardValidationResult result = _targetValidator.Validate(validationContext, runtimeCard, target);
@@ -109,6 +123,10 @@ namespace FortGame.Computer
             }
 
             _diagnostics.RecordCandidate();
+            bool isFortRaceMove = snapshot.ActingPlayer.fortHp <= 8 || snapshot.ActingPlayer.fortHp < snapshot.OpponentPlayer.fortHp;
+            // Ali: a Fort race means the AI is under pressure and should value direct Fort damage more. It's used in ActionScoringSystem
+
+
             var action = new ComputerAction($"Play {runtimeCard.SourceCard.DisplayName} on enemy fort", ActionType.PlaySpellCard)
             {
                 actingPlayerId = snapshot.ActingPlayerKey,
@@ -119,7 +137,7 @@ namespace FortGame.Computer
                 isGeneratedByLegalReader = true,
                 isLegalAction = true,
                 willDestroyEnemyFort = WouldDestroyEnemyFort(snapshot, runtimeCard),
-                isDefensiveMove = false,
+                isDefensiveMove = isFortRaceMove,
                 isLateGameCard = runtimeCard.SourceCard.cost >= 4,
                 isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
             };
@@ -164,7 +182,10 @@ namespace FortGame.Computer
 
                     _diagnostics.RecordCandidate();
 
-                    ActionType actionType = runtimeCard.SourceCard is CharacterCardData
+                    //Ali: cache the card type so action setup can reuse it without repeating the type check.
+                    bool isCharacterCard = runtimeCard.SourceCard is CharacterCardData;
+                    
+                    ActionType actionType = isCharacterCard
                         ? ActionType.PlayUnitCard
                         : ActionType.PlayWorldEffectCard;
 
@@ -177,8 +198,10 @@ namespace FortGame.Computer
                         cost = 0, // Ali: playing a card is free; card cost is only used when buying.
                         isGeneratedByLegalReader = true,
                         isLegalAction = true,
-                        isDefensiveMove = IsDefensiveColumn(snapshot, col),
-                        movesCloserToEnemyFort = IsForwardColumn(snapshot, col),
+                        isDefensiveMove = ShouldDefend(snapshot, col),
+                        movesCloserToEnemyFort = ShouldPushForward(snapshot, col),
+                        //Ali: hasSynergyOnBoard is for Small scoring bonus score for characters placed forward because they can create board pressure.
+                        hasSynergyOnBoard = (isCharacterCard && ShouldPushForward(snapshot, col)) || (!isCharacterCard && IsDefensiveColumn(snapshot, col)),
                         isLateGameCard = runtimeCard.SourceCard.cost >= 4,
                         isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
                     };
@@ -187,6 +210,38 @@ namespace FortGame.Computer
                 }
             }
         }
+
+
+        // Ali: reusable validator checks the real Fort tile, so AI fort targets need the Fort coordinate.
+        private static bool TryGetOpponentFortTile(ComputerGameSnapshot snapshot, out AxialCoord fortTile)
+        {
+            fortTile = default;
+
+            if (snapshot?.HexGrid == null)
+            {
+                return false;
+            }
+
+            string opponentKey = snapshot.OpponentPlayerKey;
+
+            for (int row = 0; row < snapshot.HexGrid.gridHeight; row++)
+            {
+                for (int col = 0; col < snapshot.HexGrid.gridWidth; col++)
+                {
+                    AxialCoord coord = HexGrid.OffsetToAxial(col, row);
+                    HexTile tile = snapshot.HexGrid.GetTile(coord);
+
+                    if (tile != null && tile.tileType == "fort" && tile.owner == opponentKey)
+                    {
+                        fortTile = coord;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
 
 
         // Ali: lets the AI recognize direct lethal Fort damage before scoring actions.
@@ -210,6 +265,17 @@ namespace FortGame.Computer
             return spellCard.effectPower >= snapshot.OpponentPlayer.fortHp;
         }
 
+        // Ali: defensive placement matters more when the AI Fort is low.
+        private static bool ShouldDefend(ComputerGameSnapshot snapshot, int col)
+        {
+            if (snapshot?.ActingPlayer == null)
+            {
+                return false;
+            }
+
+            return snapshot.ActingPlayer.fortHp < 8 && IsDefensiveColumn(snapshot, col);
+        }
+
 
         private static bool IsDefensiveColumn(ComputerGameSnapshot snapshot, int col)
         {
@@ -217,6 +283,18 @@ namespace FortGame.Computer
             return snapshot.ActingPlayerKey == "enemy"
                 ? col >= snapshot.HexGrid.gridWidth - 2
                 : col <= 1;
+        }
+
+
+        // Ali: push forward when the AI Fort is not in danger.
+        private static bool ShouldPushForward(ComputerGameSnapshot snapshot, int col)
+        {
+            if (snapshot?.ActingPlayer == null)
+            {
+                return false;
+            }
+
+            return snapshot.ActingPlayer.fortHp >= 8 && IsForwardColumn(snapshot, col);
         }
 
         private static bool IsForwardColumn(ComputerGameSnapshot snapshot, int col)
