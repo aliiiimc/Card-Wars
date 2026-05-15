@@ -32,6 +32,11 @@ namespace FortGame.Computer
             PlayerState actingPlayer = ResolveActingPlayer(gameManager, computer);
             PlayerState opponentPlayer = ResolveOpponent(gameManager, actingPlayer);
 
+            if (actingPlayer == null || opponentPlayer == null)
+            {
+                return null;
+            }
+
             string actingPlayerKey = ResolvePlayerKey(gameManager, actingPlayer, "enemy");
             string opponentPlayerKey = ResolvePlayerKey(gameManager, opponentPlayer, "player");
 

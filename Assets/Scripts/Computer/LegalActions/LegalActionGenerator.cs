@@ -42,7 +42,15 @@ namespace FortGame.Computer
                 Board = snapshot.BoardReader
             };
 
+            //Ali : évite une erreur si la main IA est absente/vide
             IReadOnlyList<CardRuntimeState> handCards = snapshot.HandCards;
+            if (handCards == null || handCards.Count == 0)
+            {
+                legalActions.Add(ComputerAction.CreateEndTurnAction(snapshot.ActingPlayerKey));
+                return legalActions;
+            }
+
+
             for (int i = 0; i < handCards.Count; i++)
             {
                 CardRuntimeState runtimeCard = handCards[i];
@@ -75,6 +83,16 @@ namespace FortGame.Computer
             ComputerGameSnapshot snapshot,
             CardRuntimeState runtimeCard)
         {
+            if (snapshot == null || runtimeCard?.SourceCard == null)
+            {
+                return;
+            }
+
+            if (legalActions == null || validationContext == null)
+            {
+                return;
+            }
+
             CardTarget target = new CardTarget
             {
                 type = CardTargetType.EnemyFort,
@@ -100,7 +118,7 @@ namespace FortGame.Computer
                 cost = 0, // Ali: playing a card is free; card cost is only used when buying.
                 isGeneratedByLegalReader = true,
                 isLegalAction = true,
-                willDestroyEnemyFort = false,
+                willDestroyEnemyFort = WouldDestroyEnemyFort(snapshot, runtimeCard),
                 isDefensiveMove = false,
                 isLateGameCard = runtimeCard.SourceCard.cost >= 4,
                 isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
@@ -115,6 +133,16 @@ namespace FortGame.Computer
             ComputerGameSnapshot snapshot,
             CardRuntimeState runtimeCard)
         {
+            if (snapshot?.HexGrid == null)
+            {
+                return;
+            }
+            if (legalActions == null || validationContext == null || runtimeCard?.SourceCard == null)
+            {
+                return;
+            }
+
+
             for (int row = 0; row < snapshot.HexGrid.gridHeight; row++)
             {
                 for (int col = 0; col < snapshot.HexGrid.gridWidth; col++)
@@ -159,6 +187,29 @@ namespace FortGame.Computer
                 }
             }
         }
+
+
+        // Ali: lets the AI recognize direct lethal Fort damage before scoring actions.
+        private static bool WouldDestroyEnemyFort(ComputerGameSnapshot snapshot, CardRuntimeState runtimeCard)
+        {
+            if (snapshot == null || snapshot.OpponentPlayer == null)
+            {
+                return false;
+            }
+
+            if (!(runtimeCard?.SourceCard is SpellCardData spellCard))
+            {
+                return false;
+            }
+
+            if (spellCard.effectType != SpellEffectType.Damage)
+            {
+                return false;
+            }
+
+            return spellCard.effectPower >= snapshot.OpponentPlayer.fortHp;
+        }
+
 
         private static bool IsDefensiveColumn(ComputerGameSnapshot snapshot, int col)
         {

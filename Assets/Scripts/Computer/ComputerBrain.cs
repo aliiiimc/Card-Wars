@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace FortGame.Computer 
+namespace FortGame.Computer
 {
     /// <summary>
     /// The logic center for the ComputerPlayer. It evaluates the current game state
@@ -29,12 +29,14 @@ namespace FortGame.Computer
         /// <param name="computer">The AI component owning this brain.</param>
         public bool DetermineNextAction(ComputerPlayer computer)
         {
-            if (computer == null || computer.playerState == null)
+            if (computer == null)
             {
                 return false;
             }
 
-            Debug.Log($"[ComputerBrain] Evaluating actions for {computer.playerState.playerName}");
+            string playerName = computer.playerState != null ? computer.playerState.playerName : "Computer";
+            Debug.Log($"[ComputerBrain] Evaluating actions for {playerName}");
+
 
             ComputerGameSnapshot snapshot = _snapshotProvider.CreateSnapshot(computer);
             if (snapshot == null)
@@ -71,19 +73,27 @@ namespace FortGame.Computer
                 }
 
                 // 3. Execute best action
-                ExecuteAction(bestAction, snapshot);
-                return true;
+                return ExecuteAction(bestAction, snapshot);
+
             }
 
             return false;
+
         }
 
+
+
+        // Ali: small wrapper so DetermineNextAction stays readable.
+        // The real legal-action logic stays inside LegalActionGenerator.
         private List<ComputerAction> GeneratePossibleActions(ComputerGameSnapshot snapshot)
         {
             return _legalActionGenerator.GenerateLegalActions(snapshot);
         }
 
-        private void ExecuteAction(ComputerAction action, ComputerGameSnapshot snapshot)
+
+
+        //Ali : si l’action IA échoue, DetermineNextAction en haut doit retourner false, pas faire semblant que l’action a réussi.
+        private bool ExecuteAction(ComputerAction action, ComputerGameSnapshot snapshot)
         {
             Debug.Log($"[ComputerBrain] Chose to execute: {action.actionName}");
 
@@ -92,6 +102,9 @@ namespace FortGame.Computer
             {
                 Debug.LogWarning($"[ComputerBrain] Failed to execute action: {action.actionName}");
             }
+
+            return success;
         }
+
     }
 }

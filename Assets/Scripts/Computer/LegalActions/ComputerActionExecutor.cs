@@ -71,65 +71,6 @@ namespace FortGame.Computer
                 || actionType == ActionType.PlaySpellCard;
         }
 
-        private static bool ExecutePlacementAction(ComputerAction action, ComputerGameSnapshot snapshot)
-        {
-            HexTile tile = snapshot.HexGrid.GetTile(action.target.tile);
-            if (tile == null || !tile.IsEmpty())
-            {
-                return false;
-            }
-
-            if (action.type == ActionType.PlayWorldEffectCard)
-            {
-                if (!(action.sourceCard?.SourceCard is WorldEffectCardData worldEffectCard))
-                {
-                    return false;
-                }
-
-                // Rabie: world effects mark the tile as an effect, not as a normal unit.
-                tile.PlaceWorldEffect(snapshot.ActingPlayerKey, worldEffectCard.manifestedSprite);
-                action.sourceCard?.ManifestOnBoard(action.target.tile);
-                return true;
-            }
-
-            if (!(action.sourceCard?.SourceCard is CharacterCardData))
-            {
-                return false;
-            }
-
-            Unit spawnedUnit = snapshot.HexGrid.SpawnUnitFromCard(tile, snapshot.ActingPlayerKey, action.sourceCard);
-            if (spawnedUnit == null)
-            {
-                return false;
-            }
-
-            action.sourceCard?.ManifestOnBoard(action.target.tile);
-            return true;
-        }
-
-        private static bool ExecuteSpellAction(ComputerAction action, ComputerGameSnapshot snapshot)
-        {
-            if (snapshot.GameManager == null)
-            {
-                return false;
-            }
-
-            if (action.target.type == CardTargetType.EnemyFort)
-            {
-                if (ReferenceEquals(snapshot.OpponentPlayer, snapshot.GameManager.player1))
-                {
-                    snapshot.GameManager.DamagePlayer1Fort(1);
-                    return true;
-                }
-
-                if (ReferenceEquals(snapshot.OpponentPlayer, snapshot.GameManager.player2))
-                {
-                    snapshot.GameManager.DamagePlayer2Fort(1);
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        
     }
 }

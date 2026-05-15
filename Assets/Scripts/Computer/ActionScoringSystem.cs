@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace FortGame.Computer 
+namespace FortGame.Computer
 {
     /// <summary> 
     /// Evaluates a list of possible ComputerActions and assigns each a score based on heuristic rules.
@@ -13,13 +13,24 @@ namespace FortGame.Computer
         /// </summary>
         public ComputerAction GetBestAction(List<ComputerAction> possibleActions, PlayerState myState, int currentTurn)
         {
+            //Ali : Protection simple si le générateur renvoie rien ou si la liste est absente.
+            if (possibleActions == null || possibleActions.Count == 0)
+            {
+                return null;
+            }
+
             ComputerAction bestAction = null;
             float highestScore = float.MinValue;
 
             foreach (var action in possibleActions)
             {
+                if (action == null)
+                {
+                    continue;
+                }
+
                 float score = CalculateScore(action, myState, currentTurn);
-                
+
                 Debug.Log($"Action [{action.actionName}] scored: {score}");
 
                 if (score > highestScore)
@@ -35,6 +46,11 @@ namespace FortGame.Computer
         private float CalculateScore(ComputerAction action, PlayerState myState, int currentTurn)
         {
             float score = 0f;
+            if (action == null)
+            {
+                return float.MinValue;
+            }
+        
 
             if (action.endsTurn || action.type == ActionType.EndTurn)
             {
@@ -47,11 +63,12 @@ namespace FortGame.Computer
             {
                 score += 10000f;
                 // We can return immediately because nothing overrides a guaranteed win.
-                return score; 
+                return score;
             }
 
             // 2. Save My Fort (Defensive priority)
-            if (myState.fortHp < 5 && action.isDefensiveMove)
+
+            if (myState != null && myState.fortHp < 5 && action.isDefensiveMove)  //Ali : évite une erreur si myState est null.
             {
                 score += 500f; // High priority if dying
             }
@@ -109,11 +126,11 @@ namespace FortGame.Computer
             {
                 // Base score for drawing cards
                 score += action.drawsCards * 30f;
-                
+
                 // Desperation multiplier: If we are almost out of cards, drawing is incredibly valuable
                 if (myState.handCount <= 2)
                 {
-                    score += action.drawsCards * 50f; 
+                    score += action.drawsCards * 50f;
                 }
             }
             if (action.forcesDiscard > 0)

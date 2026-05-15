@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace FortGame.Computer 
+namespace FortGame.Computer
 {
     /// <summary>
     /// Represents the Computer opponent in the game.
@@ -57,14 +57,14 @@ namespace FortGame.Computer
         /// </summary>
         public void StartTurn()
         {
-            if (_isMyTurn) return;
+            if (_isMyTurn || !isActiveAndEnabled) return;
 
             // Rabie: use the real GameManager player2 state before the AI starts thinking.
             SyncPlayerStateWithGameManager();
 
             _isMyTurn = true;
             Debug.Log($"[{playerState.playerName}] Turn Started!");
-            
+
             // Begin the Computer action loop
             StartCoroutine(TurnLoopRoutine());
         }
@@ -75,8 +75,9 @@ namespace FortGame.Computer
             yield return new WaitForSeconds(delayBetweenActions);
 
             int loopSecurity = 0; // Prevent infinite loops
-            
-            while (_isMyTurn && loopSecurity < 20)
+
+            while (_isMyTurn && isActiveAndEnabled && loopSecurity < 20)
+
             {
                 loopSecurity++;
 
@@ -110,12 +111,17 @@ namespace FortGame.Computer
             {
                 gameManager = FindFirstObjectByType<GameManager>();
             }
+            if (gameManager == null)
+            {
+                return;
+            }
 
-            if (gameManager != null && (gameManager.currentPhase == GamePhase.Play || gameManager.currentPhase == GamePhase.Attack))
+            if (gameManager.currentPhase == GamePhase.Play || gameManager.currentPhase == GamePhase.Attack)
             {
                 // Rabie: tell the main game flow that the computer finished its turn.
                 gameManager.EndTurn();
             }
+
         }
 
         private void SyncPlayerStateWithGameManager()
