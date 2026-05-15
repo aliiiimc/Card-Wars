@@ -41,11 +41,41 @@ public sealed class FallbackTargetValidator : ICardTargetValidator
                         "Character must be placed in your deployment zone.");
                 }
             }
+
+            // Ali: World Effect fallback must follow the same owner-half rule.
+            if (sourceCard.SourceCard is WorldEffectCardData)
+            {
+                HexGrid grid = UnityEngine.Object.FindFirstObjectByType<HexGrid>();
+
+                if (!BoardPlacementRules.CanPlaceWorldEffect(target.tile, context.ActingPlayerKey, grid))
+                {
+                    return CardValidationResult.Invalid(
+                        "OUTSIDE_OWNER_HALF",
+                        "World Effect must be placed in the owner's half.");
+                }
+            }
+
+            // Ali: spells do not target empty tiles in v1.
+            if (sourceCard.SourceCard is SpellCardData)
+            {
+                return CardValidationResult.Invalid(
+                    "WRONG_TARGET_TYPE",
+                    "Spell cards do not target empty tiles by default in v1.");
+            }
+
             return CardValidationResult.Valid();
         }
 
         if (target.type == CardTargetType.EnemyFort)
         {
+            // Ali: only damage spells can target the enemy Fort.
+            if (sourceCard.SourceCard is SpellCardData spellCard && spellCard.effectType != SpellEffectType.Damage)
+            {
+                return CardValidationResult.Invalid(
+                    "WRONG_TARGET_TYPE",
+                    "Only damage spells can target the enemy Fort.");
+            }
+
             if (string.IsNullOrWhiteSpace(target.targetPlayerId))
             {
                 return CardValidationResult.Invalid("MISSING_TARGET_PLAYER", "Enemy fort target player is required.");

@@ -7,6 +7,7 @@ namespace FortGame.Computer
     /// </summary>
     public sealed class ComputerActionExecutor
     {
+        // Ali: Executes the AI chosen action through CardPlayService so AI and player card rules stay identical.
         public bool TryExecuteAction(ComputerAction action, ComputerGameSnapshot snapshot)
         {
             if (action == null || snapshot == null || snapshot.ActingPlayer == null)
@@ -19,73 +20,29 @@ namespace FortGame.Computer
                 return false;
             }
 
-            //Ali: AI tries shared card play first. If no service exists, old manual code still runs.
+            if (!IsCardPlayAction(action.type))
+            {
+                Debug.LogWarning($"[ComputerActionExecutor] Unsupported action type: {action.type}");
+                return false;
+            }
+
             CardPlayService cardPlayService = ResolveCardPlayService(snapshot);
-            if (cardPlayService != null && IsCardPlayAction(action.type)) // Prefer the shared card play service for AI card actions so AI and player use the same rules.
-
+            if (cardPlayService == null)
             {
-                string actingPlayerId = string.IsNullOrWhiteSpace(action.actingPlayerId)
-                    ? snapshot.ActingPlayerKey
-                    : action.actingPlayerId;
-
-                CardPlayResult playResult = cardPlayService.PlayCard(action.sourceCard, actingPlayerId, action.target);
-                if (!playResult.Succeeded)
-                {
-                    Debug.LogWarning($"[ComputerActionExecutor] CardPlayService failed {action.actionName}: {playResult.ReasonCode} - {playResult.Message}");
-                    return false;
-                }
-
-                return true;
-
-            }
-            int actionCost = action.cost;
-            if (snapshot.ActingPlayer.money < actionCost)
-            {
-                Debug.LogWarning($"[ComputerActionExecutor] Cannot execute {action.actionName}. Not enough money.");
+                Debug.LogWarning("[ComputerActionExecutor] Missing CardPlayService. AI card play was blocked to avoid rule drift.");
                 return false;
             }
 
-            // Rabie: execute first, then spend money/remove the card only if the action worked.
-            bool succeeded;
-            switch (action.type)
+            string actingPlayerId = string.IsNullOrWhiteSpace(action.actingPlayerId)
+                ? snapshot.ActingPlayerKey
+                : action.actingPlayerId;
+
+            CardPlayResult playResult = cardPlayService.PlayCard(action.sourceCard, actingPlayerId, action.target);
+            if (!playResult.Succeeded)
             {
-                case ActionType.PlayUnitCard:
-                case ActionType.PlayWorldEffectCard:
-                    succeeded = ExecutePlacementAction(action, snapshot);
-                    break;
-
-                case ActionType.PlaySpellCard:
-                    succeeded = ExecuteSpellAction(action, snapshot);
-                    break;
-
-                default:
-                    Debug.LogWarning($"[ComputerActionExecutor] Unsupported action type: {action.type}");
-                    return false;
-            }
-
-            if (!succeeded)
-            {
+                Debug.LogWarning($"[ComputerActionExecutor] CardPlayService failed {action.actionName}: {playResult.ReasonCode} - {playResult.Message}");
                 return false;
             }
-
-            snapshot.ActingPlayer.money -= actionCost;
-            if (action.sourceCard != null && snapshot.ActingPlayer.handCards != null)
-            {
-                snapshot.ActingPlayer.handCards.Remove(action.sourceCard);
-                if (!action.sourceCard.IsManifestedOnBoard)
-                {
-                    action.sourceCard.MoveToZone(CardZone.Discard);
-                }
-
-                if (snapshot.GameManager != null && ReferenceEquals(snapshot.GameManager.currentPlayer, snapshot.ActingPlayer) && snapshot.GameManager.handUI != null)
-                {
-                    snapshot.GameManager.handUI.RemoveCardFromHand(action.sourceCard);
-                }
-            }
-
-            snapshot.ActingPlayer.handCount = snapshot.ActingPlayer.handCards != null
-                ? snapshot.ActingPlayer.handCards.Count
-                : Mathf.Max(0, snapshot.ActingPlayer.handCount - 1);
 
             return true;
         }

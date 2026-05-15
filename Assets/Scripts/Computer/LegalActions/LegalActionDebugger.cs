@@ -31,7 +31,7 @@ namespace FortGame.Computer
             for (int i = 0; i < actions.Count; i++)
             {
                 var action = actions[i];
-                Debug.Log($"  [{i}] {action.actionName} (cost: {action.cost}, type: {action.type})");
+                Debug.Log($"  [{i}] {action.actionName} (play cost: {action.cost}, type: {action.type})");
             }
 
             LegalActionService.Instance.LogLastDiagnostics(detailed: false);

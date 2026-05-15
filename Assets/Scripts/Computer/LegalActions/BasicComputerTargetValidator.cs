@@ -68,6 +68,14 @@ namespace FortGame.Computer
                     return CardValidationResult.Valid();
 
                 case CardTargetType.EnemyFort:
+                    // Ali: only damage spells can target the enemy Fort.
+                    if (sourceCard.SourceCard is SpellCardData spellCard && spellCard.effectType != SpellEffectType.Damage)
+                    {
+                        return CardValidationResult.Invalid(
+                            "WRONG_TARGET_TYPE",
+                            "Only damage spells can target the enemy Fort.");
+                    }
+
                     if (string.IsNullOrWhiteSpace(target.targetPlayerId))
                     {
                         return CardValidationResult.Invalid("MISSING_TARGET_PLAYER", "Enemy fort target player is missing.");

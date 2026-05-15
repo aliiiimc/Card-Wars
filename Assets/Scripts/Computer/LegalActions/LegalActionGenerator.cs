@@ -97,7 +97,7 @@ namespace FortGame.Computer
                 sourceCard = runtimeCard,
                 sourceCardName = runtimeCard.SourceCard.DisplayName,
                 target = target,
-                cost = runtimeCard.SourceCard.cost,
+                cost = 0, // Ali: playing a card is free; card cost is only used when buying.
                 isGeneratedByLegalReader = true,
                 isLegalAction = true,
                 willDestroyEnemyFort = false,
@@ -146,7 +146,7 @@ namespace FortGame.Computer
                         sourceCard = runtimeCard,
                         sourceCardName = runtimeCard.SourceCard.DisplayName,
                         target = target,
-                        cost = runtimeCard.SourceCard.cost,
+                        cost = 0, // Ali: playing a card is free; card cost is only used when buying.
                         isGeneratedByLegalReader = true,
                         isLegalAction = true,
                         isDefensiveMove = IsDefensiveColumn(snapshot, col),

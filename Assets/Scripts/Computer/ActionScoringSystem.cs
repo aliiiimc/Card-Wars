@@ -99,7 +99,7 @@ namespace FortGame.Computer
             if (action.isLateGameCard)
             {
                 if (currentTurn >= 5) score += 80f;
-                else score -= 50f; // Too expensive to play early, or holds up tempo
+                else score -= 50f; // Late-game cards are lower priority early unless the board already needs them.
             }
 
             // --- ADVANCED RULES ---
@@ -121,13 +121,8 @@ namespace FortGame.Computer
                 score += action.forcesDiscard * 40f;
             }
 
-            // 7. Resource Efficiency
-            // Reward actions that utilize more of our available mana/money 
-            // (Assumes we already validated we have enough money to play it)
-            if (action.cost > 0)
-            {
-                score += action.cost * 15f; 
-            }
+            // 7. Play cost
+            // Ali: playing cards is free in the current rules, so action.cost should not affect AI score.
 
             // 8. Synergies and Combos
             if (action.hasSynergyOnBoard)

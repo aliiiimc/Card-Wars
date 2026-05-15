@@ -34,7 +34,7 @@ namespace FortGame.Computer
                 return false;
             }
 
-            Debug.Log($"[ComputerBrain] Evaluating actions for {computer.playerState.playerName} - Money Left: {computer.playerState.money}");
+            Debug.Log($"[ComputerBrain] Evaluating actions for {computer.playerState.playerName}");
 
             ComputerGameSnapshot snapshot = _snapshotProvider.CreateSnapshot(computer);
             if (snapshot == null)
@@ -53,7 +53,7 @@ namespace FortGame.Computer
                 _legalActionGenerator.Diagnostics.LogSummary();
             }
 
-            // If we have no money or no possible moves, we can't do anything.
+            // Ali: if there are no generated legal actions, the AI ends its turn.
             if (possibleActions.Count == 0)
             {
                 return false;
