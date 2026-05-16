@@ -123,7 +123,7 @@ namespace FortGame.UI
             _targetSelectionMgr?.OnSelectionCancelled();
 
             _hudManager?.ClearFeedback();
-            _hudManager?.UpdateHUD(actingPlayer);
+            _gameManager.RefreshHUD();
             _hudManager?.ShowInfo($"{runtimeCard.SourceCard.DisplayName} played.");
             Debug.Log($"[PlayerInputController] Played {runtimeCard.SourceCard.DisplayName} on {target.type}.");
         }

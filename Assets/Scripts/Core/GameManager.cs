@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public bool isBuyDecisionPending; // State (when the hand is full) in which the player has to choose between confirming a buy and 
                                       //be forced to discard, or simply cancel the buy 
     public CardRuntimeState selectedCardToDiscard;
+    public int roundNumber = 1;
 
     public HandUI handUI; //HandUI gère l’affichage des cartes dans la main
 
@@ -75,6 +76,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
 
         winnerName = string.Empty;
+        roundNumber = 1;
 
         player1.money = gameConfig.startingMoney;
         player2.money = gameConfig.startingMoney;
@@ -548,7 +550,13 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         currentPhase = GamePhase.End;
         Debug.Log("Ending turn for " + currentPlayer.playerName);
 
+        PlayerState previousPlayer = currentPlayer;
         currentPlayer = currentPlayer == player1 ? player2 : player1;
+        if (ReferenceEquals(previousPlayer, player2) && ReferenceEquals(currentPlayer, player1))
+        {
+            roundNumber += 1;
+        }
+
         RefreshCurrentPlayerHandUI(); //Sync cards
 
 
@@ -618,14 +626,25 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void LogStateSummary()
     {
-        if (hudManager != null && currentPlayer != null)
-        {
-            // Rabie: keep the HUD synced whenever the game prints the current state.
-            hudManager.UpdateHUD(currentPlayer);
-            hudManager.SetTurnStatus(currentPlayer.playerName + " - " + currentPhase);
-        }
+        RefreshHUD();
 
         Debug.Log(GetStateSummary());
+    }
+
+    public void RefreshHUD()
+    {
+        if (hudManager == null)
+        {
+            hudManager = FindFirstObjectByType<HUDManager>();
+        }
+
+        if (hudManager == null || currentPlayer == null || player1 == null || player2 == null)
+        {
+            return;
+        }
+
+        int maxFortHp = gameConfig != null ? gameConfig.startingFortHp : Mathf.Max(player1.fortHp, player2.fortHp);
+        hudManager.UpdateHUD(player1, player2, currentPlayer, currentPhase, maxFortHp, roundNumber);
     }
 
     private bool IsComputerTurn()
