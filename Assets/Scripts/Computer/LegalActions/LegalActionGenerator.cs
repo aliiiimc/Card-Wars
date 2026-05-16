@@ -201,7 +201,7 @@ namespace FortGame.Computer
                         isDefensiveMove = ShouldDefend(snapshot, col),
                         movesCloserToEnemyFort = ShouldPushForward(snapshot, col),
                         //Ali: hasSynergyOnBoard is for Small scoring bonus score for characters placed forward because they can create board pressure.
-                        hasSynergyOnBoard = (isCharacterCard && ShouldPushForward(snapshot, col)) || (!isCharacterCard && IsDefensiveColumn(snapshot, col)),
+                        hasSynergyOnBoard = (isCharacterCard && ShouldPushForward(snapshot, col)) || (!isCharacterCard && ShouldDefend(snapshot, col)),
                         isLateGameCard = runtimeCard.SourceCard.cost >= 4,
                         isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
                     };

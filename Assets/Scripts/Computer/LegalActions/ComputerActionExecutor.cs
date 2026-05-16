@@ -22,7 +22,14 @@ namespace FortGame.Computer
 
             if (!IsCardPlayAction(action.type))
             {
-                Debug.LogWarning($"[ComputerActionExecutor] Unsupported action type: {action.type}");
+                Debug.LogWarning($"[ComputerActionExecutor] Unsupported action type: {action.type}. Only card-play actions are handled here.");
+                return false;
+            }
+
+            // Ali: card-play actions need a source card before calling CardPlayService.
+            if (action.sourceCard == null)
+            {
+                Debug.LogWarning($"[ComputerActionExecutor] Invalid card action payload: {action.actionName}");
                 return false;
             }
 
@@ -48,7 +55,7 @@ namespace FortGame.Computer
         }
 
 
-        //Ali : AI can find the same CardPlayService used by player card play with this.
+        // Ali: finds the shared CardPlayService used by both player and AI card play.
         private static CardPlayService ResolveCardPlayService(ComputerGameSnapshot snapshot)
         {
             if (snapshot?.GameManager != null)
@@ -63,7 +70,9 @@ namespace FortGame.Computer
             return Object.FindFirstObjectByType<CardPlayService>();
         }
 
-        //Ali : Only card-play actions can safely use CardPlayService; other AI actions stay on their own execution path.
+
+        // Ali: this executor currently supports only card-play actions.
+        // Movement and attacks should use separate executors later.
         private static bool IsCardPlayAction(ActionType actionType)
         {
             return actionType == ActionType.PlayUnitCard
@@ -71,6 +80,6 @@ namespace FortGame.Computer
                 || actionType == ActionType.PlaySpellCard;
         }
 
-        
+
     }
 }

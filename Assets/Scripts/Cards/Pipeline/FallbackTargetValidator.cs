@@ -41,6 +41,14 @@ public sealed class FallbackTargetValidator : ICardTargetValidator
                         "Character must be placed in your deployment zone.");
                 }
             }
+            
+            // Ali: spells do not target empty tiles in v1.
+            if (sourceCard.SourceCard is SpellCardData)
+            {
+                return CardValidationResult.Invalid(
+                    "WRONG_TARGET_TYPE",
+                    "Spell cards do not target empty tiles by default in v1.");
+            }
 
             // Ali: World Effect fallback must follow the same owner-half rule.
             if (sourceCard.SourceCard is WorldEffectCardData)
@@ -55,13 +63,7 @@ public sealed class FallbackTargetValidator : ICardTargetValidator
                 }
             }
 
-            // Ali: spells do not target empty tiles in v1.
-            if (sourceCard.SourceCard is SpellCardData)
-            {
-                return CardValidationResult.Invalid(
-                    "WRONG_TARGET_TYPE",
-                    "Spell cards do not target empty tiles by default in v1.");
-            }
+            
 
             return CardValidationResult.Valid();
         }
@@ -86,7 +88,7 @@ public sealed class FallbackTargetValidator : ICardTargetValidator
                 return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Target player is not the current opponent.");
             }
 
-            //Ali:
+            //Ali: fallback validation must check the real Fort on the real tile.
             HexGrid grid = UnityEngine.Object.FindFirstObjectByType<HexGrid>();
             if (grid == null)
             {

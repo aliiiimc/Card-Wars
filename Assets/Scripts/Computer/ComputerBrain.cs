@@ -48,7 +48,7 @@ namespace FortGame.Computer
             // 1. Gather all legally possible actions.
             List<ComputerAction> possibleActions = GeneratePossibleActions(snapshot);
 
-            Debug.Log($"[ComputerBrain] Legal actions found: {possibleActions.Count}");
+            Debug.Log($"[ComputerBrain] Legal actions found: {possibleActions?.Count ?? 0}"); //Ali: prevents the log from crashing if the actions list is ever null.
 
             if (_legalActionGenerator.Diagnostics != null)
             {
@@ -56,31 +56,26 @@ namespace FortGame.Computer
             }
 
             // Ali: if there are no generated legal actions, the AI ends its turn.
-            if (possibleActions.Count == 0)
+            if (possibleActions == null || possibleActions.Count == 0)
             {
                 return false;
             }
 
             // 2. Score the actions using the Utility AI system
             ComputerAction bestAction = _scoringSystem.GetBestAction(possibleActions, snapshot.ActingPlayer, snapshot.CurrentTurn);
-
-            if (bestAction != null)
+            if (bestAction == null)
             {
-                if (bestAction.endsTurn || bestAction.type == ActionType.EndTurn)
-                {
-                    Debug.Log("[ComputerBrain] Best action is End Turn.");
-                    return false;
-                }
-
-                // 3. Execute best action
-                return ExecuteAction(bestAction, snapshot);
-
+                return false;
             }
 
-            return false;
+            if (bestAction.endsTurn || bestAction.type == ActionType.EndTurn)
+            {
+                Debug.Log("[ComputerBrain] Best action is End Turn.");
+                return false;
+            }
 
+            return ExecuteAction(bestAction, snapshot);
         }
-
 
 
         // Ali: small wrapper so DetermineNextAction stays readable.
@@ -92,7 +87,7 @@ namespace FortGame.Computer
 
 
 
-        //Ali : si l’action IA échoue, DetermineNextAction en haut doit retourner false, pas faire semblant que l’action a réussi.
+        // Ali: executes the selected action and reports whether it really changed game state.
         private bool ExecuteAction(ComputerAction action, ComputerGameSnapshot snapshot)
         {
             Debug.Log($"[ComputerBrain] Chose to execute: {action.actionName}");

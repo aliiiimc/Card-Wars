@@ -31,7 +31,7 @@ namespace FortGame.Computer
 
                 float score = CalculateScore(action, myState, currentTurn);
 
-                Debug.Log($"Action [{action.actionName}] scored: {score}");
+                Debug.Log($"[ActionScoringSystem] Action [{action.actionName}] scored: {score}");
 
                 if (score > highestScore)
                 {
@@ -43,6 +43,8 @@ namespace FortGame.Computer
             return bestAction;
         }
 
+
+        // Ali: scores one legal action. Higher score means the AI is more likely to choose it.
         private float CalculateScore(ComputerAction action, PlayerState myState, int currentTurn)
         {
             float score = 0f;
@@ -50,7 +52,7 @@ namespace FortGame.Computer
             {
                 return float.MinValue;
             }
-        
+
 
             if (action.endsTurn || action.type == ActionType.EndTurn)
             {
@@ -79,7 +81,10 @@ namespace FortGame.Computer
             }
 
             // 3. Favorable Unit Trades (+100 to +300)
-            if (action.type == ActionType.AttackUnit || action.type == ActionType.PlaySpellCard || action.type == ActionType.PlayWorldEffectCard)
+            bool isUnitTradeAction = action.type == ActionType.AttackUnit
+                || (action.type == ActionType.PlaySpellCard && action.target.type == CardTargetType.EnemyUnit);
+
+            if (isUnitTradeAction)
             {
                 if (action.destroysEnemyUnit && action.survivesTrade)
                 {
@@ -101,6 +106,12 @@ namespace FortGame.Computer
                 //Ali: Changed what was here before, so now if the AI fort is low, going forward is "still" possible, but is less prioritary than defending.
                 score += myState != null && myState.fortHp < 8 ? 15f : 50f;
             }
+
+            if (action.hasSynergyOnBoard)
+            {
+                score += 75f;
+            }
+
             if (action.movesBackward)
             {
                 score -= 50f;
@@ -110,15 +121,15 @@ namespace FortGame.Computer
             // Early game cards are great early, terrible late.
             if (action.isEarlyGameCard)
             {
-                if (currentTurn < 5) score += 60f;
-                else score -= 30f; // Don't waste time on small cards late game
+                score += currentTurn < 5 ? 60f : -30f;
             }
-            // Late game cards are great late, or if we can ramp to them.
+
+            // Late game cards are great in lategame, or if we can ramp to them.
             if (action.isLateGameCard)
             {
-                if (currentTurn >= 5) score += 80f;
-                else score -= 50f; // Late-game cards are lower priority early unless the board already needs them.
+                score += currentTurn >= 5 ? 80f : -50f;
             }
+
 
             // --- ADVANCED RULES ---
 
@@ -129,7 +140,7 @@ namespace FortGame.Computer
                 score += action.drawsCards * 30f;
 
                 // Desperation multiplier: If we are almost out of cards, drawing is incredibly valuable
-                if (myState.handCount <= 2)
+                if (myState != null && myState.handCount <= 2)
                 {
                     score += action.drawsCards * 50f;
                 }
@@ -140,13 +151,8 @@ namespace FortGame.Computer
             }
 
             // 7. Play cost
-            // Ali: playing cards is free in the current rules, so action.cost should not affect AI score.
+            // Ali: playing cards is free in the current rules, so action.cost intentionally does not affect AI score.
 
-            // 8. Synergies and Combos
-            if (action.hasSynergyOnBoard)
-            {
-                score += 75f;
-            }
 
             return score;
         }

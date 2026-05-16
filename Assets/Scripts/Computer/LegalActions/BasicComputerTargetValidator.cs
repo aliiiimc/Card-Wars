@@ -1,6 +1,6 @@
 using UnityEngine;
-namespace FortGame.Computer
 
+namespace FortGame.Computer
 {
     /// <summary>
     /// Baseline validator used by the AI legal-action reader until full validator routing is available.
@@ -39,7 +39,15 @@ namespace FortGame.Computer
                         return CardValidationResult.Invalid("OCCUPIED_TILE", "Target tile is occupied.");
                     }
 
-                    //Ali : added more rules when spawning characters.
+                    // Ali: spells do not target empty tiles in v1.
+                    if (sourceCard.SourceCard is SpellCardData)
+                    {
+                        return CardValidationResult.Invalid(
+                            "WRONG_TARGET_TYPE",
+                            "Spell cards do not target empty tiles by default in v1.");
+                    }
+
+                    // Ali: Character cards must be placed in the owner's deployment zone.
                     if (sourceCard.SourceCard is CharacterCardData)
                     {
                         HexGrid grid = Object.FindFirstObjectByType<HexGrid>();
@@ -51,6 +59,7 @@ namespace FortGame.Computer
                                 "Character must be placed in deployment zone.");
                         }
                     }
+
                     // Ali: use the shared World Effect placement helper so AI follows the same placement rule as the player.
                     if (sourceCard.SourceCard is WorldEffectCardData)
                     {
@@ -63,7 +72,6 @@ namespace FortGame.Computer
                                 "World Effect must be placed in the owner's half.");
                         }
                     }
-
 
                     return CardValidationResult.Valid();
 
@@ -83,26 +91,25 @@ namespace FortGame.Computer
 
                     if (target.targetPlayerId != context.OpponentPlayerKey)
                     {
-
-                        //Ali:le validateur IA doit vérifier le vrai Fort sur la vraie tile, comme le validateur reusable
-                        HexGrid grid = Object.FindFirstObjectByType<HexGrid>();
-                        if (grid == null)
-                        {
-                            return CardValidationResult.Invalid("NO_GRID", "HexGrid is missing.");
-                        }
-
-                        HexTile fortTile = grid.GetTile(target.tile);
-                        if (fortTile == null || fortTile.tileType != "fort")
-                        {
-                            return CardValidationResult.Invalid("FORT_NOT_PRESENT", "Target tile does not contain a fort.");
-                        }
-
-                        if (fortTile.owner != target.targetPlayerId)
-                        {
-                            return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Fort owner does not match target player.");
-                        }
-
                         return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Target fort does not belong to opponent.");
+                    }
+
+                    // Ali: AI validation must check the real Fort on the real tile, like the reusable validator.
+                    HexGrid fortGrid = Object.FindFirstObjectByType<HexGrid>();
+                    if (fortGrid == null)
+                    {
+                        return CardValidationResult.Invalid("NO_GRID", "HexGrid is missing.");
+                    }
+
+                    HexTile fortTile = fortGrid.GetTile(target.tile);
+                    if (fortTile == null || fortTile.tileType != "fort")
+                    {
+                        return CardValidationResult.Invalid("FORT_NOT_PRESENT", "Target tile does not contain a fort.");
+                    }
+
+                    if (fortTile.owner != target.targetPlayerId)
+                    {
+                        return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Fort owner does not match target player.");
                     }
 
                     return CardValidationResult.Valid();
