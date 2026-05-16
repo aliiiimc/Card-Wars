@@ -8,6 +8,8 @@ public class UnitManager : MonoBehaviour
     public float walkBobHeight = 0.08f;
     public float walkLeanAngle = 4f;
     public float walkSquashAmount = 0.08f;
+    public Color moveHighlightColor = new Color(0.42f, 0.93f, 0.68f);
+    public Color attackHighlightColor = new Color(1f, 0.70f, 0.30f);
 
     private Unit selectedUnit;
     private List<HexTile> moveTiles = new List<HexTile>();
@@ -85,7 +87,7 @@ public class UnitManager : MonoBehaviour
             moveTiles = HexUtils.GetReachableMoveTiles(tile, selectedUnit.moveRange, grid);
             foreach (HexTile t in moveTiles)
             {
-                t.Highlight(Color.green);
+                t.Highlight(moveHighlightColor);
             }
         }
 
@@ -96,7 +98,7 @@ public class UnitManager : MonoBehaviour
             foreach (HexTile t in attackTiles)
             {
                 if (IsEnemyTarget(t))
-                    t.Highlight(Color.red);
+                    t.Highlight(attackHighlightColor);
             }
         }
     }

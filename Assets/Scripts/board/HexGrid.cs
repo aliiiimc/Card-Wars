@@ -9,6 +9,10 @@ public class HexGrid : MonoBehaviour
     public int gridHeight = 5;
     public float hexSize = 0.5f;
     public bool spawnDebugUnits = true;
+    public Color playerSideColor = new Color(0.16f, 0.42f, 0.47f);
+    public Color enemySideColor = new Color(0.47f, 0.20f, 0.26f);
+    public Color playerFortColor = new Color(0.12f, 0.70f, 0.78f);
+    public Color enemyFortColor = new Color(0.82f, 0.20f, 0.26f);
 
     private Dictionary<AxialCoord, HexTile> tiles = new Dictionary<AxialCoord, HexTile>();
 
@@ -41,9 +45,7 @@ public class HexGrid : MonoBehaviour
                 tile.coord = coord;
                 tiles[coord] = tile;
 
-                Color sideColor = col < midCol
-                    ? new Color(0.6f, 0.8f, 1f)
-                    : new Color(1f, 0.7f, 0.7f);
+                Color sideColor = col < midCol ? playerSideColor : enemySideColor;
 
                 tile.SetBaseColor(sideColor);
             }
@@ -53,8 +55,8 @@ public class HexGrid : MonoBehaviour
     void PlaceForts()
     {
         int midRow = gridHeight / 2;
-        tiles[OffsetToAxial(0, midRow)].SetAsFort(new Color(0.1f, 0.2f, 0.8f), "player");
-        tiles[OffsetToAxial(gridWidth - 1, midRow)].SetAsFort(new Color(0.8f, 0.1f, 0.1f), "enemy");
+        tiles[OffsetToAxial(0, midRow)].SetAsFort(playerFortColor, "player");
+        tiles[OffsetToAxial(gridWidth - 1, midRow)].SetAsFort(enemyFortColor, "enemy");
     }
 
     void SpawnHorizontalDebugUnits()

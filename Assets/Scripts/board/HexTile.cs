@@ -6,6 +6,9 @@ public class HexTile : MonoBehaviour
     public string tileType = "empty"; // empty, fort, unit
     public string owner = "none";     // none, player, enemy
 
+    private static readonly Color PlayerUnitTileColor = new Color(0.14f, 0.50f, 0.56f);
+    private static readonly Color EnemyUnitTileColor = new Color(0.58f, 0.22f, 0.28f);
+
     private SpriteRenderer spriteRenderer;
     private SpriteRenderer worldEffectRenderer;
     private Color baseColor;
@@ -50,7 +53,7 @@ public class HexTile : MonoBehaviour
         tileType = "unit";
         owner = unitOwner;
         ClearWorldEffectVisual();
-        originalColor = unitOwner == "player" ? new Color(0.2f, 0.4f, 1f) : new Color(1f, 0.3f, 0.3f);
+        originalColor = unitOwner == "player" ? PlayerUnitTileColor : EnemyUnitTileColor;
         spriteRenderer.color = originalColor;
     }
 

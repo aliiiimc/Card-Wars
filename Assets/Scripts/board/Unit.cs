@@ -63,9 +63,9 @@ public class Unit : MonoBehaviour
 
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (owner == "player")
-            sr.color = Color.white; // blue
+            sr.color = Color.white;
         else
-            sr.color = new Color(1f, 0.3f, 0.3f);  // red
+            sr.color = new Color(1f, 0.55f, 0.58f);
     }
 
     public void Die()
