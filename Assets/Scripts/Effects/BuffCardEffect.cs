@@ -11,6 +11,12 @@ public sealed class BuffCardEffect : MonoBehaviour, ICardEffect
 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
+        if (sourceCard != null && sourceCard.SourceCard is SpellCardData)
+        {
+            SpellManager spellManager = SpellManager.GetOrCreate();
+            return spellManager.ApplyBuffSpell(context, sourceCard, target, healAmount, damageBoostAmount, speedBoostAmount);
+        }
+
         if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
             return failure;

@@ -2,8 +2,6 @@ using UnityEngine;
 
 public class Miner : SpecialCardScriptBase
 {
-    private const float MovingVisibilityAlpha = 0.3f;
-
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
         return CardNameMatches(unitCardData, "Miner");
@@ -16,7 +14,13 @@ public class Miner : SpecialCardScriptBase
 
     public override void OnBeforeMove(Unit unit, CharacterCardData unitCardData)
     {
-        SetAlpha(unit, MovingVisibilityAlpha);
+        float movingVisibilityAlpha = 0.3f;
+        if (unitCardData is MinerCardData minerCardData)
+        {
+            movingVisibilityAlpha = Mathf.Clamp01(minerCardData.movingVisibilityAlpha);
+        }
+
+        SetAlpha(unit, movingVisibilityAlpha);
     }
 
     public override void OnAfterMove(Unit unit, CharacterCardData unitCardData, HexTile destinationTile)

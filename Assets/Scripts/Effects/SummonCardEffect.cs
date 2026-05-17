@@ -9,6 +9,12 @@ public sealed class SummonCardEffect : MonoBehaviour, ICardEffect
 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
+        if (sourceCard != null && sourceCard.SourceCard is SpellCardData)
+        {
+            SpellManager spellManager = SpellManager.GetOrCreate();
+            return spellManager.ApplySummonSpell(context, sourceCard, target, requireTileToBeEmpty);
+        }
+
         if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
             return failure;

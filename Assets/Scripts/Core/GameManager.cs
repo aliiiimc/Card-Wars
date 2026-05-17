@@ -26,7 +26,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public int roundNumber = 1;
 
     public HandUI handUI; //HandUI gère l’affichage des cartes dans la main
-    private readonly WheatField wheatFieldRules = new WheatField();
 
 
 
@@ -545,6 +544,9 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         currentPhase = GamePhase.End;
         Debug.Log("Ending turn for " + currentPlayer.playerName);
+        string endingOwnerKey = ResolveCurrentOwnerKey();
+        ConsumeUnitTimedEffectsForOwner(endingOwnerKey);
+        SpellManager.GetOrCreate().ConsumePersistentDurations(endingOwnerKey);
 
         PlayerState previousPlayer = currentPlayer;
         currentPlayer = currentPlayer == player1 ? player2 : player1;
@@ -667,8 +669,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
-        HashSet<string> ownedFieldClusters = new HashSet<string>();
-        int unclusteredOwnedFieldTiles = 0;
+        Dictionary<string, int> ownedFieldClusterBonusById = new Dictionary<string, int>();
+        int unclusteredBonusTotal = 0;
         for (int i = 0; i < allTiles.Length; i++)
         {
             HexTile tile = allTiles[i];
@@ -680,24 +682,28 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
                 continue;
             }
 
+            int tileBonus = Mathf.Max(0, tile.fieldBonusMoneyPerTurn);
+
             if (!string.IsNullOrWhiteSpace(tile.fieldClusterId))
             {
-                ownedFieldClusters.Add(tile.fieldClusterId);
+                if (!ownedFieldClusterBonusById.ContainsKey(tile.fieldClusterId))
+                {
+                    ownedFieldClusterBonusById[tile.fieldClusterId] = tileBonus;
+                }
             }
             else
             {
-                unclusteredOwnedFieldTiles++;
+                unclusteredBonusTotal += tileBonus;
             }
         }
 
-        int ownedFieldCount = ownedFieldClusters.Count + unclusteredOwnedFieldTiles;
-        if (ownedFieldCount <= 0)
+        int clusterBonusTotal = 0;
+        foreach (KeyValuePair<string, int> pair in ownedFieldClusterBonusById)
         {
-            return;
+            clusterBonusTotal += Mathf.Max(0, pair.Value);
         }
 
-        int bonusPerField = wheatFieldRules.GetBonusMoneyPerTurn();
-        int bonusMoney = Mathf.Max(0, ownedFieldCount * bonusPerField);
+        int bonusMoney = Mathf.Max(0, clusterBonusTotal + unclusteredBonusTotal);
         if (bonusMoney <= 0)
         {
             return;
@@ -793,6 +799,31 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
 
         LogStateSummary();
+    }
+
+    private void ConsumeUnitTimedEffectsForOwner(string ownerKey)
+    {
+        if (string.IsNullOrWhiteSpace(ownerKey))
+        {
+            return;
+        }
+
+        Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        if (allUnits == null || allUnits.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < allUnits.Length; i++)
+        {
+            Unit unit = allUnits[i];
+            if (unit == null || unit.owner != ownerKey)
+            {
+                continue;
+            }
+
+            unit.ConsumeTimedEffectsOnOwnerTurnEnd();
+        }
     }
 
 

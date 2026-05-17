@@ -11,6 +11,12 @@ public sealed class DebuffCardEffect : MonoBehaviour, ICardEffect
 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
+        if (sourceCard != null && sourceCard.SourceCard is SpellCardData)
+        {
+            SpellManager spellManager = SpellManager.GetOrCreate();
+            return spellManager.ApplyDebuffSpell(context, sourceCard, target, damageAmount, damageReductionAmount, speedReductionAmount);
+        }
+
         if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
             return failure;

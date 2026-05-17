@@ -1,7 +1,12 @@
 public class Camp
 {
-    public bool ForcesNewSpawnLocation()
+    public bool ForcesNewSpawnLocation(CampCardData worldEffectCard)
     {
-        return true;
+        if (worldEffectCard == null)
+        {
+            return true;
+        }
+
+        return worldEffectCard.forcesNewSpawnLocation;
     }
 }

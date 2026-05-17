@@ -9,6 +9,12 @@ public sealed class UtilityCardEffect : MonoBehaviour, ICardEffect
 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
+        if (sourceCard != null && sourceCard.SourceCard is SpellCardData)
+        {
+            SpellManager spellManager = SpellManager.GetOrCreate();
+            return spellManager.ApplyUtilitySpell(context, sourceCard, target, movementDelta);
+        }
+
         if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
             return failure;

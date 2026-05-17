@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10b9f8f30f2d57443a05fde10c03e1e4, type: 3}
+  m_Script: {fileID: 11500000, guid: 85be3f4dc3ca4b8f8c9d7f48c2da41bd, type: 3}
   m_Name: 2 speed
-  m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
+  m_EditorClassIdentifier: Assembly-CSharp::SpeedSpellCardData
   cardName: 2x speed
   cost: 4
   handDeckSprite: {fileID: 2807850933495882075, guid: fd8b357a4905b0447946371ee89c45c1, type: 3}
@@ -21,6 +21,7 @@ MonoBehaviour:
   effectType: 0
   effectPower: 1
   effectDurationTurns: 3
+  movementCapacityMultiplier: 2
   spellMovementCapacity:
     hasValue: 0
     value: 0

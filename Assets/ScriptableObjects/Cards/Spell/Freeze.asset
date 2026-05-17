@@ -10,15 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10b9f8f30f2d57443a05fde10c03e1e4, type: 3}
-  m_Name: Scout Utility
+  m_Name: Freeze
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
-  cardName: Scout Utility
-  cost: 2
+  cardName: 
+  cost: 0
   handDeckSprite: {fileID: 0}
-  description: Grants a movement tempo boost to one allied unit.
+  description: 
   validatorId: target.rules.reusable
-  effectId: effect.utility
-  effectType: 6
-  effectPower: 1
+  effectId: 
+  effectType: 0
+  effectPower: 0
   effectDurationTurns: 0
-  spellMovementCapacity: 0
+  spellMovementCapacity:
+    hasValue: 0
+    value: 0

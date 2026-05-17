@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public static class BoardPlacementRules // verify if a board-placement card can be put on the board.
 {
     public static bool CanPlaceCharacter(AxialCoord coord, string playerKey, HexGrid grid)
@@ -25,7 +27,7 @@ public static class BoardPlacementRules // verify if a board-placement card can 
 
         // Camp special rule: when active, it opens a new spawn location around owned camp tiles.
         Camp camp = new Camp();
-        if (!camp.ForcesNewSpawnLocation())
+        if (!camp.ForcesNewSpawnLocation(ResolveCampCardData()))
         {
             return false;
         }
@@ -80,5 +82,30 @@ public static class BoardPlacementRules // verify if a board-placement card can 
         }
 
         return false;
+    }
+
+    private static CampCardData ResolveCampCardData()
+    {
+        CardLibrary[] libraries = Object.FindObjectsByType<CardLibrary>(FindObjectsSortMode.None);
+        for (int i = 0; i < libraries.Length; i++)
+        {
+            CardLibrary library = libraries[i];
+            if (library == null || library.cards == null)
+            {
+                continue;
+            }
+
+            for (int j = 0; j < library.cards.Count; j++)
+            {
+                if (!(library.cards[j] is CampCardData campCardData))
+                {
+                    continue;
+                }
+
+                return campCardData;
+            }
+        }
+
+        return null;
     }
 }

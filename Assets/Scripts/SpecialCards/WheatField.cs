@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class WheatField
 {
-    private const int DefaultTilesPerField = 6;
-    private const int DefaultHpPerTile = 1;
-
-    public int GetBonusMoneyPerTurn()
+    public int GetBonusMoneyPerTurn(WheatFieldCardData worldEffectCard)
     {
-        return 1;
+        if (worldEffectCard == null)
+        {
+            return 1;
+        }
+
+        return Mathf.Max(0, worldEffectCard.bonusMoneyPerTurn);
     }
 
     public string CreateClusterId()
@@ -17,7 +19,7 @@ public class WheatField
         return Guid.NewGuid().ToString("N");
     }
 
-    public List<HexTile> BuildFieldTiles(HexGrid grid, HexTile originTile, int requestedTileCount = DefaultTilesPerField)
+    public List<HexTile> BuildFieldTiles(HexGrid grid, HexTile originTile, int requestedTileCount = -1)
     {
         List<HexTile> fieldTiles = new List<HexTile>();
         if (grid == null || originTile == null)
@@ -62,7 +64,7 @@ public class WheatField
         return fieldTiles;
     }
 
-    public bool ApplyFieldCluster(HexGrid grid, HexTile originTile, string owner, Sprite fieldSprite, CardRuntimeState sourceCard, out string clusterId, int tileCount = DefaultTilesPerField, int hpPerTile = DefaultHpPerTile)
+    public bool ApplyFieldCluster(HexGrid grid, HexTile originTile, string owner, Sprite fieldSprite, CardRuntimeState sourceCard, out string clusterId, int tileCount = -1, int hpPerTile = -1)
     {
         clusterId = string.Empty;
         if (grid == null || originTile == null || string.IsNullOrWhiteSpace(owner) || sourceCard == null)
@@ -76,14 +78,21 @@ public class WheatField
             return false;
         }
 
-        List<HexTile> tiles = BuildFieldTiles(grid, originTile, tileCount);
+        WheatFieldCardData worldEffectCard = sourceCard.SourceCard as WheatFieldCardData;
+        int configuredTileCount = worldEffectCard != null ? Mathf.Max(1, worldEffectCard.tilesPerField) : 6;
+        int configuredHpPerTile = worldEffectCard != null ? Mathf.Max(1, worldEffectCard.hpPerTile) : 1;
+        int resolvedTileCount = tileCount > 0 ? tileCount : configuredTileCount;
+        int resolvedHpPerTile = hpPerTile > 0 ? hpPerTile : configuredHpPerTile;
+        int bonusMoneyPerTurn = GetBonusMoneyPerTurn(worldEffectCard);
+
+        List<HexTile> tiles = BuildFieldTiles(grid, originTile, resolvedTileCount);
         if (tiles.Count == 0)
         {
             return false;
         }
 
         clusterId = CreateClusterId();
-        int safeHpPerTile = Mathf.Max(1, hpPerTile);
+        int safeHpPerTile = Mathf.Max(1, resolvedHpPerTile);
         int placedTileCount = 0;
 
         for (int i = 0; i < tiles.Count; i++)
@@ -105,7 +114,7 @@ public class WheatField
                 continue;
             }
 
-            if (worldEffectManager.TrySetFieldData(tile, clusterId, safeHpPerTile))
+            if (worldEffectManager.TrySetFieldData(tile, clusterId, safeHpPerTile, bonusMoneyPerTurn))
             {
                 placedTileCount++;
             }

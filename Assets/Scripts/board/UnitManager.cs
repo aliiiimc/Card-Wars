@@ -418,7 +418,7 @@ public class UnitManager : MonoBehaviour
             return true;
         }
 
-        return HexUtils.GetHexDistance(unit.turnStartTile, tile) <= unit.moveRange;
+        return HexUtils.GetHexDistance(unit.turnStartTile, tile) <= unit.GetEffectiveMoveRange();
     }
 
     int GetAttackRangeForUnit(Unit unit)

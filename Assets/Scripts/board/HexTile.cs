@@ -8,6 +8,7 @@ public class HexTile : MonoBehaviour
     public bool isFieldTile;
     public string fieldClusterId = "";
     public int fieldHp;
+    public int fieldBonusMoneyPerTurn;
     public bool isMineTile;
     public int mineDamage;
     public bool isCampTile;
@@ -101,7 +102,7 @@ public class HexTile : MonoBehaviour
         spriteRenderer.color = baseColor;
     }
 
-    public void SetFieldData(string clusterId, int hpPerTile)
+    public void SetFieldData(string clusterId, int hpPerTile, int bonusMoneyPerTurn = 1)
     {
         if (tileType != "worldEffect")
         {
@@ -111,6 +112,7 @@ public class HexTile : MonoBehaviour
         isFieldTile = true;
         fieldClusterId = string.IsNullOrWhiteSpace(clusterId) ? string.Empty : clusterId;
         fieldHp = Mathf.Max(1, hpPerTile);
+        fieldBonusMoneyPerTurn = Mathf.Max(0, bonusMoneyPerTurn);
         isMineTile = false;
         mineDamage = 0;
         isCampTile = false;
@@ -126,6 +128,7 @@ public class HexTile : MonoBehaviour
         isFieldTile = false;
         fieldClusterId = string.Empty;
         fieldHp = 0;
+        fieldBonusMoneyPerTurn = 0;
         isMineTile = true;
         mineDamage = Mathf.Max(1, damage);
         isCampTile = false;
@@ -154,6 +157,7 @@ public class HexTile : MonoBehaviour
         isFieldTile = false;
         fieldClusterId = string.Empty;
         fieldHp = 0;
+        fieldBonusMoneyPerTurn = 0;
         isMineTile = false;
         mineDamage = 0;
         isCampTile = true;
@@ -164,6 +168,7 @@ public class HexTile : MonoBehaviour
         isFieldTile = false;
         fieldClusterId = string.Empty;
         fieldHp = 0;
+        fieldBonusMoneyPerTurn = 0;
         isMineTile = false;
         mineDamage = 0;
         isCampTile = false;

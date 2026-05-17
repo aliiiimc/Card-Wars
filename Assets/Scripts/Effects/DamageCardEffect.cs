@@ -10,6 +10,12 @@ public sealed class DamageCardEffect : MonoBehaviour, ICardEffect
     //Ali : 
     public CardEffectResult Apply(CardEffectContext context, CardRuntimeState sourceCard, CardTarget target)
     {
+        if (sourceCard != null && sourceCard.SourceCard is SpellCardData)
+        {
+            SpellManager spellManager = SpellManager.GetOrCreate();
+            return spellManager.ApplyDamageSpell(context, sourceCard, target, amount);
+        }
+
         if (!CardEffectGuards.TryRequireContextAndWriter(context, out CardEffectResult failure))
         {
             return failure;

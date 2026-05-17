@@ -1,13 +1,25 @@
+using UnityEngine;
+
 public class Mines
 {
-    public int GetMinesToPlace()
+    public int GetMinesToPlace(MinesCardData worldEffectCard)
     {
-        return 5;
+        if (worldEffectCard == null)
+        {
+            return 5;
+        }
+
+        return Mathf.Max(1, worldEffectCard.minesToPlace);
     }
 
-    public int GetMineDamage()
+    public int GetMineDamage(MinesCardData worldEffectCard)
     {
-        return 3;
+        if (worldEffectCard == null)
+        {
+            return 3;
+        }
+
+        return Mathf.Max(1, worldEffectCard.mineDamage);
     }
 
     public string GetEnemyWarningMessage()

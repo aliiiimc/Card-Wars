@@ -13,6 +13,8 @@ public class Unit : MonoBehaviour
     public bool hasAttackedThisTurn;
     public int movementSpentThisTurn;
     public CharacterCardData sourceCharacterCardData;
+    public int movementRangeMultiplier = 1;
+    public int movementRangeMultiplierTurnsRemaining;
 
     private CardRuntimeState runtimeCard;
 
@@ -40,7 +42,7 @@ public class Unit : MonoBehaviour
 
     public int GetRemainingMovement()
     {
-        return Mathf.Max(0, moveRange - movementSpentThisTurn);
+        return Mathf.Max(0, GetEffectiveMoveRange() - movementSpentThisTurn);
     }
 
     public bool HasExhaustedMovementThisTurn()
@@ -51,7 +53,7 @@ public class Unit : MonoBehaviour
     public void MarkMoved(int movementCost)
     {
         int safeCost = Mathf.Max(0, movementCost);
-        movementSpentThisTurn = Mathf.Min(moveRange, movementSpentThisTurn + safeCost);
+        movementSpentThisTurn = Mathf.Min(GetEffectiveMoveRange(), movementSpentThisTurn + safeCost);
         hasMovedThisTurn = movementSpentThisTurn > 0;
     }
 
@@ -122,7 +124,7 @@ public class Unit : MonoBehaviour
         }
 
         moveRange = Mathf.Max(0, moveRange + delta);
-        movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, moveRange);
+        movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
     }
 
     private void SyncStatsFromRuntimeCard()
@@ -145,8 +147,43 @@ public class Unit : MonoBehaviour
         if (runtimeCard.CurrentMovementCapacity.HasValue)
         {
             moveRange = runtimeCard.CurrentMovementCapacity.Value;
-            movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, moveRange);
+            movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
         }
+    }
+
+    public int GetEffectiveMoveRange()
+    {
+        int multiplier = movementRangeMultiplierTurnsRemaining > 0
+            ? Mathf.Max(1, movementRangeMultiplier)
+            : 1;
+
+        return Mathf.Max(0, moveRange * multiplier);
+    }
+
+    public void ApplyMovementRangeMultiplier(int multiplier, int turns)
+    {
+        int safeMultiplier = Mathf.Max(1, multiplier);
+        int safeTurns = Mathf.Max(1, turns);
+
+        movementRangeMultiplier = safeMultiplier;
+        movementRangeMultiplierTurnsRemaining = safeTurns;
+        movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
+    }
+
+    public void ConsumeTimedEffectsOnOwnerTurnEnd()
+    {
+        if (movementRangeMultiplierTurnsRemaining <= 0)
+        {
+            return;
+        }
+
+        movementRangeMultiplierTurnsRemaining = Mathf.Max(0, movementRangeMultiplierTurnsRemaining - 1);
+        if (movementRangeMultiplierTurnsRemaining <= 0)
+        {
+            movementRangeMultiplier = 1;
+        }
+
+        movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
     }
 
     public void ResetTurnActions()

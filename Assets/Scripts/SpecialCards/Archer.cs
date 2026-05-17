@@ -1,7 +1,5 @@
 public class Archer : SpecialCardScriptBase
 {
-    private const int BonusAttackRange = 2;
-
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
         return CardNameMatches(unitCardData, "Archer");
@@ -14,7 +12,13 @@ public class Archer : SpecialCardScriptBase
             return 0;
         }
 
-        return unit.attackRange + BonusAttackRange;
+        int bonusAttackRange = 2;
+        if (unitCardData is ArcherCardData archerCardData)
+        {
+            bonusAttackRange = UnityEngine.Mathf.Max(0, archerCardData.bonusAttackRange);
+        }
+
+        return unit.attackRange + bonusAttackRange;
     }
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)

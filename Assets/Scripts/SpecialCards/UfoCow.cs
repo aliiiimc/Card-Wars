@@ -10,7 +10,7 @@ public class UfoCow : SpecialCardScriptBase
         return tile != null && tile.tileType == "worldEffect" && tile.isFieldTile;
     }
 
-    public bool ConsumeOneFieldStep(Unit ufoCow, HexGrid grid, int consumeAmount = 1)
+    public bool ConsumeOneFieldStep(Unit ufoCow, HexGrid grid, int consumeAmount = -1)
     {
         if (ufoCow == null || grid == null || ufoCow.currentTile == null)
         {
@@ -30,7 +30,13 @@ public class UfoCow : SpecialCardScriptBase
         }
 
         string clusterId = currentTile.fieldClusterId;
-        int safeConsume = UnityEngine.Mathf.Max(1, consumeAmount);
+        int configuredConsumeAmount = 1;
+        if (ufoCow.sourceCharacterCardData is UfoCowCardData ufoCowCardData)
+        {
+            configuredConsumeAmount = UnityEngine.Mathf.Max(1, ufoCowCardData.fieldConsumeAmount);
+        }
+        int resolvedConsumeAmount = consumeAmount > 0 ? consumeAmount : configuredConsumeAmount;
+        int safeConsume = UnityEngine.Mathf.Max(1, resolvedConsumeAmount);
 
         // Prefer consuming the current tile first.
         if (worldEffectManager.TryDamageField(currentTile, safeConsume))
@@ -75,7 +81,7 @@ public class UfoCow : SpecialCardScriptBase
             return;
         }
 
-        bool consumed = ConsumeOneFieldStep(unit, grid, 1);
+        bool consumed = ConsumeOneFieldStep(unit, grid);
         if (!consumed)
         {
             UnityEngine.Debug.Log("[SpecialTrigger][UfoCow] No field tile consumed after move.");

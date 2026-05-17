@@ -448,7 +448,8 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (cardName == "mines")
         {
             Mines mines = new Mines();
-            int placedMineCount = PlaceMinesRandomly(worldEffectCard, runtimeCard, owner, targetTile, mines);
+            MinesCardData minesCardData = worldEffectCard as MinesCardData;
+            int placedMineCount = PlaceMinesRandomly(minesCardData, runtimeCard, owner, targetTile, mines);
             LogTransaction($"{mines.GetEnemyWarningMessage()} Placed {placedMineCount} mine(s).");
             return;
         }
@@ -456,7 +457,7 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (cardName == "camp")
         {
             Camp camp = new Camp();
-            if (camp.ForcesNewSpawnLocation())
+            if (camp.ForcesNewSpawnLocation(worldEffectCard as CampCardData))
             {
                 if (worldEffectManager != null && worldEffectManager.TrySetCampData(targetTile))
                 {
@@ -470,7 +471,7 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         }
     }
 
-    private int PlaceMinesRandomly(WorldEffectCardData worldEffectCard, CardRuntimeState runtimeCard, string owner, HexTile targetTile, Mines mines)
+    private int PlaceMinesRandomly(MinesCardData worldEffectCard, CardRuntimeState runtimeCard, string owner, HexTile targetTile, Mines mines)
     {
         if (worldEffectManager == null || boardSource == null || worldEffectCard == null || runtimeCard == null || mines == null)
         {
@@ -484,8 +485,8 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         }
 
         List<HexTile> candidates = GetRandomMineCandidates(owner);
-        int requestedCount = Mathf.Max(1, mines.GetMinesToPlace());
-        int mineDamage = Mathf.Max(1, mines.GetMineDamage());
+        int requestedCount = Mathf.Max(1, mines.GetMinesToPlace(worldEffectCard));
+        int mineDamage = Mathf.Max(1, mines.GetMineDamage(worldEffectCard));
         int placedCount = 0;
 
         for (int i = 0; i < candidates.Count && placedCount < requestedCount; i++)

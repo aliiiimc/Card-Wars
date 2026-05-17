@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d10e72179da00f74cb4561cda13856f7, type: 3}
+  m_Script: {fileID: 11500000, guid: 3f13af551c1c4fef99b495bf935d5f8b, type: 3}
   m_Name: Mines
-  m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
+  m_EditorClassIdentifier: Assembly-CSharp::MinesCardData
   cardName: 
   cost: 0
   handDeckSprite: {fileID: -2121628431070228569, guid: 7ce25fc85b53cb7428274e532b2f8330, type: 3}
@@ -39,3 +39,5 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
+  minesToPlace: 5
+  mineDamage: 3

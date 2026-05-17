@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d10e72179da00f74cb4561cda13856f7, type: 3}
+  m_Script: {fileID: 11500000, guid: d4da62ad7a39483eb4e2d26184dd5f43, type: 3}
   m_Name: Wheat field
-  m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
+  m_EditorClassIdentifier: Assembly-CSharp::WheatFieldCardData
   cardName: 
   cost: 0
   handDeckSprite: {fileID: 6271399085124507442, guid: a0f855235feaeba428874fabacd33387, type: 3}
@@ -39,3 +39,6 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
+  tilesPerField: 6
+  hpPerTile: 1
+  bonusMoneyPerTurn: 1

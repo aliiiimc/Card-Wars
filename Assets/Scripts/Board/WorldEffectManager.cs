@@ -94,14 +94,14 @@ public class WorldEffectManager : MonoBehaviour
         return false;
     }
 
-    public bool TrySetFieldData(HexTile tile, string clusterId, int hpPerTile)
+    public bool TrySetFieldData(HexTile tile, string clusterId, int hpPerTile, int bonusMoneyPerTurn = 1)
     {
         if (!IsOwnedWorldEffectTile(tile))
         {
             return false;
         }
 
-        tile.SetFieldData(clusterId, hpPerTile);
+        tile.SetFieldData(clusterId, hpPerTile, bonusMoneyPerTurn);
         return true;
     }
 

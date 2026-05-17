@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
+  m_Script: {fileID: 11500000, guid: 33415f35c6cc48caaf48469fb9ed298a, type: 3}
   m_Name: Archer
-  m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
+  m_EditorClassIdentifier: Assembly-CSharp::ArcherCardData
   cardName: Archer
   cost: 3
   handDeckSprite: {fileID: 21300000, guid: 95810dc5e3b0e6947b6caa70bb14b1e8, type: 3}
@@ -23,3 +23,5 @@ MonoBehaviour:
   unitMovementCapacity:
     hasValue: 1
     value: 2
+  canColonizeEnemyWorldEffects: 0
+  bonusAttackRange: 2
