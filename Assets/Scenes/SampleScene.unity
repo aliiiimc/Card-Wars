@@ -3198,7 +3198,7 @@ MonoBehaviour:
   gridWidth: 28
   gridHeight: 11
   hexSize: 0.65
-  spawnDebugUnits: 1
+  spawnDebugUnits: 0
 --- !u!4 &1552139958
 Transform:
   m_ObjectHideFlags: 0
