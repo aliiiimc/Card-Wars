@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: 0}
-  manifestedSprite: {fileID: 0}
+  handDeckSprite: {fileID: -2121628431070228569, guid: 7ce25fc85b53cb7428274e532b2f8330, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: effect.summon
+  manifestedSprite: {fileID: 3108955975675672734, guid: 84ed32d1f52551442bdf0566275a291e, type: 3}
   category: 0
   structureHp:
     hasValue: 0
@@ -36,4 +36,6 @@ MonoBehaviour:
     hasValue: 0
     value: 0
   durationTurns: 0
-  worldEffectMovementCapacity: 0
+  worldEffectMovementCapacity:
+    hasValue: 0
+    value: 0

@@ -18,7 +18,7 @@ MonoBehaviour:
   description: 
   validatorId: target.rules.reusable
   effectId: effect.summon
-  manifestedSprite: {fileID: 8315357902960899490, guid: d35d537154587fb4f90e22dd9f0f084b, type: 3}
+  manifestedSprite: {fileID: 8315357902960899490, guid: 1ef5f81c47c20424eb385f012991bdbb, type: 3}
   category: 0
   structureHp:
     hasValue: 1

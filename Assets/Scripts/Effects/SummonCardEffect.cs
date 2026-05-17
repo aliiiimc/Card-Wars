@@ -38,6 +38,13 @@ public sealed class SummonCardEffect : MonoBehaviour, ICardEffect
         }
 
         context.Writer.ManifestCard(sourceCard, target.tile);
+
+        if ((sourceCard.SourceCard is CharacterCardData || sourceCard.SourceCard is WorldEffectCardData)
+            && !sourceCard.IsManifestedOnBoard)
+        {
+            return CardEffectResult.Failure("MANIFEST_FAILED", "Card could not be manifested on the target tile.");
+        }
+
         return CardEffectResult.Success("Summon applied.");
     }
 }

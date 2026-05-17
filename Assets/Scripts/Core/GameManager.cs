@@ -1,6 +1,7 @@
 using UnityEngine;
 using FortGame.Computer;
 using FortGame.UI;
+using System.Collections.Generic;
 
 
 public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
@@ -25,6 +26,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public int roundNumber = 1;
 
     public HandUI handUI; //HandUI gère l’affichage des cartes dans la main
+    private readonly WheatField wheatFieldRules = new WheatField();
 
 
 
@@ -121,6 +123,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         mustDiscardAfterBuy = false;
         ClearSelectedCardToDiscard();
         currentPlayer.money += gameConfig.moneyPerTurn;
+        ApplyWheatFieldIncomeForCurrentPlayer();
+        UpdateMineVisibilityForCurrentPlayer();
 
 
         Debug.Log(currentPlayer.playerName + " receives income.");
@@ -481,7 +485,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         return CardFactory.CreateRuntimeState(randomCard);
     }
 
-
     public void GoToPlayPhase()
     {
         if (currentPhase != GamePhase.Buy)
@@ -643,6 +646,112 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     private bool IsComputerTurn()
     {
         return computerPlayer != null && currentPlayer != null && ReferenceEquals(currentPlayer, player2);
+    }
+
+    private void ApplyWheatFieldIncomeForCurrentPlayer()
+    {
+        if (currentPlayer == null)
+        {
+            return;
+        }
+
+        string ownerKey = ResolveCurrentOwnerKey();
+        if (string.IsNullOrWhiteSpace(ownerKey))
+        {
+            return;
+        }
+
+        HexTile[] allTiles = FindObjectsByType<HexTile>(FindObjectsSortMode.None);
+        if (allTiles == null || allTiles.Length == 0)
+        {
+            return;
+        }
+
+        HashSet<string> ownedFieldClusters = new HashSet<string>();
+        int unclusteredOwnedFieldTiles = 0;
+        for (int i = 0; i < allTiles.Length; i++)
+        {
+            HexTile tile = allTiles[i];
+            if (tile == null
+                || tile.tileType != "worldEffect"
+                || !tile.isFieldTile
+                || tile.owner != ownerKey)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(tile.fieldClusterId))
+            {
+                ownedFieldClusters.Add(tile.fieldClusterId);
+            }
+            else
+            {
+                unclusteredOwnedFieldTiles++;
+            }
+        }
+
+        int ownedFieldCount = ownedFieldClusters.Count + unclusteredOwnedFieldTiles;
+        if (ownedFieldCount <= 0)
+        {
+            return;
+        }
+
+        int bonusPerField = wheatFieldRules.GetBonusMoneyPerTurn();
+        int bonusMoney = Mathf.Max(0, ownedFieldCount * bonusPerField);
+        if (bonusMoney <= 0)
+        {
+            return;
+        }
+
+        currentPlayer.money += bonusMoney;
+        Debug.Log($"{currentPlayer.playerName} gains +{bonusMoney} from Wheat field.");
+    }
+
+    private void UpdateMineVisibilityForCurrentPlayer()
+    {
+        string ownerKey = ResolveCurrentOwnerKey();
+        if (string.IsNullOrWhiteSpace(ownerKey))
+        {
+            return;
+        }
+
+        HexTile[] allTiles = FindObjectsByType<HexTile>(FindObjectsSortMode.None);
+        if (allTiles == null || allTiles.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < allTiles.Length; i++)
+        {
+            HexTile tile = allTiles[i];
+            if (tile == null || tile.tileType != "worldEffect" || !tile.isMineTile)
+            {
+                continue;
+            }
+
+            bool isOwnerTurn = tile.owner == ownerKey;
+            tile.SetMineVisibility(isOwnerTurn);
+        }
+    }
+
+    private string ResolveCurrentOwnerKey()
+    {
+        if (currentPlayer == null)
+        {
+            return string.Empty;
+        }
+
+        if (ReferenceEquals(currentPlayer, player2))
+        {
+            return PlayerKeyResolver.PlayerTwoKey;
+        }
+
+        if (ReferenceEquals(currentPlayer, player1))
+        {
+            return PlayerKeyResolver.PlayerOneKey;
+        }
+
+        return string.Empty;
     }
 
     private void ApplyFortDamage(PlayerState targetPlayer, int damage)

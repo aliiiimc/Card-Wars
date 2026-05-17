@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: e55ba832f9bbd014f8c116a63926a7e7
+guid: 7ce25fc85b53cb7428274e532b2f8330
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -7849992999706883352
-    second: campchibi_0
+      213: -2121628431070228569
+    second: Mines_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: campchibi_0
+      name: Mines_0
       rect:
         serializedVersion: 2
-        x: 111
-        y: 182
-        width: 1030
-        height: 892
+        x: 0
+        y: 0
+        width: 1024
+        height: 1536
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8ea0b2335f83f0390800000000000000
-      internalID: -7849992999706883352
+      spriteID: 7af80bcce267e82e0800000000000000
+      internalID: -2121628431070228569
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      campchibi_0: -7849992999706883352
+      Mines_0: -2121628431070228569
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

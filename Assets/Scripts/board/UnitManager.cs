@@ -15,6 +15,14 @@ public class UnitManager : MonoBehaviour
     private List<HexTile> moveTiles = new List<HexTile>();
     private List<HexTile> attackTiles = new List<HexTile>();
     private HexGrid grid;
+    private WorldEffectManager worldEffectManager;
+    private readonly List<ISpecialCardScript> specialCardScripts = new List<ISpecialCardScript>
+    {
+        new Archer(),
+        new EuropeanKing(),
+        new Miner(),
+        new UfoCow()
+    };
 
     private GameManager gameManager; //Ali
     private string lastActiveOwner = "";
@@ -25,6 +33,7 @@ public class UnitManager : MonoBehaviour
     {
         gameManager = FindFirstObjectByType<GameManager>(); //Def de GameManager
         grid = FindFirstObjectByType<HexGrid>();
+        worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
         ResetUnitsForActiveOwnerIfNeeded();
     }
 
@@ -64,7 +73,7 @@ public class UnitManager : MonoBehaviour
                     AttackTarget(clickedTile);
                 }
                 // Move to an empty tile in move range
-                else if (moveTiles.Contains(clickedTile) && clickedTile.IsEmpty())
+                else if (moveTiles.Contains(clickedTile) && IsValidMoveDestination(clickedTile))
                 {
                     MoveUnit(clickedTile);
                 }
@@ -85,6 +94,7 @@ public class UnitManager : MonoBehaviour
         if (selectedUnit.CanMove())
         {
             moveTiles = HexUtils.GetReachableMoveTiles(tile, selectedUnit.GetRemainingMovement(), grid);
+            AppendReachableEnemyMineTiles(tile, selectedUnit, moveTiles);
             moveTiles.RemoveAll(t => !IsInsideTurnStartRange(selectedUnit, t));
             foreach (HexTile t in moveTiles)
             {
@@ -95,7 +105,12 @@ public class UnitManager : MonoBehaviour
         // Attack range (red) — highlight enemies within attackRange
         if (selectedUnit.CanAttack())
         {
-            attackTiles = HexUtils.GetTilesInRange(tile, selectedUnit.attackRange, grid);
+            int effectiveAttackRange = GetAttackRangeForUnit(selectedUnit);
+            if (effectiveAttackRange > selectedUnit.attackRange)
+            {
+                Debug.Log($"[SpecialTrigger][Archer] Extended attack range from {selectedUnit.attackRange} to {effectiveAttackRange}.");
+            }
+            attackTiles = HexUtils.GetTilesInRange(tile, effectiveAttackRange, grid);
             foreach (HexTile t in attackTiles)
             {
                 if (IsEnemyTarget(t))
@@ -113,6 +128,8 @@ public class UnitManager : MonoBehaviour
         }
 
         Unit movingUnit = selectedUnit;
+        CharacterCardData unitCardData;
+        ISpecialCardScript specialScript = ResolveSpecialScript(movingUnit, out unitCardData);
         int movementCost = HexUtils.GetMoveDistance(
             movingUnit.currentTile,
             targetTile,
@@ -133,19 +150,70 @@ public class UnitManager : MonoBehaviour
 
         Vector3 startPosition = movingUnit.transform.position;
         Vector3 targetPosition = targetTile.transform.position;
+        bool steppedOnEnemyMine = IsEnemyMineTileForUnit(targetTile, movingUnit);
+        int mineDamage = steppedOnEnemyMine ? Mathf.Max(1, targetTile.mineDamage) : 0;
 
+        if (steppedOnEnemyMine)
+        {
+            if (worldEffectManager == null)
+            {
+                worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
+            }
+
+            if (worldEffectManager != null)
+            {
+                worldEffectManager.Remove(targetTile);
+            }
+            else
+            {
+                targetTile.RemoveUnit();
+            }
+        }
+
+        specialScript?.OnBeforeMove(movingUnit, unitCardData);
         movingUnit.currentTile.RemoveUnit();
         movingUnit.PlaceOnTile(targetTile, snapToTile: false);
-        movingUnit.MarkMoved(movementCost);
+        bool consumeMoveAction = specialScript == null || specialScript.ConsumeMoveAction(movingUnit, unitCardData);
+        if (consumeMoveAction)
+        {
+            movingUnit.MarkMoved(movementCost);
+        }
+        else
+        {
+            Debug.Log($"[SpecialTrigger][Miner] Move action preserved after moving to ({targetTile.coord.q},{targetTile.coord.r}).");
+        }
+
+        if (steppedOnEnemyMine)
+        {
+            movingUnit.health -= mineDamage;
+            Debug.Log($"[SpecialTrigger][Mines] Mine triggered at ({targetTile.coord.q},{targetTile.coord.r}). {movingUnit.name} took {mineDamage} damage. HP now {movingUnit.health}.");
+            if (movingUnit.health <= 0)
+            {
+                movingUnit.Die();
+                DeselectUnit();
+                return;
+            }
+        }
+
         DeselectUnit();
 
-        StartCoroutine(MoveUnitSmoothly(movingUnit, startPosition, targetPosition));
+        StartCoroutine(MoveUnitSmoothly(movingUnit, startPosition, targetPosition, specialScript, unitCardData, targetTile));
     }
 
     void AttackTarget(HexTile targetTile)
     {
         if (selectedUnit == null || !selectedUnit.CanAttack())
         {
+            DeselectUnit();
+            return;
+        }
+
+        CharacterCardData attackerCardData;
+        ISpecialCardScript specialScript = ResolveSpecialScript(selectedUnit, out attackerCardData);
+        bool isSpecialTarget = specialScript != null && specialScript.CanTarget(selectedUnit, attackerCardData, targetTile, GetActiveOwner());
+        if (isSpecialTarget && specialScript.TryHandleAttack(selectedUnit, attackerCardData, targetTile, GetActiveOwner()))
+        {
+            selectedUnit.MarkAttacked();
             DeselectUnit();
             return;
         }
@@ -185,8 +253,27 @@ public class UnitManager : MonoBehaviour
                  && selectedUnit.canColonizeEnemyWorldEffects
                  && targetTile.owner != GetActiveOwner())
         {
-            targetTile.PlaceWorldEffect(GetActiveOwner());
-            Debug.Log("Colonized enemy world effect.");
+            if (worldEffectManager == null)
+            {
+                worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
+            }
+
+            if (worldEffectManager != null && worldEffectManager.TryColonize(targetTile, GetActiveOwner()))
+            {
+                Debug.Log("Colonized enemy world effect.");
+            }
+            else
+            {
+                Debug.LogWarning("Colonization failed: world effect manager rejected this target.");
+                DeselectUnit();
+                return;
+            }
+        }
+        else if (isSpecialTarget)
+        {
+            Debug.LogWarning("Special target was selected but the special card did not handle this attack.");
+            DeselectUnit();
+            return;
         }
 
 
@@ -256,16 +343,72 @@ public class UnitManager : MonoBehaviour
 
     bool IsEnemyTarget(HexTile tile)
     {
+        if (tile == null || selectedUnit == null)
+        {
+            return false;
+        }
+
+        CharacterCardData attackerCardData;
+        ISpecialCardScript specialScript = ResolveSpecialScript(selectedUnit, out attackerCardData);
+        bool canSpecialTarget = specialScript != null
+            && specialScript.CanTarget(selectedUnit, attackerCardData, tile, GetActiveOwner());
+
         // Ali: special units can target enemy world effects for colonization, while normal units keep classic unit/fort targeting.
-        bool canTargetEnemyWorldEffect = selectedUnit != null
-            && selectedUnit.canColonizeEnemyWorldEffects
-            && tile != null
+        bool canTargetEnemyWorldEffect = selectedUnit.canColonizeEnemyWorldEffects
             && tile.tileType == "worldEffect";
 
-        return tile != null
-            && tile.owner != "none"
+        return tile.owner != "none"
             && tile.owner != GetActiveOwner()
-            && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect);
+            && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect || canSpecialTarget);
+    }
+
+    bool IsValidMoveDestination(HexTile tile)
+    {
+        if (selectedUnit == null || tile == null)
+        {
+            return false;
+        }
+
+        return tile.IsEmpty() || IsEnemyMineTileForUnit(tile, selectedUnit);
+    }
+
+    bool IsEnemyMineTileForUnit(HexTile tile, Unit unit)
+    {
+        return tile != null
+            && unit != null
+            && tile.tileType == "worldEffect"
+            && tile.isMineTile
+            && tile.owner != "none"
+            && tile.owner != unit.owner;
+    }
+
+    void AppendReachableEnemyMineTiles(HexTile startTile, Unit unit, List<HexTile> destinationTiles)
+    {
+        if (startTile == null || unit == null || destinationTiles == null || grid == null)
+        {
+            return;
+        }
+
+        List<HexTile> inRangeTiles = HexUtils.GetTilesInRange(startTile, unit.GetRemainingMovement(), grid);
+        for (int i = 0; i < inRangeTiles.Count; i++)
+        {
+            HexTile tile = inRangeTiles[i];
+            if (!IsEnemyMineTileForUnit(tile, unit))
+            {
+                continue;
+            }
+
+            int distance = HexUtils.GetMoveDistance(startTile, tile, grid, unit.GetRemainingMovement());
+            if (distance <= 0)
+            {
+                continue;
+            }
+
+            if (!destinationTiles.Contains(tile))
+            {
+                destinationTiles.Add(tile);
+            }
+        }
     }
 
     bool IsInsideTurnStartRange(Unit unit, HexTile tile)
@@ -278,7 +421,44 @@ public class UnitManager : MonoBehaviour
         return HexUtils.GetHexDistance(unit.turnStartTile, tile) <= unit.moveRange;
     }
 
-    IEnumerator MoveUnitSmoothly(Unit unit, Vector3 startPosition, Vector3 targetPosition)
+    int GetAttackRangeForUnit(Unit unit)
+    {
+        if (unit == null)
+        {
+            return 0;
+        }
+
+        CharacterCardData unitCardData;
+        ISpecialCardScript specialScript = ResolveSpecialScript(unit, out unitCardData);
+        if (specialScript != null)
+        {
+            return Mathf.Max(0, specialScript.GetAttackRange(unit, unitCardData));
+        }
+
+        return Mathf.Max(0, unit.attackRange);
+    }
+
+    ISpecialCardScript ResolveSpecialScript(Unit unit, out CharacterCardData unitCardData)
+    {
+        unitCardData = unit != null ? unit.sourceCharacterCardData : null;
+        if (unit == null || unitCardData == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < specialCardScripts.Count; i++)
+        {
+            ISpecialCardScript script = specialCardScripts[i];
+            if (script != null && script.IsMatch(unit, unitCardData))
+            {
+                return script;
+            }
+        }
+
+        return null;
+    }
+
+    IEnumerator MoveUnitSmoothly(Unit unit, Vector3 startPosition, Vector3 targetPosition, ISpecialCardScript specialScript, CharacterCardData unitCardData, HexTile destinationTile)
     {
         isAnimatingUnit = true;
 
@@ -294,6 +474,7 @@ public class UnitManager : MonoBehaviour
                 unit.transform.rotation = originalRotation;
             }
 
+            specialScript?.OnAfterMove(unit, unitCardData, destinationTile);
             isAnimatingUnit = false;
             yield break;
         }
@@ -332,6 +513,7 @@ public class UnitManager : MonoBehaviour
             unit.transform.rotation = originalRotation;
         }
 
+        specialScript?.OnAfterMove(unit, unitCardData, destinationTile);
         isAnimatingUnit = false;
     }
 }

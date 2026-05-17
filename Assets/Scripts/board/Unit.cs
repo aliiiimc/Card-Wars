@@ -12,6 +12,7 @@ public class Unit : MonoBehaviour
     public bool hasMovedThisTurn;
     public bool hasAttackedThisTurn;
     public int movementSpentThisTurn;
+    public CharacterCardData sourceCharacterCardData;
 
     private CardRuntimeState runtimeCard;
 

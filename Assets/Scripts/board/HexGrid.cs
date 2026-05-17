@@ -180,6 +180,8 @@ public class HexGrid : MonoBehaviour
             return unit;
         }
 
+        unit.sourceCharacterCardData = characterCard;
+
         SpriteRenderer spriteRenderer = unit.GetComponent<SpriteRenderer>(); //récupère le composant qui affiche l’image de l’unité sur le board.
         if (spriteRenderer != null && characterCard.manifestedSprite != null)
         {

@@ -5,6 +5,12 @@ public class HexTile : MonoBehaviour
     public AxialCoord coord;
     public string tileType = "empty"; // empty, fort, unit
     public string owner = "none";     // none, player, enemy
+    public bool isFieldTile;
+    public string fieldClusterId = "";
+    public int fieldHp;
+    public bool isMineTile;
+    public int mineDamage;
+    public bool isCampTile;
 
     private static readonly Color PlayerUnitTileColor = new Color(0.14f, 0.50f, 0.56f);
     private static readonly Color EnemyUnitTileColor = new Color(0.58f, 0.22f, 0.28f);
@@ -44,6 +50,7 @@ public class HexTile : MonoBehaviour
     {
         tileType = "fort";
         owner = fortOwner;
+        ClearFieldData();
         originalColor = fortColor;
         spriteRenderer.color = fortColor;
     }
@@ -52,6 +59,7 @@ public class HexTile : MonoBehaviour
     {
         tileType = "unit";
         owner = unitOwner;
+        ClearFieldData();
         ClearWorldEffectVisual();
         originalColor = unitOwner == "player" ? PlayerUnitTileColor : EnemyUnitTileColor;
         spriteRenderer.color = originalColor;
@@ -87,9 +95,101 @@ public class HexTile : MonoBehaviour
     {
         tileType = "empty";
         owner = "none";
+        ClearFieldData();
         ClearWorldEffectVisual();
         originalColor = baseColor;
         spriteRenderer.color = baseColor;
+    }
+
+    public void SetFieldData(string clusterId, int hpPerTile)
+    {
+        if (tileType != "worldEffect")
+        {
+            return;
+        }
+
+        isFieldTile = true;
+        fieldClusterId = string.IsNullOrWhiteSpace(clusterId) ? string.Empty : clusterId;
+        fieldHp = Mathf.Max(1, hpPerTile);
+        isMineTile = false;
+        mineDamage = 0;
+        isCampTile = false;
+    }
+
+    public void SetMineData(int damage)
+    {
+        if (tileType != "worldEffect")
+        {
+            return;
+        }
+
+        isFieldTile = false;
+        fieldClusterId = string.Empty;
+        fieldHp = 0;
+        isMineTile = true;
+        mineDamage = Mathf.Max(1, damage);
+        isCampTile = false;
+    }
+
+    public void SetMineVisibility(bool isVisible)
+    {
+        if (!isMineTile)
+        {
+            return;
+        }
+
+        if (worldEffectRenderer != null)
+        {
+            worldEffectRenderer.enabled = isVisible;
+        }
+    }
+
+    public void SetCampData()
+    {
+        if (tileType != "worldEffect")
+        {
+            return;
+        }
+
+        isFieldTile = false;
+        fieldClusterId = string.Empty;
+        fieldHp = 0;
+        isMineTile = false;
+        mineDamage = 0;
+        isCampTile = true;
+    }
+
+    public void ClearWorldEffectSpecialData()
+    {
+        isFieldTile = false;
+        fieldClusterId = string.Empty;
+        fieldHp = 0;
+        isMineTile = false;
+        mineDamage = 0;
+        isCampTile = false;
+    }
+
+    public bool DamageField(int amount)
+    {
+        if (tileType != "worldEffect" || !isFieldTile)
+        {
+            return false;
+        }
+
+        int safeAmount = Mathf.Max(1, amount);
+        fieldHp -= safeAmount;
+
+        if (fieldHp <= 0)
+        {
+            RemoveUnit();
+        }
+
+        return true;
+    }
+
+    private void ClearFieldData()
+    {
+        ClearWorldEffectSpecialData();
     }
 
     private void SetWorldEffectVisual(Sprite effectSprite)
