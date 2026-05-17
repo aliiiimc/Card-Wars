@@ -122,8 +122,17 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             return;
         }
 
-        card.ApplyDamage(amount);
-        LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} amount={Mathf.Max(0, amount)}.");
+        int safeAmount = Mathf.Max(0, amount);
+        Unit boardUnit = FindUnitForCard(card);
+        if (boardUnit != null)
+        {
+            boardUnit.ApplyDamage(safeAmount);
+            LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} realUnit amount={safeAmount}.");
+            return;
+        }
+
+        card.ApplyDamage(safeAmount);
+        LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} amount={safeAmount}.");
     }
 
     public void ApplyHeal(CardRuntimeState card, int amount)
@@ -133,8 +142,17 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             return;
         }
 
-        card.ApplyHeal(amount);
-        LogTransaction($"ApplyHeal: {card.SourceCard.DisplayName} amount={Mathf.Max(0, amount)}.");
+        int safeAmount = Mathf.Max(0, amount);
+        Unit boardUnit = FindUnitForCard(card);
+        if (boardUnit != null)
+        {
+            boardUnit.ApplyHeal(safeAmount);
+            LogTransaction($"ApplyHeal: {card.SourceCard.DisplayName} realUnit amount={safeAmount}.");
+            return;
+        }
+
+        card.ApplyHeal(safeAmount);
+        LogTransaction($"ApplyHeal: {card.SourceCard.DisplayName} amount={safeAmount}.");
     }
 
     //Ali:
@@ -202,6 +220,14 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             return;
         }
 
+        Unit boardUnit = FindUnitForCard(card);
+        if (boardUnit != null)
+        {
+            boardUnit.ModifyAttack(delta);
+            LogTransaction($"ModifyDamage: {card.SourceCard.DisplayName} realUnit delta={delta}.");
+            return;
+        }
+
         card.ModifyDamage(delta);
         LogTransaction($"ModifyDamage: {card.SourceCard.DisplayName} delta={delta}.");
     }
@@ -210,6 +236,14 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
     {
         if (card == null)
         {
+            return;
+        }
+
+        Unit boardUnit = FindUnitForCard(card);
+        if (boardUnit != null)
+        {
+            boardUnit.ModifyMovementRange(delta);
+            LogTransaction($"ModifyMovement: {card.SourceCard.DisplayName} realUnit delta={delta}.");
             return;
         }
 
@@ -274,6 +308,26 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         }
 
         return PlayerKeyResolver.PlayerOneKey;
+    }
+
+    private Unit FindUnitForCard(CardRuntimeState card)
+    {
+        if (card == null)
+        {
+            return null;
+        }
+
+        Unit[] units = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        for (int i = 0; i < units.Length; i++)
+        {
+            Unit unit = units[i];
+            if (unit != null && ReferenceEquals(unit.RuntimeCard, card))
+            {
+                return unit;
+            }
+        }
+
+        return null;
     }
 
     private void LogTransaction(string message)

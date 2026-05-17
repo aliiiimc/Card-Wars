@@ -153,13 +153,12 @@ public class UnitManager : MonoBehaviour
         Unit target = FindUnitOnTile(targetTile);
         if (target != null)
         {
-            target.health -= selectedUnit.attack;
+            target.ApplyDamage(selectedUnit.attack);
             Debug.Log($"Attacked! Target health: {target.health}");
 
             if (target.health <= 0)
             {
                 Debug.Log("Target died!");
-                target.Die();
             }
         }
         else if (targetTile.tileType == "fort") //Ali : Update de AttackTarget

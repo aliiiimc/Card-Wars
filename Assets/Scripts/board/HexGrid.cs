@@ -207,6 +207,9 @@ public class HexGrid : MonoBehaviour
             unit.moveRange = characterCard.unitMovementCapacity.Value;
         }
 
+        // Ali: link the spawned board unit back to the card runtime so spells can target and update the real Unit.
+        unit.LinkRuntimeCard(card);
+
         return unit;
     }
     //Ali end.

@@ -13,12 +13,16 @@ public class Unit : MonoBehaviour
     public bool hasAttackedThisTurn;
     public int movementSpentThisTurn;
 
+    private CardRuntimeState runtimeCard;
+
     // Ali: runtime flag copied from card data for world-effect capture rules.
     public bool canColonizeEnemyWorldEffects;
 
 
     // Ali: track whether a spawned unit is allowed to attack yet, instead of assuming every new unit is immediately ready.
     public bool isReadyToAttack = true;
+
+    public CardRuntimeState RuntimeCard => runtimeCard;
 
 
     public bool CanMove()
@@ -55,6 +59,95 @@ public class Unit : MonoBehaviour
         hasAttackedThisTurn = true;
     }
 
+    public void LinkRuntimeCard(CardRuntimeState card)
+    {
+        runtimeCard = card;
+        SyncStatsFromRuntimeCard();
+    }
+
+    public void ApplyDamage(int amount)
+    {
+        int safeAmount = Mathf.Max(0, amount);
+
+        if (runtimeCard != null)
+        {
+            runtimeCard.ApplyDamage(safeAmount);
+            SyncStatsFromRuntimeCard();
+        }
+        else
+        {
+            health = Mathf.Max(0, health - safeAmount);
+        }
+
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
+    public void ApplyHeal(int amount)
+    {
+        int safeAmount = Mathf.Max(0, amount);
+
+        if (runtimeCard != null)
+        {
+            runtimeCard.ApplyHeal(safeAmount);
+            SyncStatsFromRuntimeCard();
+            return;
+        }
+
+        health += safeAmount;
+    }
+
+    public void ModifyAttack(int delta)
+    {
+        if (runtimeCard != null)
+        {
+            runtimeCard.ModifyDamage(delta);
+            SyncStatsFromRuntimeCard();
+            return;
+        }
+
+        attack = Mathf.Max(0, attack + delta);
+    }
+
+    public void ModifyMovementRange(int delta)
+    {
+        if (runtimeCard != null)
+        {
+            runtimeCard.ModifyMovement(delta);
+            SyncStatsFromRuntimeCard();
+            return;
+        }
+
+        moveRange = Mathf.Max(0, moveRange + delta);
+        movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, moveRange);
+    }
+
+    private void SyncStatsFromRuntimeCard()
+    {
+        if (runtimeCard == null)
+        {
+            return;
+        }
+
+        if (runtimeCard.CurrentHp.HasValue)
+        {
+            health = runtimeCard.CurrentHp.Value;
+        }
+
+        if (runtimeCard.CurrentDamage.HasValue)
+        {
+            attack = runtimeCard.CurrentDamage.Value;
+        }
+
+        if (runtimeCard.CurrentMovementCapacity.HasValue)
+        {
+            moveRange = runtimeCard.CurrentMovementCapacity.Value;
+            movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, moveRange);
+        }
+    }
+
     public void ResetTurnActions()
     {
         hasMovedThisTurn = false;
@@ -89,6 +182,8 @@ public class Unit : MonoBehaviour
 
     public void Die()
     {
+        runtimeCard?.MoveToZone(CardZone.Discard);
+
         if (currentTile != null)
         {
             currentTile.RemoveUnit();

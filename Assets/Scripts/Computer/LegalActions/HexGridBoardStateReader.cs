@@ -42,6 +42,22 @@ namespace FortGame.Computer
                 return null;
             }
 
+            Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsSortMode.None);
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit == null || unit.RuntimeCard == null || unit.currentTile == null)
+                {
+                    continue;
+                }
+
+                AxialCoord unitPosition = unit.currentTile.coord;
+                if (unitPosition.q == tile.q && unitPosition.r == tile.r)
+                {
+                    return unit.RuntimeCard;
+                }
+            }
+
             CardManifest[] manifests = Object.FindObjectsByType<CardManifest>(FindObjectsSortMode.None);
             for (int i = 0; i < manifests.Length; i++)
             {
