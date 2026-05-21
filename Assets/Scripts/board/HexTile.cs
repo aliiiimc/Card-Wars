@@ -213,7 +213,32 @@ public class HexTile : MonoBehaviour
         }
 
         worldEffectRenderer.sprite = effectSprite;
+        FitWorldEffectVisualToTile(effectSprite);
         worldEffectRenderer.enabled = true;
+    }
+
+    private void FitWorldEffectVisualToTile(Sprite effectSprite)
+    {
+        if (worldEffectRenderer == null || spriteRenderer == null || effectSprite == null)
+        {
+            return;
+        }
+
+        Vector2 tileSize = spriteRenderer.sprite != null
+            ? spriteRenderer.sprite.bounds.size
+            : Vector2.zero;
+        Vector2 effectSize = effectSprite.bounds.size;
+
+        if (tileSize.x <= 0f || tileSize.y <= 0f || effectSize.x <= 0f || effectSize.y <= 0f)
+        {
+            worldEffectRenderer.transform.localScale = Vector3.one;
+            return;
+        }
+
+        worldEffectRenderer.transform.localScale = new Vector3(
+            tileSize.x / effectSize.x,
+            tileSize.y / effectSize.y,
+            1f);
     }
 
     private void ClearWorldEffectVisual()

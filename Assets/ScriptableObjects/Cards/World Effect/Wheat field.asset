@@ -18,7 +18,7 @@ MonoBehaviour:
   description: 
   validatorId: target.rules.reusable
   effectId: effect.summon
-  manifestedSprite: {fileID: 3970204860081587053, guid: 3d38a52f323913e45b0d7d41414ea36c, type: 3}
+  manifestedSprite: {fileID: 8434763298640690643, guid: ec9423ee853a15d42ad7399f661a858d, type: 3}
   category: 1
   structureHp:
     hasValue: 1
@@ -26,6 +26,11 @@ MonoBehaviour:
   structureDamage:
     hasValue: 0
     value: 0
+  worldEffectAttackRange:
+    hasValue: 0
+    value: 0
+  attackType: 1
+  attackTarget: 0
   revenuePerTurn:
     hasValue: 1
     value: 3
@@ -39,6 +44,6 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
-  tilesPerField: 6
+  tilesPerField: 5
   hpPerTile: 1
   bonusMoneyPerTurn: 1
