@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
   m_Name: Dragon
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
-  cardName: 
-  cost: 0
+  cardName: Dragon
+  cost: 7
   handDeckSprite: {fileID: 8127724391895405021, guid: b51fc4777de8ead4394806a62d3209dc, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
   manifestedSprite: {fileID: -1387163648491893939, guid: 93ef6eaa9efd0184d9bbce4d2c980906, type: 3}
-  maxHp: 0
-  attackDamage: 0
+  maxHp: 85
+  attackDamage: 24
   attackRange: 1
   attackType: 0
-  attackTarget: 0
+  attackTarget: 2
   movementType: 1
   startsReadyToAttack: 0
   unitMovementCapacity:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 4
   canColonizeEnemyWorldEffects: 0

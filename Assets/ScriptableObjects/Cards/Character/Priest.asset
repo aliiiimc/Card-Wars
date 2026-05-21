@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
   m_Name: Priest
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
-  cardName: 
-  cost: 0
+  cardName: Priest
+  cost: 3
   handDeckSprite: {fileID: -338558310170827541, guid: 506d8adbf34d5b3479b1c3e08403a928, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
   manifestedSprite: {fileID: -5635021077249355321, guid: e812f5015c90e15469c32a56f813b146, type: 3}
-  maxHp: 0
-  attackDamage: 0
-  attackRange: 1
+  maxHp: 34
+  attackDamage: 10
+  attackRange: 2
   attackType: 2
   attackTarget: 2
   movementType: 0
-  startsReadyToAttack: 0
+  startsReadyToAttack: 1
   unitMovementCapacity:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 2
   canColonizeEnemyWorldEffects: 0

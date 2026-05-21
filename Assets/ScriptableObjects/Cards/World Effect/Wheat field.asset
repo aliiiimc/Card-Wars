@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4da62ad7a39483eb4e2d26184dd5f43, type: 3}
   m_Name: Wheat field
   m_EditorClassIdentifier: Assembly-CSharp::WheatFieldCardData
-  cardName: 
-  cost: 0
+  cardName: Wheat Field
+  cost: 3
   handDeckSprite: {fileID: 4022944960128804840, guid: 1255e1b7309acf44d978c9575e623518, type: 3}
   description: 
   validatorId: target.rules.reusable
@@ -22,7 +22,7 @@ MonoBehaviour:
   category: 1
   structureHp:
     hasValue: 1
-    value: 5
+    value: 8
   structureDamage:
     hasValue: 0
     value: 0
@@ -33,7 +33,7 @@ MonoBehaviour:
   attackTarget: 0
   revenuePerTurn:
     hasValue: 1
-    value: 3
+    value: 1
   visionModifier:
     hasValue: 0
     value: 0
@@ -44,6 +44,6 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
-  tilesPerField: 5
-  hpPerTile: 1
+  tilesPerField: 4
+  hpPerTile: 2
   bonusMoneyPerTurn: 1

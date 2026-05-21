@@ -20,7 +20,7 @@ MonoBehaviour:
   effectId: effect.buff
   effectType: 0
   effectPower: 1
-  effectDurationTurns: 3
+  effectDurationTurns: 2
   spellMovementCapacity:
     hasValue: 0
     value: 0

@@ -12,9 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddd8c1af2e448fc4db4c905105072e9c, type: 3}
   m_Name: MainGameConfig
   m_EditorClassIdentifier: Assembly-CSharp::GameConfig
-  startingMoney: 3
-  startingFortHp: 20
-  startingHandSize: 5
+  startingMoney: 4
+  startingFortHp: 45
+  startingHandSize: 4
   maxHandSize: 7
-  moneyPerTurn: 2
-  buyCost: 1
+  moneyPerTurn: 3
+  buyCost: 2
+  discardMoneyReward: 1
+  maxDiscardCardsPerTurn: 1

@@ -12,18 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
   m_Name: Spearman
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
-  cardName: 
-  cost: 0
+  cardName: Spearman
+  cost: 2
   handDeckSprite: {fileID: 2140098413681247292, guid: e4a6f2847b7db5444995cdcef106821a, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
   manifestedSprite: {fileID: 4270412340355224758, guid: 228a5fd8d740e014b80126f22f29ef5f, type: 3}
-  maxHp: 0
-  attackDamage: 0
+  maxHp: 42
+  attackDamage: 10
   attackRange: 1
-  startsReadyToAttack: 0
+  attackType: 0
+  attackTarget: 0
+  movementType: 0
+  startsReadyToAttack: 1
   unitMovementCapacity:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 2
   canColonizeEnemyWorldEffects: 0

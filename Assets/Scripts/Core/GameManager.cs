@@ -2,6 +2,8 @@ using UnityEngine;
 using FortGame.Computer;
 using FortGame.UI;
 using System.Collections.Generic;
+using TMPro;
+using UnityEngine.UI;
 
 
 public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
@@ -22,8 +24,16 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public bool mustDiscardAfterBuy;
     public bool isBuyDecisionPending; // State (when the hand is full) in which the player has to choose between confirming a buy and 
                                       //be forced to discard, or simply cancel the buy 
+    public int pendingBuyCost = -1; //Ali: garde le prix choisi quand la main est pleine et que le joueur doit confirmer.
     public CardRuntimeState selectedCardToDiscard;
     public int roundNumber = 1;
+
+    [Header("Buy Cost Menu UI")]
+    public bool autoCreateBuyCostMenu = true;
+    public string buyButtonName = "TestBuycard";
+    public Transform buyCostMenuParent;
+    public float buyCostOptionSpacing = 110f;
+    private GameObject buyCostOptionsRoot;
 
     public HandUI handUI; //HandUI gère l’affichage des cartes dans la main
 
@@ -61,6 +71,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         SetupGame();
+        SetupBuyCostMenu();
     }
 
     private void SetupGame()
@@ -120,6 +131,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         discardCardsUsedThisTurn = 0;
         isBuyDecisionPending = false;
         mustDiscardAfterBuy = false;
+        pendingBuyCost = -1;
+        HideBuyCostOptions();
         ClearSelectedCardToDiscard();
         currentPlayer.money += gameConfig.moneyPerTurn;
         ApplyWheatFieldIncomeForCurrentPlayer();
@@ -182,11 +195,36 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void BuyCard()
     {
+        int defaultCost = gameConfig != null ? gameConfig.buyCost : -1;
+        if (!HasCardsAtBuyCost(defaultCost))
+        {
+            defaultCost = GetLowestAvailableBuyCost();
+        }
+
+        BuyCardForCost(defaultCost);
+    }
+
+    public void BuyCardForCost2() { BuyCardForCost(2); }
+    public void BuyCardForCost3() { BuyCardForCost(3); }
+    public void BuyCardForCost4() { BuyCardForCost(4); }
+    public void BuyCardForCost5() { BuyCardForCost(5); }
+    public void BuyCardForCost6() { BuyCardForCost(6); }
+
+    public void BuyCardForCost(int selectedCost)
+    {
         if (currentPhase != GamePhase.Buy)
         {
             Debug.Log("You cannot buy cards right now.");
             return;
         }
+
+        if (isBuyDecisionPending)
+        {
+            Debug.Log("Resolve buy decision first: confirm or cancel.");
+            return;
+        }
+
+        HideBuyCostOptions();
 
         if (hasBoughtThisTurn)
         {
@@ -194,9 +232,21 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
-        if (currentPlayer.money < gameConfig.buyCost)
+        if (selectedCost <= 0)
         {
-            Debug.Log(currentPlayer.playerName + " does not have enough money to buy a card.");
+            Debug.Log("Choose a valid buy cost.");
+            return;
+        }
+
+        if (currentPlayer.money < selectedCost)
+        {
+            Debug.Log(currentPlayer.playerName + " does not have enough money to buy a " + selectedCost + " cost card.");
+            return;
+        }
+
+        if (!HasCardsAtBuyCost(selectedCost))
+        {
+            Debug.Log("No cards are available at cost " + selectedCost + ".");
             return;
         }
 
@@ -209,26 +259,26 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         if (IsHandFull(currentPlayer))
         {
             isBuyDecisionPending = true;
-            Debug.Log(currentPlayer.playerName + " has a full hand. Confirm buy to buy anyway and be forced to discard, or cancel.");
+            pendingBuyCost = selectedCost;
+            Debug.Log(currentPlayer.playerName + " has a full hand. Confirm buy to buy a " + selectedCost + " cost card and be forced to discard, or cancel.");
             return;
         }
 
 
-        currentPlayer.money -= gameConfig.buyCost;
-
-
-        CardRuntimeState boughtCard = CreateRandomCardRuntimeState();
+        CardRuntimeState boughtCard = CreateRandomCardRuntimeStateForCost(selectedCost);
         if (boughtCard == null)
         {
             Debug.Log("Could not create a bought card.");
             return;
         }
 
+        currentPlayer.money -= selectedCost;
         AddCardToHand(currentPlayer, boughtCard);
 
         hasBoughtThisTurn = true;
 
-        Debug.Log(currentPlayer.playerName + " bought a card.");
+        string cardName = boughtCard.SourceCard != null ? boughtCard.SourceCard.DisplayName : "Unknown Card";
+        Debug.Log(currentPlayer.playerName + " bought " + cardName + " for " + selectedCost + ".");
         Debug.Log(currentPlayer.playerName + " money is now: " + currentPlayer.money);
         Debug.Log(currentPlayer.playerName + " hand count is now: " + currentPlayer.handCount);
 
@@ -359,27 +409,37 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
-        if (currentPlayer.money < gameConfig.buyCost)
+        if (pendingBuyCost <= 0)
         {
-            Debug.Log(currentPlayer.playerName + " cannot buy because insufficient funds.");
+            Debug.Log("No buy cost was selected.");
             isBuyDecisionPending = false;
             return;
         }
 
-        currentPlayer.money -= gameConfig.buyCost;
-        CardRuntimeState boughtCard = CreateRandomCardRuntimeState();
+        if (currentPlayer.money < pendingBuyCost)
+        {
+            Debug.Log(currentPlayer.playerName + " cannot buy because insufficient funds.");
+            isBuyDecisionPending = false;
+            pendingBuyCost = -1;
+            return;
+        }
+
+        CardRuntimeState boughtCard = CreateRandomCardRuntimeStateForCost(pendingBuyCost);
 
         if (boughtCard == null)
         {
             Debug.Log("Could not create a bought card.");
             isBuyDecisionPending = false;
+            pendingBuyCost = -1;
             return;
         }
 
+        currentPlayer.money -= pendingBuyCost;
         AddCardToHand(currentPlayer, boughtCard);
 
         hasBoughtThisTurn = true;
         isBuyDecisionPending = false;
+        pendingBuyCost = -1;
         mustDiscardAfterBuy = true;
 
         Debug.Log(currentPlayer.playerName + " confirmed the buy with a full hand and must now discard one card.");
@@ -397,6 +457,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
         isBuyDecisionPending = false;
+        pendingBuyCost = -1;
         Debug.Log(currentPlayer.playerName + " canceled the buy and stayed in Buy phase.");
         LogStateSummary();
 
@@ -482,6 +543,19 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         return CardFactory.CreateRuntimeState(randomCard);
     }
 
+    private CardRuntimeState CreateRandomCardRuntimeStateForCost(int selectedCost)
+    {
+        //Ali: ici le random reste, mais seulement parmi les cartes qui ont exactement ce prix.
+        CardData randomCard = GetRandomCardFromLibraryByCost(selectedCost, false);
+
+        if (randomCard == null)
+        {
+            return null;
+        }
+
+        return CardFactory.CreateRuntimeState(randomCard);
+    }
+
     private CardRuntimeState CreateRandomCharacterCardRuntimeState()
     {
         // (abdo :) Used by AI buying when it needs real character cards to keep board pressure.
@@ -509,6 +583,273 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         return CardFactory.CreateRuntimeState(randomCharacterCard);
     }
 
+    private CardRuntimeState CreateRandomCharacterCardRuntimeStateForCost(int selectedCost)
+    {
+        CardData randomCharacterCard = GetRandomCardFromLibraryByCost(selectedCost, true);
+
+        if (randomCharacterCard == null)
+        {
+            return null;
+        }
+
+        return CardFactory.CreateRuntimeState(randomCharacterCard);
+    }
+
+    private CardData GetRandomCardFromLibraryByCost(int selectedCost, bool characterOnly)
+    {
+        if (cardLibrary == null || cardLibrary.cards == null || cardLibrary.cards.Count == 0)
+        {
+            Debug.Log("Card Library is missing or empty.");
+            return null;
+        }
+
+        List<CardData> matchingCards = new List<CardData>();
+        for (int i = 0; i < cardLibrary.cards.Count; i++)
+        {
+            CardData card = cardLibrary.cards[i];
+            if (card == null || card.cost != selectedCost)
+            {
+                continue;
+            }
+
+            if (characterOnly && !(card is CharacterCardData))
+            {
+                continue;
+            }
+
+            matchingCards.Add(card);
+        }
+
+        if (matchingCards.Count == 0)
+        {
+            return null;
+        }
+
+        return matchingCards[Random.Range(0, matchingCards.Count)];
+    }
+
+    private bool HasCardsAtBuyCost(int selectedCost)
+    {
+        return GetRandomCardFromLibraryByCost(selectedCost, false) != null;
+    }
+
+    private List<int> GetAvailableBuyCosts(bool characterOnly)
+    {
+        List<int> costs = new List<int>();
+
+        if (cardLibrary == null || cardLibrary.cards == null)
+        {
+            return costs;
+        }
+
+        for (int i = 0; i < cardLibrary.cards.Count; i++)
+        {
+            CardData card = cardLibrary.cards[i];
+            if (card == null || card.cost <= 0)
+            {
+                continue;
+            }
+
+            if (characterOnly && !(card is CharacterCardData))
+            {
+                continue;
+            }
+
+            if (!costs.Contains(card.cost))
+            {
+                costs.Add(card.cost);
+            }
+        }
+
+        costs.Sort();
+        return costs;
+    }
+
+    private int ChooseComputerBuyCost(bool preferCharacter)
+    {
+        int characterCost = preferCharacter ? ChooseHighestAffordableBuyCost(true) : -1;
+        if (characterCost > 0)
+        {
+            return characterCost;
+        }
+
+        return ChooseHighestAffordableBuyCost(false);
+    }
+
+    private int ChooseHighestAffordableBuyCost(bool characterOnly)
+    {
+        //Ali: l'IA prend le meilleur tier qu'elle peut payer et qui contient au moins une carte.
+        List<int> costs = GetAvailableBuyCosts(characterOnly);
+        for (int i = costs.Count - 1; i >= 0; i--)
+        {
+            if (currentPlayer != null && currentPlayer.money >= costs[i])
+            {
+                return costs[i];
+            }
+        }
+
+        return -1;
+    }
+
+    private int GetLowestAvailableBuyCost()
+    {
+        List<int> costs = GetAvailableBuyCosts(false);
+        return costs.Count > 0 ? costs[0] : -1;
+    }
+
+    private void SetupBuyCostMenu()
+    {
+        if (!autoCreateBuyCostMenu)
+        {
+            return;
+        }
+
+        Button buyButton = FindButtonByObjectName(buyButtonName);
+        if (buyButton == null)
+        {
+            Debug.Log("Buy button was not found: " + buyButtonName);
+            return;
+        }
+
+        SetButtonText(buyButton, "Buy");
+        CreateBuyCostOptions(buyButton);
+        HideBuyCostOptions();
+    }
+
+    private void CreateBuyCostOptions(Button buyButton)
+    {
+        List<int> costs = GetAvailableBuyCosts(false);
+        if (costs.Count == 0)
+        {
+            return;
+        }
+
+        RectTransform buyButtonRect = buyButton.GetComponent<RectTransform>();
+        Transform parent = buyCostMenuParent != null ? buyCostMenuParent : buyButton.transform.parent;
+
+        buyCostOptionsRoot = new GameObject("BuyCostOptions");
+        RectTransform rootRect = buyCostOptionsRoot.AddComponent<RectTransform>();
+        buyCostOptionsRoot.transform.SetParent(parent, false);
+
+        if (buyButtonRect != null)
+        {
+            rootRect.anchorMin = buyButtonRect.anchorMin;
+            rootRect.anchorMax = buyButtonRect.anchorMax;
+            rootRect.pivot = buyButtonRect.pivot;
+            rootRect.anchoredPosition = buyButtonRect.anchoredPosition + new Vector2(0f, 90f);
+            rootRect.sizeDelta = new Vector2(costs.Count * buyCostOptionSpacing, 50f);
+        }
+
+        for (int i = 0; i < costs.Count; i++)
+        {
+            CreateBuyCostOptionButton(buyButton, costs[i], i);
+        }
+    }
+
+    private void CreateBuyCostOptionButton(Button buyButton, int selectedCost, int index)
+    {
+        //Ali: ces boutons sont neufs, donc ils ne gardent pas l'ancien OnClick Unity du bouton Buy.
+        GameObject buttonObject = new GameObject("BuyCost" + selectedCost + "Option");
+        buttonObject.transform.SetParent(buyCostOptionsRoot.transform, false);
+
+        RectTransform buttonRect = buttonObject.AddComponent<RectTransform>();
+        buttonRect.sizeDelta = new Vector2(95f, 44f);
+        buttonRect.anchoredPosition = new Vector2(index * buyCostOptionSpacing, 0f);
+
+        Image image = buttonObject.AddComponent<Image>();
+        Image buyButtonImage = buyButton.GetComponent<Image>();
+        if (buyButtonImage != null)
+        {
+            image.sprite = buyButtonImage.sprite;
+            image.type = buyButtonImage.type;
+            image.color = buyButtonImage.color;
+        }
+
+        Button optionButton = buttonObject.AddComponent<Button>();
+        optionButton.targetGraphic = image;
+        optionButton.onClick.AddListener(() => BuyCardForCost(selectedCost));
+
+        GameObject labelObject = new GameObject("Text");
+        labelObject.transform.SetParent(buttonObject.transform, false);
+        RectTransform labelRect = labelObject.AddComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
+        TextMeshProUGUI templateLabel = buyButton.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (templateLabel != null)
+        {
+            label.font = templateLabel.font;
+            label.fontMaterial = templateLabel.fontMaterial;
+            label.color = templateLabel.color;
+            label.fontSize = templateLabel.fontSize;
+        }
+
+        label.alignment = TextAlignmentOptions.Center;
+        label.text = "$" + selectedCost;
+    }
+
+    public void ToggleBuyCostOptions()
+    {
+        if (currentPhase != GamePhase.Buy)
+        {
+            Debug.Log("You can only choose a buy cost during Buy phase.");
+            return;
+        }
+
+        if (isBuyDecisionPending)
+        {
+            Debug.Log("Resolve buy decision first: confirm or cancel.");
+            return;
+        }
+
+        if (buyCostOptionsRoot == null)
+        {
+            Debug.Log("Buy cost options are not ready.");
+            return;
+        }
+
+        buyCostOptionsRoot.SetActive(!buyCostOptionsRoot.activeSelf);
+    }
+
+    private void HideBuyCostOptions()
+    {
+        if (buyCostOptionsRoot != null)
+        {
+            buyCostOptionsRoot.SetActive(false);
+        }
+    }
+
+    private Button FindButtonByObjectName(string objectName)
+    {
+        Button[] buttons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (buttons[i] != null && buttons[i].name == objectName)
+            {
+                return buttons[i];
+            }
+        }
+
+        return null;
+    }
+
+    private void SetButtonText(Button button, string text)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (label != null)
+        {
+            label.text = text;
+        }
+    }
+
     private void HandleComputerBuyPhase()
     {
         // (abdo :) Keep the computer turn automatic, but give it the same card-refill chance before it starts playing.
@@ -528,12 +869,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return false;
         }
 
-        if (currentPlayer.money < gameConfig.buyCost)
-        {
-            Debug.Log(currentPlayer.playerName + " skipped buy: not enough money.");
-            return false;
-        }
-
         if (IsHandFull(currentPlayer))
         {
             Debug.Log(currentPlayer.playerName + " skipped buy: hand is full.");
@@ -543,14 +878,21 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         string ownerKey = ResolveCurrentOwnerKey();
         int ownedUnitCount = CountUnitsForOwner(ownerKey);
         bool shouldBuyCharacter = ownedUnitCount < 3 || !HasCharacterCardInHand(currentPlayer);
+        int selectedCost = ChooseComputerBuyCost(shouldBuyCharacter);
+
+        if (selectedCost <= 0)
+        {
+            Debug.Log(currentPlayer.playerName + " skipped buy: no affordable cost tier has cards.");
+            return false;
+        }
 
         CardRuntimeState boughtCard = shouldBuyCharacter
-            ? CreateRandomCharacterCardRuntimeState()
-            : CreateRandomCardRuntimeState();
+            ? CreateRandomCharacterCardRuntimeStateForCost(selectedCost)
+            : CreateRandomCardRuntimeStateForCost(selectedCost);
 
         if (boughtCard == null && shouldBuyCharacter)
         {
-            boughtCard = CreateRandomCardRuntimeState();
+            boughtCard = CreateRandomCardRuntimeStateForCost(selectedCost);
         }
 
         if (boughtCard == null)
@@ -559,12 +901,12 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return false;
         }
 
-        currentPlayer.money -= gameConfig.buyCost;
+        currentPlayer.money -= selectedCost;
         AddCardToHand(currentPlayer, boughtCard);
         hasBoughtThisTurn = true;
 
         string cardName = boughtCard.SourceCard != null ? boughtCard.SourceCard.DisplayName : "Unknown Card";
-        Debug.Log(currentPlayer.playerName + " bought " + cardName + ".");
+        Debug.Log(currentPlayer.playerName + " bought " + cardName + " for " + selectedCost + ".");
         Debug.Log(currentPlayer.playerName + " money is now: " + currentPlayer.money);
         Debug.Log(currentPlayer.playerName + " hand count is now: " + currentPlayer.handCount);
 
@@ -745,6 +1087,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             + " | HasBought=" + hasBoughtThisTurn
             + " | DiscardCardsUsedThisTurn=" + discardCardsUsedThisTurn
             + " | isBuyDecisionPending=" + isBuyDecisionPending
+            + " | pendingBuyCost=" + pendingBuyCost
             + " | mustDiscardAfterBuy=" + mustDiscardAfterBuy
             + " | Winner=" + winnerText
             + " | P1(Money=" + player1.money + ", Hand=" + player1.handCount + ", Discard=" + player1.discardCount + ", Fort=" + player1.fortHp + ")"
@@ -997,5 +1340,5 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     }
 
     public void TestBuyCard()
-    { BuyCard(); }
+    { ToggleBuyCostOptions(); }
 }

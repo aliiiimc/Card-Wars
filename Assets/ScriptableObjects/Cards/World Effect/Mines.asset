@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f13af551c1c4fef99b495bf935d5f8b, type: 3}
   m_Name: Mines
   m_EditorClassIdentifier: Assembly-CSharp::MinesCardData
-  cardName: 
-  cost: 0
+  cardName: Mines
+  cost: 3
   handDeckSprite: {fileID: 1355481623098922949, guid: de76974235c7f034cba9d5e2ae961290, type: 3}
   description: 
   validatorId: target.rules.reusable
@@ -39,5 +39,5 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
-  minesToPlace: 5
-  mineDamage: 3
+  minesToPlace: 4
+  mineDamage: 12

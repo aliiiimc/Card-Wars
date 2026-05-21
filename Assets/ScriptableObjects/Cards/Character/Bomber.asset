@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d2a9c146a0e4a49959658bb4585e2b1, type: 3}
   m_Name: Bomber
   m_EditorClassIdentifier: Assembly-CSharp::BomberCardData
-  cardName: 
-  cost: 0
+  cardName: Bomber
+  cost: 4
   handDeckSprite: {fileID: -4187696135964769988, guid: c2c55fc504468c74a919011b23589f02, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
   manifestedSprite: {fileID: -72050608465181975, guid: 989cc12ac30bd474b979643a76686f52, type: 3}
-  maxHp: 49
-  attackDamage: 10
-  attackRange: 1
+  maxHp: 38
+  attackDamage: 14
+  attackRange: 2
   attackType: 1
   attackTarget: 0
   movementType: 0
   startsReadyToAttack: 1
   unitMovementCapacity:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 3
   canColonizeEnemyWorldEffects: 0
-  damageAfterDroppingBomb: 2
+  damageAfterDroppingBomb: 4

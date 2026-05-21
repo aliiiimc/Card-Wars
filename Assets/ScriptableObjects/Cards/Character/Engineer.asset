@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f0cbec6ca3846b38d8d4c53888bb43c, type: 3}
   m_Name: Engineer
   m_EditorClassIdentifier: Assembly-CSharp::EngineerCardData
-  cardName: 
-  cost: 0
+  cardName: Engineer
+  cost: 4
   handDeckSprite: {fileID: 2115940347179211307, guid: 6e629e3327608904091ecd628d823c76, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
   manifestedSprite: {fileID: -1361017798201000990, guid: 2a8bba0a83b6cdd44bf8c6852ef27150, type: 3}
-  maxHp: 0
+  maxHp: 44
   attackDamage: 0
   attackRange: 1
   attackType: 2
   attackTarget: 0
   movementType: 0
-  startsReadyToAttack: 0
+  startsReadyToAttack: 1
   unitMovementCapacity:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 2
   canColonizeEnemyWorldEffects: 0
-  structureRepairBoostAmount: 6
+  structureRepairBoostAmount: 10
