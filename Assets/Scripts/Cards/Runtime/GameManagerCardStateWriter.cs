@@ -118,7 +118,7 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         // Ali: the writer is the runtime layer that applies the real board result of a card play, so Character and World Effect manifestation should both happen here.
         if (targetTile != null)
         {
-            if (card.SourceCard is CharacterCardData)
+            if (card.SourceCard is CharacterCardData characterCardData)
             {
                 placementSucceeded = boardSource != null
                     && boardSource.SpawnUnitFromCard(targetTile, owner, card) != null;
@@ -127,11 +127,23 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
                     LogTransaction(
                         $"ManifestCard character placement failed: owner='{owner}', tileType='{targetTile.tileType}', tileOwner='{targetTile.owner}'.");
                 }
-                else if (boardSource != null
-                    && !boardSource.IsInPlayerDeploymentZone(tile, owner)
-                    && BoardPlacementRules.CanPlaceCharacter(tile, owner, boardSource))
+                else
                 {
-                    LogTransaction($"[SpecialTrigger][Camp] Character spawned using Camp override at {tile}.");
+                    Unit unit = FindUnitForCard(card);
+                    if (unit != null)
+                    {
+                        UnitManager unitManager = FindFirstObjectByType<UnitManager>();
+                        if (unitManager != null)
+                        {
+                            unitManager.NotifyUnitSpawned(unit, characterCardData);
+                        }
+                    }
+                    if (boardSource != null
+                    && !boardSource.IsInPlayerDeploymentZone(tile, owner)
+                    && BoardPlacementRules.CanPlaceCharacter(tile, owner, boardSource, characterCardData))
+                    {
+                        LogTransaction($"[SpecialTrigger][Camp] Character spawned using Camp override at {tile}.");
+                    }
                 }
             }
             else if (card.SourceCard is WorldEffectCardData worldEffectCard)
@@ -142,9 +154,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
                 }
                 else
                 {
-                    placementSucceeded = targetTile.IsEmpty()
+                    placementSucceeded = !targetTile.HasWorldEffect() && targetTile.tileType == "empty"
                         ? worldEffectManager.TryPlaceFromCard(targetTile, owner, card, out _)
-                        : targetTile.tileType == "worldEffect"
+                        : targetTile.HasWorldEffect() && !targetTile.HasUnitOccupant()
                             && worldEffectManager.TryReplace(targetTile, owner, card, out _);
 
                     if (!placementSucceeded)
@@ -449,101 +461,47 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         {
             Mines mines = new Mines();
             MinesCardData minesCardData = worldEffectCard as MinesCardData;
-            int placedMineCount = PlaceMinesRandomly(minesCardData, runtimeCard, owner, targetTile, mines);
+            int placedMineCount = mines.ApplyMinefield(boardSource, worldEffectManager, minesCardData, runtimeCard, owner, targetTile);
             LogTransaction($"{mines.GetEnemyWarningMessage()} Placed {placedMineCount} mine(s).");
+
+            if (gameManager != null)
+            {
+                gameManager.UpdateMineVisibilityForBoardViewer();
+                if (owner == PlayerKeyResolver.PlayerTwoKey)
+                {
+                    gameManager.NotifyEnemyMinefieldPlaced(placedMineCount);
+                }
+            }
             return;
         }
 
         if (cardName == "camp")
         {
             Camp camp = new Camp();
-            if (camp.ForcesNewSpawnLocation(worldEffectCard as CampCardData))
+            if (camp.TryActivateOnTile(worldEffectManager, targetTile, worldEffectCard as CampCardData))
             {
-                if (worldEffectManager != null && worldEffectManager.TrySetCampData(targetTile))
-                {
-                    LogTransaction("Camp world effect activated on tile.");
-                }
-                else
-                {
-                    LogTransaction("Camp world effect activation failed.");
-                }
+                LogTransaction("Camp world effect activated on tile.");
             }
-        }
-    }
-
-    private int PlaceMinesRandomly(MinesCardData worldEffectCard, CardRuntimeState runtimeCard, string owner, HexTile targetTile, Mines mines)
-    {
-        if (worldEffectManager == null || boardSource == null || worldEffectCard == null || runtimeCard == null || mines == null)
-        {
-            return 0;
-        }
-
-        // Remove the initial anchor manifestation: mines are distributed randomly in owner's half.
-        if (targetTile != null && targetTile.tileType == "worldEffect")
-        {
-            worldEffectManager.Remove(targetTile);
-        }
-
-        List<HexTile> candidates = GetRandomMineCandidates(owner);
-        int requestedCount = Mathf.Max(1, mines.GetMinesToPlace(worldEffectCard));
-        int mineDamage = Mathf.Max(1, mines.GetMineDamage(worldEffectCard));
-        int placedCount = 0;
-
-        for (int i = 0; i < candidates.Count && placedCount < requestedCount; i++)
-        {
-            HexTile candidate = candidates[i];
-            if (candidate == null)
+            else
             {
-                continue;
+                LogTransaction("Camp world effect activation failed.");
             }
 
-            if (!worldEffectManager.TryPlaceFromCard(candidate, owner, runtimeCard, out _))
-            {
-                continue;
-            }
-
-            worldEffectManager.TrySetMineData(candidate, mineDamage);
-            placedCount++;
+            return;
         }
 
-        return placedCount;
-    }
-
-    private List<HexTile> GetRandomMineCandidates(string owner)
-    {
-        List<HexTile> candidates = new List<HexTile>();
-        HexTile[] allTiles = FindObjectsByType<HexTile>(FindObjectsSortMode.None);
-        if (allTiles == null || allTiles.Length == 0 || boardSource == null)
+        if (cardName == "wall")
         {
-            return candidates;
-        }
-
-        for (int i = 0; i < allTiles.Length; i++)
-        {
-            HexTile tile = allTiles[i];
-            if (tile == null || !tile.IsEmpty())
+            Wall wall = new Wall();
+            if (!wall.ApplyWallLine(boardSource, targetTile, owner, runtimeCard))
             {
-                continue;
+                LogTransaction("Wall line creation failed.");
             }
-
-            if (!boardSource.IsInPlayerHalf(tile.coord, owner))
+            else
             {
-                continue;
+                LogTransaction("Wall line created.");
             }
-
-            candidates.Add(tile);
         }
-
-        // Fisher-Yates shuffle
-        for (int i = candidates.Count - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            HexTile temp = candidates[i];
-            candidates[i] = candidates[j];
-            candidates[j] = temp;
-        }
-
-        return candidates;
     }
 
     private WorldEffectManager CreateWorldEffectManagerFallback()

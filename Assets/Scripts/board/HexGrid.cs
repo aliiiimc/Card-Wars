@@ -71,7 +71,7 @@ public class HexGrid : MonoBehaviour
 
     public Unit SpawnUnit(GameObject prefab, HexTile tile, string owner)
     {
-        if (prefab == null || tile == null || !tile.IsEmpty())
+        if (prefab == null || tile == null || !tile.CanUnitOccupy())
         {
             return null;
         }
@@ -161,7 +161,7 @@ public class HexGrid : MonoBehaviour
 
     public Unit SpawnUnitFromCard(HexTile tile, string owner, CardRuntimeState card) //Spawn
     {
-        if (tile == null || card == null || !tile.IsEmpty()) //Basic verification
+        if (tile == null || card == null || !tile.CanUnitOccupy()) //Basic verification
         {
             return null;
         }

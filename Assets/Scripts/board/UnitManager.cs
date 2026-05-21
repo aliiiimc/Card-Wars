@@ -28,6 +28,7 @@ public class UnitManager : MonoBehaviour
         new Priest(),
         new UfoCow()
     };
+    private readonly Hospital hospital = new Hospital();
 
     private GameManager gameManager; //Ali
     private string lastActiveOwner = "";
@@ -152,6 +153,17 @@ public class UnitManager : MonoBehaviour
         return legalTiles;
     }
 
+    public void NotifyUnitSpawned(Unit unit, CharacterCardData unitCardData)
+    {
+        if (unit == null || unitCardData == null)
+        {
+            return;
+        }
+
+        ISpecialCardScript specialScript = ResolveSpecialScript(unit, out _);
+        specialScript?.OnAfterSpawn(unit, unitCardData);
+    }
+
     public List<HexTile> GetLegalAttackTargets(Unit unit)
     {
         List<HexTile> legalTargets = new List<HexTile>();
@@ -256,8 +268,8 @@ public class UnitManager : MonoBehaviour
 
         Vector3 startPosition = movingUnit.transform.position;
         Vector3 targetPosition = targetTile.transform.position;
-        bool steppedOnEnemyMine = IsEnemyMineTileForUnit(targetTile, movingUnit);
-        int mineDamage = steppedOnEnemyMine ? Mathf.Max(1, targetTile.mineDamage) : 0;
+        Mines mines = new Mines();
+        bool steppedOnEnemyMine = mines.TryTriggerMine(movingUnit, targetTile, worldEffectManager, out int mineDamage);
 
         if (steppedOnEnemyMine)
         {
@@ -265,19 +277,10 @@ public class UnitManager : MonoBehaviour
             {
                 worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
             }
-
-            if (worldEffectManager != null)
-            {
-                worldEffectManager.Remove(targetTile);
-            }
-            else
-            {
-                targetTile.RemoveUnit();
-            }
         }
 
         specialScript?.OnBeforeMove(movingUnit, unitCardData);
-        movingUnit.currentTile.RemoveUnit();
+        movingUnit.currentTile.ClearUnitOccupant();
         movingUnit.PlaceOnTile(targetTile, snapToTile: false);
         bool consumeMoveAction = specialScript == null || specialScript.ConsumeMoveAction(movingUnit, unitCardData);
         if (consumeMoveAction)
@@ -436,6 +439,9 @@ public class UnitManager : MonoBehaviour
             if (unit != null && unit.owner == activeOwner)
             {
                 unit.ResetTurnActions();
+                CharacterCardData unitCardData;
+                ISpecialCardScript specialScript = ResolveSpecialScript(unit, out unitCardData);
+                specialScript?.OnOwnerTurnStart(unit, unitCardData);
             }
         }
 
@@ -481,7 +487,7 @@ public class UnitManager : MonoBehaviour
             && specialScript.CanTarget(unit, attackerCardData, tile, activeOwner);
         GetUnitAttackProfile(attackerCardData, out AttackType attackType, out global::AttackTarget attackTarget);
 
-        if (tile.owner == "none")
+        if (tile.owner == "none" && tile.worldEffectOwner == "none")
         {
             return false;
         }
@@ -497,11 +503,15 @@ public class UnitManager : MonoBehaviour
             return false;
         }
 
+        string targetOwner = tile.HasWorldEffect() && tile.tileType != "unit" && tile.tileType != "fort"
+            ? tile.worldEffectOwner
+            : tile.owner;
+
         // Ali: special units can target enemy world effects for colonization, while normal units keep classic unit/fort targeting.
         bool canTargetEnemyWorldEffect = unit.canColonizeEnemyWorldEffects
-            && tile.tileType == "worldEffect";
+            && tile.HasWorldEffect();
 
-        if (tile.owner == activeOwner)
+        if (targetOwner == activeOwner)
         {
             return false;
         }
@@ -523,7 +533,7 @@ public class UnitManager : MonoBehaviour
             return CanProfileTarget(attackTarget, false);
         }
 
-        if (tile.tileType == "worldEffect")
+        if (tile.tileType == "worldEffect" || tile.HasWorldEffect())
         {
             return CanProfileTarget(attackTarget, false) || canTargetEnemyWorldEffect;
         }
@@ -543,17 +553,13 @@ public class UnitManager : MonoBehaviour
             return false;
         }
 
-        return tile.IsEmpty() || IsEnemyMineTileForUnit(tile, unit);
+        return tile.CanUnitOccupy() || IsEnemyMineTileForUnit(tile, unit);
     }
 
     bool IsEnemyMineTileForUnit(HexTile tile, Unit unit)
     {
-        return tile != null
-            && unit != null
-            && tile.tileType == "worldEffect"
-            && tile.isMineTile
-            && tile.owner != "none"
-            && tile.owner != unit.owner;
+        Mines mines = new Mines();
+        return mines.IsEnemyMineTileForUnit(tile, unit);
     }
 
     void AppendReachableEnemyMineTiles(HexTile startTile, Unit unit, List<HexTile> destinationTiles)
@@ -727,6 +733,7 @@ public class UnitManager : MonoBehaviour
             }
 
             specialScript?.OnAfterMove(unit, unitCardData, destinationTile);
+            hospital.ApplyAdjacentHospitalHealing(unit);
             isAnimatingUnit = false;
             yield break;
         }
@@ -766,6 +773,7 @@ public class UnitManager : MonoBehaviour
         }
 
         specialScript?.OnAfterMove(unit, unitCardData, destinationTile);
+        hospital.ApplyAdjacentHospitalHealing(unit);
         isAnimatingUnit = false;
     }
 }

@@ -69,8 +69,8 @@ public class Engineer : SpecialCardScriptBase
 
         if (tile == null
             || string.IsNullOrWhiteSpace(activeOwner)
-            || tile.tileType != "worldEffect"
-            || tile.owner != activeOwner)
+            || !tile.HasWorldEffect()
+            || tile.worldEffectOwner != activeOwner)
         {
             return false;
         }

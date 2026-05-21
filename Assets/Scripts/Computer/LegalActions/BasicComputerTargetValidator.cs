@@ -48,11 +48,11 @@ namespace FortGame.Computer
                     }
 
                     // Ali: Character cards must be placed in the owner's deployment zone.
-                    if (sourceCard.SourceCard is CharacterCardData)
+                    if (sourceCard.SourceCard is CharacterCardData characterCard)
                     {
                         HexGrid grid = Object.FindFirstObjectByType<HexGrid>();
 
-                        if (!BoardPlacementRules.CanPlaceCharacter(target.tile, context.ActingPlayerKey, grid))
+                        if (!BoardPlacementRules.CanPlaceCharacter(target.tile, context.ActingPlayerKey, grid, characterCard))
                         {
                             return CardValidationResult.Invalid(
                                 "OUTSIDE_DEPLOYMENT_ZONE",

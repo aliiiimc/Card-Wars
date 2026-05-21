@@ -206,8 +206,7 @@ public class Unit : MonoBehaviour
         {
             turnStartTile = tile;
         }
-        tile.tileType = "unit";
-        tile.owner = owner;
+        tile.PlaceUnit(owner);
 
         if (snapToTile)
         {
@@ -227,7 +226,7 @@ public class Unit : MonoBehaviour
 
         if (currentTile != null)
         {
-            currentTile.RemoveUnit();
+            currentTile.ClearUnitOccupant();
             currentTile = null;
         }
         Destroy(gameObject);

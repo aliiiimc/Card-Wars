@@ -136,7 +136,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         ClearSelectedCardToDiscard();
         currentPlayer.money += gameConfig.moneyPerTurn;
         ApplyWheatFieldIncomeForCurrentPlayer();
-        UpdateMineVisibilityForCurrentPlayer();
+        UpdateMineVisibilityForBoardViewer();
+        ApplyAutomaticWorldEffectAttacksForCurrentPlayer();
 
 
         Debug.Log(currentPlayer.playerName + " receives income.");
@@ -1147,9 +1148,9 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             HexTile tile = allTiles[i];
             if (tile == null
-                || tile.tileType != "worldEffect"
+                || !tile.HasWorldEffect()
                 || !tile.isFieldTile
-                || tile.owner != ownerKey)
+                || tile.worldEffectOwner != ownerKey)
             {
                 continue;
             }
@@ -1185,10 +1186,10 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         Debug.Log($"{currentPlayer.playerName} gains +{bonusMoney} from Wheat field.");
     }
 
-    private void UpdateMineVisibilityForCurrentPlayer()
+    public void UpdateMineVisibilityForBoardViewer()
     {
-        string ownerKey = ResolveCurrentOwnerKey();
-        if (string.IsNullOrWhiteSpace(ownerKey))
+        string visibleOwnerKey = ResolveVisibleMineOwnerKey();
+        if (string.IsNullOrWhiteSpace(visibleOwnerKey))
         {
             return;
         }
@@ -1202,13 +1203,53 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         for (int i = 0; i < allTiles.Length; i++)
         {
             HexTile tile = allTiles[i];
-            if (tile == null || tile.tileType != "worldEffect" || !tile.isMineTile)
+            if (tile == null || !tile.HasWorldEffect() || !tile.isMineTile)
             {
                 continue;
             }
 
-            bool isOwnerTurn = tile.owner == ownerKey;
-            tile.SetMineVisibility(isOwnerTurn);
+            bool isVisibleToViewer = tile.worldEffectOwner == visibleOwnerKey;
+            tile.SetMineVisibility(isVisibleToViewer);
+        }
+    }
+
+    public void NotifyEnemyMinefieldPlaced(int placedMineCount)
+    {
+        if (placedMineCount <= 0 || computerPlayer == null)
+        {
+            return;
+        }
+
+        Debug.LogWarning("[SpecialTrigger][Mines] Warning: enemy mines may have been placed in their territory.");
+    }
+
+    private void ApplyAutomaticWorldEffectAttacksForCurrentPlayer()
+    {
+        string ownerKey = ResolveCurrentOwnerKey();
+        if (string.IsNullOrWhiteSpace(ownerKey))
+        {
+            return;
+        }
+
+        HexGrid grid = FindFirstObjectByType<HexGrid>();
+        WorldEffectManager worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
+        if (grid == null || worldEffectManager == null)
+        {
+            return;
+        }
+
+        WatchTower watchTower = new WatchTower();
+        int hits = watchTower.ApplyAutomaticAttacks(ownerKey, grid, worldEffectManager);
+        if (hits > 0)
+        {
+            Debug.Log($"[SpecialTrigger][WatchTower] Applied {hits} automatic watch-tower hit(s) against '{ownerKey}'.");
+        }
+
+        AntiAirTower antiAirTower = new AntiAirTower();
+        int antiAirHits = antiAirTower.ApplyAutomaticAttacks(ownerKey, grid, worldEffectManager);
+        if (antiAirHits > 0)
+        {
+            Debug.Log($"[SpecialTrigger][AntiAirTower] Applied {antiAirHits} automatic anti-air hit(s) against '{ownerKey}'.");
         }
     }
 
@@ -1230,6 +1271,16 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         return string.Empty;
+    }
+
+    private string ResolveVisibleMineOwnerKey()
+    {
+        if (computerPlayer != null)
+        {
+            return PlayerKeyResolver.PlayerOneKey;
+        }
+
+        return ResolveCurrentOwnerKey();
     }
 
     private void ApplyFortDamage(PlayerState targetPlayer, int damage)

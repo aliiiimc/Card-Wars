@@ -10,7 +10,13 @@ public class WorldEffect : MonoBehaviour
     public OptionalInt revenuePerTurn;
     public string effectName = "";
 
-    public void PlaceOnTile(HexTile tile, string effectOwner, Sprite manifestedSprite = null)
+    public void PlaceOnTile(
+        HexTile tile,
+        string effectOwner,
+        Sprite manifestedSprite = null,
+        bool allowsUnitPassThrough = false,
+        bool allowsUnitOccupancy = false,
+        float opacity = 1f)
     {
         if (tile == null)
         {
@@ -19,7 +25,7 @@ public class WorldEffect : MonoBehaviour
 
         owner = string.IsNullOrWhiteSpace(effectOwner) ? "none" : effectOwner;
         currentTile = tile;
-        tile.PlaceWorldEffect(owner, manifestedSprite);
+        tile.PlaceWorldEffect(owner, manifestedSprite, allowsUnitPassThrough, allowsUnitOccupancy, opacity);
         transform.position = tile.transform.position;
     }
 
@@ -44,9 +50,9 @@ public class WorldEffect : MonoBehaviour
 
     public void RemoveFromBoard()
     {
-        if (currentTile != null && currentTile.tileType == "worldEffect")
+        if (currentTile != null && currentTile.HasWorldEffect())
         {
-            currentTile.RemoveUnit();
+            currentTile.RemoveWorldEffect();
         }
 
         currentTile = null;

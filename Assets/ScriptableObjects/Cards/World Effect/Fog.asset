@@ -26,6 +26,14 @@ MonoBehaviour:
   structureDamage:
     hasValue: 0
     value: 0
+  worldEffectAttackRange:
+    hasValue: 0
+    value: 0
+  allowsUnitPassThrough: 1
+  allowsUnitOccupancy: 1
+  worldEffectOpacity: 0.6
+  attackType: 1
+  attackTarget: 0
   revenuePerTurn:
     hasValue: 0
     value: 0

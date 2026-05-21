@@ -32,6 +32,14 @@ public abstract class SpecialCardScriptBase : ISpecialCardScript
     {
     }
 
+    public virtual void OnAfterSpawn(Unit unit, CharacterCardData unitCardData)
+    {
+    }
+
+    public virtual void OnOwnerTurnStart(Unit unit, CharacterCardData unitCardData)
+    {
+    }
+
     protected static bool CardNameMatches(CharacterCardData cardData, string expected)
     {
         if (cardData == null || string.IsNullOrWhiteSpace(expected))

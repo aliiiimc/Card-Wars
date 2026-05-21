@@ -109,7 +109,7 @@ public static class HexUtils
 
                 visited.Add(neighbor);
 
-                bool canLandOnNeighbor = neighbor.IsEmpty();
+                bool canLandOnNeighbor = neighbor.CanUnitOccupy();
                 if (canLandOnNeighbor)
                 {
                     reachableTiles.Add(neighbor);
@@ -189,7 +189,7 @@ public static class HexUtils
 
         if (tile == target)
         {
-            return true;
+            return tile.CanUnitOccupy() || movementType == MovementType.Flying;
         }
 
         if (movementType == MovementType.Flying)
@@ -197,6 +197,6 @@ public static class HexUtils
             return true;
         }
 
-        return tile.IsEmpty();
+        return tile.CanUnitPassThrough();
     }
 }

@@ -14,6 +14,13 @@ public class WorldEffectCardData : CardData
 
     public OptionalInt worldEffectAttackRange;
 
+    public bool allowsUnitPassThrough;
+
+    public bool allowsUnitOccupancy;
+
+    [Range(0f, 1f)]
+    public float worldEffectOpacity = 1f;
+
     public AttackType attackType = AttackType.Projectile;
 
     public AttackTarget attackTarget = AttackTarget.Ground;

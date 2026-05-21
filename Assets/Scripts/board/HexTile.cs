@@ -5,6 +5,10 @@ public class HexTile : MonoBehaviour
     public AxialCoord coord;
     public string tileType = "empty"; // empty, fort, unit
     public string owner = "none";     // none, player, enemy
+    public bool hasWorldEffect;
+    public string worldEffectOwner = "none";
+    public bool worldEffectAllowsUnitPassThrough;
+    public bool worldEffectAllowsUnitOccupancy;
     public bool isFieldTile;
     public string fieldClusterId = "";
     public int fieldHp;
@@ -44,7 +48,42 @@ public class HexTile : MonoBehaviour
 
     public bool IsEmpty()
     {
-        return tileType == "empty";
+        return tileType == "empty" && (!hasWorldEffect || worldEffectAllowsUnitOccupancy);
+    }
+
+    public bool HasUnitOccupant()
+    {
+        return tileType == "unit";
+    }
+
+    public bool HasWorldEffect()
+    {
+        return hasWorldEffect;
+    }
+
+    public bool CanPlaceWorldEffect()
+    {
+        return tileType == "empty" && !hasWorldEffect;
+    }
+
+    public bool CanUnitPassThrough()
+    {
+        if (tileType == "fort" || tileType == "unit")
+        {
+            return false;
+        }
+
+        return !hasWorldEffect || worldEffectAllowsUnitPassThrough;
+    }
+
+    public bool CanUnitOccupy()
+    {
+        if (tileType == "fort" || tileType == "unit")
+        {
+            return false;
+        }
+
+        return !hasWorldEffect || worldEffectAllowsUnitOccupancy;
     }
 
     public void SetAsFort(Color fortColor, string fortOwner)
@@ -60,21 +99,39 @@ public class HexTile : MonoBehaviour
     {
         tileType = "unit";
         owner = unitOwner;
-        ClearFieldData();
-        ClearWorldEffectVisual();
         originalColor = unitOwner == "player" ? PlayerUnitTileColor : EnemyUnitTileColor;
         spriteRenderer.color = originalColor;
     }
 
-    public void PlaceWorldEffect(string effectOwner, Sprite effectSprite = null)
+    public void PlaceWorldEffect(
+        string effectOwner,
+        Sprite effectSprite = null,
+        bool allowsUnitPassThrough = false,
+        bool allowsUnitOccupancy = false,
+        float opacity = 1f)
     {
-        // Rabie: world effect cards reserve the tile without pretending to be units.
-        tileType = "worldEffect";
-        owner = effectOwner;
+        hasWorldEffect = true;
+        worldEffectOwner = string.IsNullOrWhiteSpace(effectOwner) ? "none" : effectOwner;
+        worldEffectAllowsUnitPassThrough = allowsUnitPassThrough;
+        worldEffectAllowsUnitOccupancy = allowsUnitOccupancy;
+
+        if (!HasUnitOccupant())
+        {
+            if (worldEffectAllowsUnitOccupancy)
+            {
+                tileType = "empty";
+                owner = "none";
+            }
+            else
+            {
+                tileType = "worldEffect";
+                owner = worldEffectOwner;
+            }
+        }
 
         if (effectSprite != null)
         {
-            SetWorldEffectVisual(effectSprite);
+            SetWorldEffectVisual(effectSprite, opacity);
             originalColor = baseColor;
             spriteRenderer.color = baseColor;
             return;
@@ -92,19 +149,83 @@ public class HexTile : MonoBehaviour
         }
     }
 
-    public void RemoveUnit()
+    public void SetWorldEffectOwner(string effectOwner)
     {
+        if (!hasWorldEffect)
+        {
+            return;
+        }
+
+        worldEffectOwner = string.IsNullOrWhiteSpace(effectOwner) ? "none" : effectOwner;
+        if (tileType == "worldEffect")
+        {
+            owner = worldEffectOwner;
+        }
+    }
+
+    public void ClearUnitOccupant()
+    {
+        if (tileType != "unit")
+        {
+            return;
+        }
+
+        if (hasWorldEffect)
+        {
+            if (worldEffectAllowsUnitOccupancy)
+            {
+                tileType = "empty";
+                owner = "none";
+            }
+            else
+            {
+                tileType = "worldEffect";
+                owner = worldEffectOwner;
+            }
+
+            originalColor = baseColor;
+            spriteRenderer.color = baseColor;
+            return;
+        }
+
         tileType = "empty";
         owner = "none";
+        originalColor = baseColor;
+        spriteRenderer.color = baseColor;
+    }
+
+    public void RemoveWorldEffect()
+    {
+        hasWorldEffect = false;
+        worldEffectOwner = "none";
+        worldEffectAllowsUnitPassThrough = false;
+        worldEffectAllowsUnitOccupancy = false;
         ClearFieldData();
         ClearWorldEffectVisual();
+
+        if (tileType == "worldEffect")
+        {
+            tileType = "empty";
+            owner = "none";
+            originalColor = baseColor;
+            spriteRenderer.color = baseColor;
+            return;
+        }
+
+        if (tileType == "unit")
+        {
+            originalColor = owner == "player" ? PlayerUnitTileColor : EnemyUnitTileColor;
+            spriteRenderer.color = originalColor;
+            return;
+        }
+
         originalColor = baseColor;
         spriteRenderer.color = baseColor;
     }
 
     public void SetFieldData(string clusterId, int hpPerTile, int bonusMoneyPerTurn = 1)
     {
-        if (tileType != "worldEffect")
+        if (!hasWorldEffect)
         {
             return;
         }
@@ -120,7 +241,7 @@ public class HexTile : MonoBehaviour
 
     public void SetMineData(int damage)
     {
-        if (tileType != "worldEffect")
+        if (!hasWorldEffect)
         {
             return;
         }
@@ -149,7 +270,7 @@ public class HexTile : MonoBehaviour
 
     public void SetCampData()
     {
-        if (tileType != "worldEffect")
+        if (!hasWorldEffect)
         {
             return;
         }
@@ -176,7 +297,7 @@ public class HexTile : MonoBehaviour
 
     public bool DamageField(int amount)
     {
-        if (tileType != "worldEffect" || !isFieldTile)
+        if (!hasWorldEffect || !isFieldTile)
         {
             return false;
         }
@@ -186,7 +307,7 @@ public class HexTile : MonoBehaviour
 
         if (fieldHp <= 0)
         {
-            RemoveUnit();
+            RemoveWorldEffect();
         }
 
         return true;
@@ -197,7 +318,7 @@ public class HexTile : MonoBehaviour
         ClearWorldEffectSpecialData();
     }
 
-    private void SetWorldEffectVisual(Sprite effectSprite)
+    private void SetWorldEffectVisual(Sprite effectSprite, float opacity = 1f)
     {
         if (worldEffectRenderer == null)
         {
@@ -213,6 +334,7 @@ public class HexTile : MonoBehaviour
         }
 
         worldEffectRenderer.sprite = effectSprite;
+        worldEffectRenderer.color = new Color(1f, 1f, 1f, Mathf.Clamp01(opacity));
         FitWorldEffectVisualToTile(effectSprite);
         worldEffectRenderer.enabled = true;
     }
@@ -249,6 +371,7 @@ public class HexTile : MonoBehaviour
         }
 
         worldEffectRenderer.sprite = null;
+        worldEffectRenderer.color = Color.white;
         worldEffectRenderer.enabled = false;
     }
 

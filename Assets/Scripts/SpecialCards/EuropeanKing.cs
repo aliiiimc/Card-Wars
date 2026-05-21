@@ -10,9 +10,9 @@ public class EuropeanKing : SpecialCardScriptBase
         return tile != null
             && GetAttackType(attackerCardData) != AttackType.HealFix
             && TargetsGround(attackerCardData)
-            && tile.tileType == "worldEffect"
-            && tile.owner != "none"
-            && tile.owner != activeOwner;
+            && tile.HasWorldEffect()
+            && tile.worldEffectOwner != "none"
+            && tile.worldEffectOwner != activeOwner;
     }
 
     public override bool TryHandleAttack(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)

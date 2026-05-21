@@ -12,10 +12,10 @@ public class Bomber : SpecialCardScriptBase
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
     {
         return tile != null
-            && tile.owner != "none"
-            && tile.owner != activeOwner
+            && ResolveTargetOwner(tile) != "none"
+            && ResolveTargetOwner(tile) != activeOwner
             && CanAttackEnemyTileWithProfile(attackerCardData, tile)
-            && (tile.tileType == "unit" || tile.tileType == "fort" || tile.tileType == "worldEffect");
+            && (tile.tileType == "unit" || tile.tileType == "fort" || tile.HasWorldEffect());
     }
 
     public override bool TryHandleAttack(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
@@ -95,7 +95,7 @@ public class Bomber : SpecialCardScriptBase
     {
         dealtDamage = 0;
 
-        if (tile == null || tile.tileType != "worldEffect" || damage <= 0)
+        if (tile == null || !tile.HasWorldEffect() || damage <= 0)
         {
             return false;
         }
@@ -115,7 +115,7 @@ public class Bomber : SpecialCardScriptBase
                 return false;
             }
 
-            int fieldHpAfter = tile.tileType == "worldEffect" && tile.isFieldTile
+            int fieldHpAfter = tile.HasWorldEffect() && tile.isFieldTile
                 ? Mathf.Max(0, tile.fieldHp)
                 : 0;
             dealtDamage = Mathf.Max(0, fieldHpBefore - fieldHpAfter);
@@ -178,5 +178,20 @@ public class Bomber : SpecialCardScriptBase
         {
             attacker.ModifyAttack(delta);
         }
+    }
+
+    private static string ResolveTargetOwner(HexTile tile)
+    {
+        if (tile == null)
+        {
+            return "none";
+        }
+
+        if (tile.HasWorldEffect() && tile.tileType != "unit" && tile.tileType != "fort")
+        {
+            return tile.worldEffectOwner;
+        }
+
+        return tile.owner;
     }
 }

@@ -18,7 +18,7 @@ MonoBehaviour:
   description: 
   validatorId: target.rules.reusable
   effectId: effect.summon
-  manifestedSprite: {fileID: 8434763298640690643, guid: ec9423ee853a15d42ad7399f661a858d, type: 3}
+  manifestedSprite: {fileID: -5534807364260679264, guid: dd4a2689b92f86c41967b204b54fa90d, type: 3}
   category: 1
   structureHp:
     hasValue: 1
@@ -29,6 +29,8 @@ MonoBehaviour:
   worldEffectAttackRange:
     hasValue: 0
     value: 0
+  allowsUnitPassThrough: 1
+  allowsUnitOccupancy: 1
   attackType: 1
   attackTarget: 0
   revenuePerTurn:

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class BoardPlacementRules // verify if a board-placement card can be put on the board.
 {
-    public static bool CanPlaceCharacter(AxialCoord coord, string playerKey, HexGrid grid)
+    public static bool CanPlaceCharacter(AxialCoord coord, string playerKey, HexGrid grid, CharacterCardData characterCard = null)
     {
         if (grid == null)
         {
@@ -15,9 +15,14 @@ public static class BoardPlacementRules // verify if a board-placement card can 
             return false;
         }
 
-        if (!tile.IsEmpty())
+        if (!tile.CanUnitOccupy())
         {
             return false;
+        }
+
+        if (CanPlaceUfoCowOnEnemyField(characterCard, tile, playerKey))
+        {
+            return true;
         }
 
         if (grid.IsInPlayerDeploymentZone(coord, playerKey))
@@ -27,12 +32,13 @@ public static class BoardPlacementRules // verify if a board-placement card can 
 
         // Camp special rule: when active, it opens a new spawn location around owned camp tiles.
         Camp camp = new Camp();
-        if (!camp.ForcesNewSpawnLocation(ResolveCampCardData()))
+        CampCardData campCardData = ResolveCampCardData();
+        if (!camp.ForcesNewSpawnLocation(campCardData))
         {
             return false;
         }
 
-        return IsAdjacentToOwnedCamp(tile, playerKey, grid);
+        return camp.CanOpenSpawnLocation(tile, playerKey, grid, campCardData);
     }
 
     // Ali: keep World Effect placement in one shared helper so player and AI validation cannot drift.
@@ -49,39 +55,12 @@ public static class BoardPlacementRules // verify if a board-placement card can 
             return false;
         }
 
-        if (!tile.IsEmpty())
+        if (!tile.CanPlaceWorldEffect())
         {
             return false;
         }
 
         return grid.IsInPlayerHalf(coord, playerKey);
-    }
-
-    private static bool IsAdjacentToOwnedCamp(HexTile tile, string playerKey, HexGrid grid)
-    {
-        if (tile == null || grid == null || string.IsNullOrWhiteSpace(playerKey))
-        {
-            return false;
-        }
-
-        var neighbors = HexUtils.GetNeighbors(tile, grid);
-        for (int i = 0; i < neighbors.Count; i++)
-        {
-            HexTile neighbor = neighbors[i];
-            if (neighbor == null)
-            {
-                continue;
-            }
-
-            if (neighbor.tileType == "worldEffect"
-                && neighbor.isCampTile
-                && neighbor.owner == playerKey)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static CampCardData ResolveCampCardData()
@@ -107,5 +86,24 @@ public static class BoardPlacementRules // verify if a board-placement card can 
         }
 
         return null;
+    }
+
+    private static bool CanPlaceUfoCowOnEnemyField(CharacterCardData characterCard, HexTile tile, string playerKey)
+    {
+        if (characterCard == null || tile == null || string.IsNullOrWhiteSpace(playerKey))
+        {
+            return false;
+        }
+
+        if (!string.Equals(characterCard.DisplayName, "UFO Cow", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return tile.HasWorldEffect()
+            && tile.isFieldTile
+            && tile.worldEffectOwner != "none"
+            && tile.worldEffectOwner != playerKey
+            && tile.CanUnitOccupy();
     }
 }

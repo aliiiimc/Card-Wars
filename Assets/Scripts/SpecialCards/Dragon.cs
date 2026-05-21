@@ -10,9 +10,9 @@ public class Dragon : SpecialCardScriptBase
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
     {
         return tile != null
-            && tile.tileType == "worldEffect"
-            && tile.owner != "none"
-            && tile.owner != activeOwner
+            && tile.HasWorldEffect()
+            && tile.worldEffectOwner != "none"
+            && tile.worldEffectOwner != activeOwner
             && CanAttackEnemyTileWithProfile(attackerCardData, tile);
     }
 
@@ -37,7 +37,7 @@ public class Dragon : SpecialCardScriptBase
     {
         dealtDamage = 0;
 
-        if (tile == null || tile.tileType != "worldEffect" || damage <= 0)
+        if (tile == null || !tile.HasWorldEffect() || damage <= 0)
         {
             return false;
         }
@@ -57,7 +57,7 @@ public class Dragon : SpecialCardScriptBase
                 return false;
             }
 
-            int fieldHpAfter = tile.tileType == "worldEffect" && tile.isFieldTile
+            int fieldHpAfter = tile.HasWorldEffect() && tile.isFieldTile
                 ? Mathf.Max(0, tile.fieldHp)
                 : 0;
             dealtDamage = Mathf.Max(0, fieldHpBefore - fieldHpAfter);

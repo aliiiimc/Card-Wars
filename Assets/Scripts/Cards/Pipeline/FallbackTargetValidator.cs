@@ -30,11 +30,11 @@ public sealed class FallbackTargetValidator : ICardTargetValidator
             }
 
             //Ali : si la carte est un Character, la case doit être dans la zone de déploiement du joueur
-            if (sourceCard.SourceCard is CharacterCardData)
+            if (sourceCard.SourceCard is CharacterCardData characterCard)
             {
                 HexGrid grid = UnityEngine.Object.FindFirstObjectByType<HexGrid>();
 
-                if (!BoardPlacementRules.CanPlaceCharacter(target.tile, context.ActingPlayerKey, grid))
+                if (!BoardPlacementRules.CanPlaceCharacter(target.tile, context.ActingPlayerKey, grid, characterCard))
                 {
                     return CardValidationResult.Invalid(
                         "OUTSIDE_DEPLOYMENT_ZONE",

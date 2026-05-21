@@ -7,4 +7,6 @@ public interface ISpecialCardScript
     bool ConsumeMoveAction(Unit unit, CharacterCardData unitCardData);
     void OnBeforeMove(Unit unit, CharacterCardData unitCardData);
     void OnAfterMove(Unit unit, CharacterCardData unitCardData, HexTile destinationTile);
+    void OnAfterSpawn(Unit unit, CharacterCardData unitCardData);
+    void OnOwnerTurnStart(Unit unit, CharacterCardData unitCardData);
 }

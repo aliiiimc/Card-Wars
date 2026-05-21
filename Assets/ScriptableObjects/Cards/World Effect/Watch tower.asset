@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d10e72179da00f74cb4561cda13856f7, type: 3}
   m_Name: Watch tower
   m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
-  cardName: 
+  cardName: Watch Tower
   cost: 0
   handDeckSprite: {fileID: -9044012078644547418, guid: 0db5b2f01fb2cd943b9f2bab729360b6, type: 3}
   description: 
@@ -24,8 +24,13 @@ MonoBehaviour:
     hasValue: 0
     value: 0
   structureDamage:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 4
+  worldEffectAttackRange:
+    hasValue: 1
+    value: 2
+  allowsUnitPassThrough: 0
+  allowsUnitOccupancy: 0
   attackType: 1
   attackTarget: 2
   revenuePerTurn:

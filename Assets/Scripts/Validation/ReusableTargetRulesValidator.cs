@@ -75,14 +75,14 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
         }
 
         //Ali: Character cards must target an empty tile inside the acting player's deployment zone.
-        if (sourceCard.SourceCard is CharacterCardData)
+        if (sourceCard.SourceCard is CharacterCardData characterCard)
         {
             if (context.Board.IsTileOccupied(target.tile))
             {
                 return CardValidationResult.Invalid("TILE_OCCUPIED", "Character must be placed on an empty tile.");
             }
 
-            if (!grid.IsInPlayerDeploymentZone(target.tile, context.ActingPlayerKey))
+            if (!BoardPlacementRules.CanPlaceCharacter(target.tile, context.ActingPlayerKey, grid, characterCard))
             {
                 return CardValidationResult.Invalid("OUTSIDE_DEPLOYMENT_ZONE", "Character must be placed in the owner's 2-column deployment zone.");
             }

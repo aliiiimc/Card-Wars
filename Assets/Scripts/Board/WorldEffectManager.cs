@@ -14,7 +14,7 @@ public class WorldEffectManager : MonoBehaviour
             return false;
         }
 
-        if (!tile.IsEmpty())
+        if (!tile.CanPlaceWorldEffect())
         {
             return false;
         }
@@ -30,12 +30,12 @@ public class WorldEffectManager : MonoBehaviour
             return false;
         }
 
-        if (tile.tileType != "worldEffect" || tile.owner == "none" || tile.owner == newOwner)
+        if (!tile.HasWorldEffect() || tile.worldEffectOwner == "none" || tile.worldEffectOwner == newOwner)
         {
             return false;
         }
 
-        tile.PlaceWorldEffect(newOwner);
+        tile.SetWorldEffectOwner(newOwner);
 
         if (worldEffectsByTile.TryGetValue(tile, out WorldEffect existing) && existing != null)
         {
@@ -55,7 +55,7 @@ public class WorldEffectManager : MonoBehaviour
             return false;
         }
 
-        if (tile.tileType != "worldEffect")
+        if (!tile.HasWorldEffect() || tile.HasUnitOccupant())
         {
             return false;
         }
@@ -80,14 +80,14 @@ public class WorldEffectManager : MonoBehaviour
             }
             else
             {
-                tile.RemoveUnit();
+                tile.RemoveWorldEffect();
             }
             return true;
         }
 
-        if (tile.tileType == "worldEffect")
+        if (tile.HasWorldEffect())
         {
-            tile.RemoveUnit();
+            tile.RemoveWorldEffect();
             return true;
         }
 
@@ -140,7 +140,7 @@ public class WorldEffectManager : MonoBehaviour
 
     public bool TryDamageField(HexTile tile, int amount)
     {
-        if (tile == null || tile.tileType != "worldEffect" || !tile.isFieldTile)
+        if (tile == null || !tile.HasWorldEffect() || !tile.isFieldTile)
         {
             return false;
         }
@@ -184,7 +184,7 @@ public class WorldEffectManager : MonoBehaviour
         attackType = AttackType.Projectile;
         attackTarget = AttackTarget.Ground;
 
-        if (sourceTile == null || sourceTile.tileType != "worldEffect")
+        if (sourceTile == null || !sourceTile.HasWorldEffect())
         {
             return false;
         }
@@ -225,7 +225,13 @@ public class WorldEffectManager : MonoBehaviour
         if (worldEffectsByTile.TryGetValue(tile, out WorldEffect existing) && existing != null)
         {
             existing.InitializeFromCard(card);
-            existing.PlaceOnTile(tile, owner, worldEffectCard.manifestedSprite);
+            existing.PlaceOnTile(
+                tile,
+                owner,
+                worldEffectCard.manifestedSprite,
+                worldEffectCard.allowsUnitPassThrough,
+                worldEffectCard.allowsUnitOccupancy,
+                worldEffectCard.worldEffectOpacity);
             return existing;
         }
 
@@ -234,7 +240,13 @@ public class WorldEffectManager : MonoBehaviour
 
         WorldEffect worldEffect = worldEffectObject.AddComponent<WorldEffect>();
         worldEffect.InitializeFromCard(card);
-        worldEffect.PlaceOnTile(tile, owner, worldEffectCard.manifestedSprite);
+        worldEffect.PlaceOnTile(
+            tile,
+            owner,
+            worldEffectCard.manifestedSprite,
+            worldEffectCard.allowsUnitPassThrough,
+            worldEffectCard.allowsUnitOccupancy,
+            worldEffectCard.worldEffectOpacity);
 
         worldEffectsByTile[tile] = worldEffect;
         return worldEffect;
@@ -243,8 +255,8 @@ public class WorldEffectManager : MonoBehaviour
     private static bool IsOwnedWorldEffectTile(HexTile tile)
     {
         return tile != null
-            && tile.tileType == "worldEffect"
-            && !string.IsNullOrWhiteSpace(tile.owner)
-            && tile.owner != "none";
+            && tile.HasWorldEffect()
+            && !string.IsNullOrWhiteSpace(tile.worldEffectOwner)
+            && tile.worldEffectOwner != "none";
     }
 }

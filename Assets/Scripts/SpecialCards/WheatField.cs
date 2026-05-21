@@ -42,7 +42,7 @@ public class WheatField
                 continue;
             }
 
-            if (current.IsEmpty() || current.tileType == "worldEffect")
+            if (current.IsEmpty() || current.HasWorldEffect())
             {
                 fieldTiles.Add(current);
             }
@@ -103,9 +103,9 @@ public class WheatField
             {
                 placed = worldEffectManager.TryPlaceFromCard(tile, owner, sourceCard, out _);
             }
-            else if (tile.tileType == "worldEffect")
+            else if (tile.HasWorldEffect() && !tile.HasUnitOccupant())
             {
-                bool ownershipReady = tile.owner == owner || worldEffectManager.TryColonize(tile, owner);
+                bool ownershipReady = tile.worldEffectOwner == owner || worldEffectManager.TryColonize(tile, owner);
                 placed = ownershipReady && worldEffectManager.TryReplace(tile, owner, sourceCard, out _);
             }
 
