@@ -371,9 +371,9 @@ public class UnitManager : MonoBehaviour
             }
         }
         // Ali: colonization rule - special units can convert enemy world effects instead of dealing damage.
-        else if (targetTile.tileType == "worldEffect"
+        else if (targetTile.HasWorldEffect()
                  && attacker.canColonizeEnemyWorldEffects
-                 && targetTile.owner != activeOwner)
+                 && targetTile.worldEffectOwner != activeOwner)
         {
             if (worldEffectManager == null)
             {
@@ -389,6 +389,23 @@ public class UnitManager : MonoBehaviour
                 Debug.LogWarning("Colonization failed: world effect manager rejected this target.");
                 return false;
             }
+        }
+        else if (targetTile.HasWorldEffect()
+                 && targetTile.worldEffectOwner != "none"
+                 && targetTile.worldEffectOwner != activeOwner)
+        {
+            if (worldEffectManager == null)
+            {
+                worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
+            }
+
+            if (worldEffectManager == null || !worldEffectManager.TryDamageWorldEffect(targetTile, attacker.attack, out int dealtDamage))
+            {
+                Debug.LogWarning("World effect attack failed.");
+                return false;
+            }
+
+            Debug.Log($"Attacked world effect for {dealtDamage} damage.");
         }
         else if (isSpecialTarget)
         {

@@ -49,7 +49,7 @@ public class Bomber : SpecialCardScriptBase
                 Debug.Log($"[SpecialTrigger][Bomber] Bomb hit fort at ({tile.coord.q},{tile.coord.r}) for {bombDamage} damage.");
             }
         }
-        else if (tile.tileType == "worldEffect")
+        else if (tile.HasWorldEffect())
         {
             int dealtDamage;
             attackApplied = TryDamageWorldEffect(tile, bombDamage, out dealtDamage);

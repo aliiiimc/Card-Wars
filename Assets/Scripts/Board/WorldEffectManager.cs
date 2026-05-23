@@ -156,6 +156,65 @@ public class WorldEffectManager : MonoBehaviour
         return true;
     }
 
+    public bool TryDamageWorldEffect(HexTile tile, int amount, out int dealtDamage)
+    {
+        // (abdo :) Shared damage path for fields and structures, used by normal combat and special attacks.
+        dealtDamage = 0;
+
+        if (tile == null || !tile.HasWorldEffect() || amount <= 0)
+        {
+            return false;
+        }
+
+        int safeAmount = Mathf.Max(1, amount);
+        if (tile.isFieldTile)
+        {
+            int fieldHpBefore = Mathf.Max(0, tile.fieldHp);
+            bool damaged = TryDamageField(tile, safeAmount);
+            if (!damaged)
+            {
+                return false;
+            }
+
+            int fieldHpAfter = tile.HasWorldEffect() && tile.isFieldTile
+                ? Mathf.Max(0, tile.fieldHp)
+                : 0;
+            dealtDamage = Mathf.Max(0, fieldHpBefore - fieldHpAfter);
+            return true;
+        }
+
+        WorldEffect worldEffect = FindWorldEffectOnTile(tile);
+        if (worldEffect == null)
+        {
+            dealtDamage = safeAmount;
+            return Remove(tile);
+        }
+
+        int hpBefore = worldEffect.sourceCard != null && worldEffect.sourceCard.CurrentHp.HasValue
+            ? Mathf.Max(0, worldEffect.sourceCard.CurrentHp.Value)
+            : Mathf.Max(0, worldEffect.health);
+
+        if (worldEffect.sourceCard != null)
+        {
+            worldEffect.sourceCard.ApplyDamage(safeAmount);
+            worldEffect.health = worldEffect.sourceCard.CurrentHp.HasValue
+                ? worldEffect.sourceCard.CurrentHp.Value
+                : Mathf.Max(0, worldEffect.health - safeAmount);
+        }
+        else
+        {
+            worldEffect.health = Mathf.Max(0, worldEffect.health - safeAmount);
+        }
+
+        dealtDamage = Mathf.Max(0, hpBefore - Mathf.Max(0, worldEffect.health));
+        if (worldEffect.health <= 0)
+        {
+            return Remove(tile);
+        }
+
+        return true;
+    }
+
     // Backward-compatible wrapper while call sites migrate.
     public WorldEffect SpawnWorldEffectFromCard(HexTile tile, string owner, CardRuntimeState card)
     {

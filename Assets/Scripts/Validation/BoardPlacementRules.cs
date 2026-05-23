@@ -15,14 +15,15 @@ public static class BoardPlacementRules // verify if a board-placement card can 
             return false;
         }
 
-        if (!tile.CanUnitOccupy())
-        {
-            return false;
-        }
-
         if (CanPlaceUfoCowOnEnemyField(characterCard, tile, playerKey))
         {
             return true;
+        }
+
+        // (abdo :) Movement may allow standing on some world effects, but normal card spawns still need a plain empty tile.
+        if (tile.HasUnitOccupant() || tile.tileType == "fort" || tile.HasWorldEffect() || !tile.CanUnitOccupy())
+        {
+            return false;
         }
 
         if (grid.IsInPlayerDeploymentZone(coord, playerKey))
