@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace FortGame.Computer
 {
+    // Rabie : "Changed AI decision execution so it retries legal actions and prioritizes a moved unit's same-turn follow-up attack."
     /// <summary>
     /// The logic center for the ComputerPlayer. It evaluates the current game state
     /// and decides the best available action.
@@ -13,6 +14,8 @@ namespace FortGame.Computer
         private readonly ComputerGameSnapshotProvider _snapshotProvider;
         private readonly LegalActionGenerator _legalActionGenerator;
         private readonly ComputerActionExecutor _actionExecutor;
+        private Unit _preferredFollowUpAttacker;
+        private int _preferredFollowUpRound = -1;
 
         public ComputerBrain()
         {
@@ -61,20 +64,54 @@ namespace FortGame.Computer
                 return false;
             }
 
-            // 2. Score the actions using the Utility AI system
-            ComputerAction bestAction = _scoringSystem.GetBestAction(possibleActions, snapshot.ActingPlayer, snapshot.CurrentTurn);
-            if (bestAction == null)
+            // 2. Score the actions using the Utility AI system.
+            List<ComputerAction> sortedActions = _scoringSystem.GetActionsByScoreDescending(possibleActions, snapshot.ActingPlayer, snapshot.CurrentTurn);
+            if (sortedActions.Count == 0)
             {
                 return false;
             }
 
-            if (bestAction.endsTurn || bestAction.type == ActionType.EndTurn)
+            ComputerAction failedFollowUpAction = null;
+            ComputerAction followUpAttack = FindPreferredFollowUpAttack(sortedActions, snapshot);
+            if (followUpAttack != null)
             {
-                Debug.Log("[ComputerBrain] Best action is End Turn.");
-                return false;
+                Debug.Log($"[ComputerBrain] Prioritizing move-then-attack follow-up: {followUpAttack.actionName}");
+                if (ExecuteAction(followUpAttack, snapshot))
+                {
+                    return true;
+                }
+
+                failedFollowUpAction = followUpAttack;
+                ClearPreferredFollowUpAttack();
             }
 
-            return ExecuteAction(bestAction, snapshot);
+            for (int i = 0; i < sortedActions.Count; i++)
+            {
+                ComputerAction candidateAction = sortedActions[i];
+                if (candidateAction == null)
+                {
+                    continue;
+                }
+
+                if (ReferenceEquals(candidateAction, failedFollowUpAction))
+                {
+                    continue;
+                }
+
+                if (candidateAction.endsTurn || candidateAction.type == ActionType.EndTurn)
+                {
+                    Debug.Log("[ComputerBrain] Reached End Turn action after trying useful actions.");
+                    return false;
+                }
+
+                if (ExecuteAction(candidateAction, snapshot))
+                {
+                    return true;
+                }
+            }
+
+            Debug.LogWarning("[ComputerBrain] No scored action executed successfully. Ending turn safely.");
+            return false;
         }
 
 
@@ -98,8 +135,122 @@ namespace FortGame.Computer
                 Debug.LogWarning($"[ComputerBrain] Failed to execute action: {action.actionName}");
             }
 
+            if (success)
+            {
+                UpdatePreferredFollowUpAttack(action, snapshot);
+            }
+
             return success;
         }
 
+        private ComputerAction FindPreferredFollowUpAttack(List<ComputerAction> sortedActions, ComputerGameSnapshot snapshot)
+        {
+            if (_preferredFollowUpAttacker == null || snapshot == null)
+            {
+                return null;
+            }
+
+            if (_preferredFollowUpRound != snapshot.CurrentTurn
+                || _preferredFollowUpAttacker.owner != snapshot.ActingPlayerKey
+                || !_preferredFollowUpAttacker.CanAttack())
+            {
+                ClearPreferredFollowUpAttack();
+                return null;
+            }
+
+            for (int i = 0; i < sortedActions.Count; i++)
+            {
+                ComputerAction action = sortedActions[i];
+                if (action == null || !IsAttackAction(action))
+                {
+                    continue;
+                }
+
+                if (ReferenceEquals(action.actingUnit, _preferredFollowUpAttacker))
+                {
+                    return action;
+                }
+            }
+
+            ClearPreferredFollowUpAttack();
+            return null;
+        }
+
+        private void UpdatePreferredFollowUpAttack(ComputerAction action, ComputerGameSnapshot snapshot)
+        {
+            if (action == null || snapshot == null)
+            {
+                ClearPreferredFollowUpAttack();
+                return;
+            }
+
+            if (IsAttackAction(action))
+            {
+                if (ReferenceEquals(action.actingUnit, _preferredFollowUpAttacker))
+                {
+                    ClearPreferredFollowUpAttack();
+                }
+
+                return;
+            }
+
+            if (action.type != ActionType.MoveUnit || !MoveCreatedAttackOpportunity(action, snapshot))
+            {
+                return;
+            }
+
+            _preferredFollowUpAttacker = action.actingUnit;
+            _preferredFollowUpRound = snapshot.CurrentTurn;
+            Debug.Log($"[ComputerBrain] Stored move-then-attack follow-up for {action.actingUnit.name}.");
+        }
+
+        private static bool MoveCreatedAttackOpportunity(ComputerAction action, ComputerGameSnapshot snapshot)
+        {
+            if (action?.actingUnit == null || snapshot == null || action.actingUnit.owner != snapshot.ActingPlayerKey)
+            {
+                return false;
+            }
+
+            if (!action.actingUnit.CanAttack())
+            {
+                return false;
+            }
+
+            UnitManager unitManager = Object.FindFirstObjectByType<UnitManager>();
+            if (unitManager == null)
+            {
+                return false;
+            }
+
+            List<HexTile> targetTiles = unitManager.GetLegalAttackTargets(action.actingUnit);
+            for (int i = 0; i < targetTiles.Count; i++)
+            {
+                HexTile targetTile = targetTiles[i];
+                if (targetTile == null)
+                {
+                    continue;
+                }
+
+                if ((targetTile.tileType == "unit" || targetTile.tileType == "fort")
+                    && targetTile.owner == snapshot.OpponentPlayerKey)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ClearPreferredFollowUpAttack()
+        {
+            _preferredFollowUpAttacker = null;
+            _preferredFollowUpRound = -1;
+        }
+
+        private static bool IsAttackAction(ComputerAction action)
+        {
+            return action != null
+                && (action.type == ActionType.AttackUnit || action.type == ActionType.AttackFort);
+        }
     }
 }

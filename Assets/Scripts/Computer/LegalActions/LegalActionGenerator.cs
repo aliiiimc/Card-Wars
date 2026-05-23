@@ -1,4 +1,4 @@
-// Rabie: "Added AI movement and attack action generation using UnitManager legal board actions, while keeping existing card action generation."
+// Rabie: "Added tactical scoring for attack targets and move-to-attack threats so AI choices look more intentional."
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -277,7 +277,7 @@ namespace FortGame.Computer
                         movesBackward = IsBackwardMove(snapshot, unit, destinationTile),
                         hasSynergyOnBoard = movesForward,
                         // (abdo :) Movement gets scored by forward progress and distance so the AI uses its range instead of tiny steps.
-                        tacticalScore = ScoreMoveDestination(snapshot, unit, destinationTile, movementDistance)
+                        tacticalScore = ScoreMoveDestination(snapshot, unit, destinationTile, movementDistance, unitManager)
                     };
 
                     legalActions.Add(action);
@@ -362,7 +362,8 @@ namespace FortGame.Computer
                             && unit.attack >= snapshot.OpponentPlayer.fortHp,
                         isDefensiveMove = ShouldDefend(snapshot, targetColumn),
                         destroysEnemyUnit = targetUnit != null && unit.attack >= targetUnit.health,
-                        survivesTrade = targetUnit == null || unit.health > targetUnit.attack
+                        survivesTrade = targetUnit == null || unit.health > targetUnit.attack,
+                        tacticalScore = ScoreAttackTarget(snapshot, unit, targetTile, targetUnit, actionType)
                     };
 
                     legalActions.Add(action);
@@ -399,7 +400,7 @@ namespace FortGame.Computer
             return score;
         }
 
-        private static float ScoreMoveDestination(ComputerGameSnapshot snapshot, Unit unit, HexTile destinationTile, int movementDistance)
+        private static float ScoreMoveDestination(ComputerGameSnapshot snapshot, Unit unit, HexTile destinationTile, int movementDistance, UnitManager unitManager)
         {
             // (abdo :) Reward forward movement and spending movement budget, while still keeping lanes near the middle useful.
             if (snapshot?.HexGrid == null || unit?.currentTile == null || destinationTile == null)
@@ -414,6 +415,7 @@ namespace FortGame.Computer
             score += Mathf.Max(0, forwardProgress) * 45f;
             score += safeDistance * 12f;
             score += GetCenterRowScore(snapshot, destinationTile.coord.r) * 18f;
+            score += ScoreMoveToAttackThreat(snapshot, unit, destinationTile, safeDistance, unitManager);
 
             if (forwardProgress <= 0)
             {
@@ -421,6 +423,255 @@ namespace FortGame.Computer
             }
 
             return score;
+        }
+
+        private static float ScoreAttackTarget(ComputerGameSnapshot snapshot, Unit attacker, HexTile targetTile, Unit targetUnit, ActionType actionType)
+        {
+            if (snapshot?.HexGrid == null || attacker == null || targetTile == null)
+            {
+                return 0f;
+            }
+
+            if (actionType == ActionType.AttackFort)
+            {
+                return ScoreFortAttack(snapshot, attacker);
+            }
+
+            if (actionType != ActionType.AttackUnit || targetUnit == null)
+            {
+                return 0f;
+            }
+
+            int targetHp = Mathf.Max(1, targetUnit.health);
+            int targetAttack = Mathf.Max(0, targetUnit.attack);
+            bool killsTarget = attacker.attack >= targetHp;
+            bool survivesCounterAttack = attacker.health > targetAttack;
+
+            float score = 60f;
+            score += targetAttack * 25f;
+            score += Mathf.Clamp01(attacker.attack / (float)targetHp) * 90f;
+            score += ScoreThreatNearOwnFort(snapshot, targetTile);
+
+            if (killsTarget)
+            {
+                score += 180f;
+            }
+
+            if (targetAttack >= attacker.health)
+            {
+                score += 60f;
+            }
+
+            if (survivesCounterAttack)
+            {
+                score += 45f;
+            }
+            else if (!killsTarget)
+            {
+                score -= 90f;
+            }
+
+            return score;
+        }
+
+        private static float ScoreFortAttack(ComputerGameSnapshot snapshot, Unit attacker)
+        {
+            if (snapshot?.OpponentPlayer == null || attacker == null)
+            {
+                return 0f;
+            }
+
+            int opponentFortHp = Mathf.Max(1, snapshot.OpponentPlayer.fortHp);
+            int attackDamage = Mathf.Max(0, attacker.attack);
+            int remainingFortHp = opponentFortHp - attackDamage;
+
+            if (remainingFortHp <= 0)
+            {
+                return 10000f;
+            }
+
+            float score = 100f;
+            score += attackDamage * 30f;
+
+            if (opponentFortHp <= 8)
+            {
+                score += 120f;
+            }
+
+            if (remainingFortHp <= attackDamage)
+            {
+                score += 180f;
+            }
+
+            return score;
+        }
+
+        private static float ScoreMoveToAttackThreat(
+            ComputerGameSnapshot snapshot,
+            Unit unit,
+            HexTile destinationTile,
+            int movementDistance,
+            UnitManager unitManager)
+        {
+            if (snapshot?.HexGrid == null || unit == null || destinationTile == null || unitManager == null)
+            {
+                return 0f;
+            }
+
+            if (!unit.isReadyToAttack || unit.hasAttackedThisTurn)
+            {
+                return 0f;
+            }
+
+            int remainingMovementAfterMove = unit.GetRemainingMovement() - movementDistance;
+            if (remainingMovementAfterMove <= 0)
+            {
+                return 0f;
+            }
+
+            int attackRange = Mathf.Max(0, unit.attackRange);
+            if (attackRange <= 0)
+            {
+                return 0f;
+            }
+
+            List<HexTile> futureTargets = HexUtils.GetTilesInRange(destinationTile, attackRange, snapshot.HexGrid);
+            float bestThreatScore = 0f;
+
+            for (int i = 0; i < futureTargets.Count; i++)
+            {
+                HexTile futureTarget = futureTargets[i];
+                if (!CanThreatenTargetFromMove(snapshot, unit, futureTarget, unitManager, out Unit targetUnit, out ActionType actionType))
+                {
+                    continue;
+                }
+
+                float threatScore = ScoreAttackTarget(snapshot, unit, futureTarget, targetUnit, actionType);
+                if (actionType == ActionType.AttackFort)
+                {
+                    threatScore = threatScore >= 10000f ? 9000f : 140f + threatScore * 0.45f;
+                }
+                else
+                {
+                    threatScore = 160f + threatScore * 0.55f;
+                }
+
+                bestThreatScore = Mathf.Max(bestThreatScore, threatScore);
+            }
+
+            return bestThreatScore;
+        }
+
+        private static bool CanThreatenTargetFromMove(
+            ComputerGameSnapshot snapshot,
+            Unit attacker,
+            HexTile targetTile,
+            UnitManager unitManager,
+            out Unit targetUnit,
+            out ActionType actionType)
+        {
+            targetUnit = null;
+            actionType = ActionType.EndTurn;
+
+            if (snapshot == null || attacker == null || targetTile == null || unitManager == null)
+            {
+                return false;
+            }
+
+            if (GetAttackType(attacker.sourceCharacterCardData) == AttackType.HealFix)
+            {
+                return false;
+            }
+
+            if (targetTile.tileType == "fort" && targetTile.owner == snapshot.OpponentPlayerKey)
+            {
+                actionType = ActionType.AttackFort;
+                return CanProfileTarget(GetAttackTarget(attacker.sourceCharacterCardData), targetIsAir: false);
+            }
+
+            if (targetTile.tileType != "unit" || targetTile.owner != snapshot.OpponentPlayerKey)
+            {
+                return false;
+            }
+
+            targetUnit = unitManager.FindUnitOnTile(targetTile);
+            if (targetUnit == null)
+            {
+                return false;
+            }
+
+            bool targetIsAir = IsAirUnit(targetUnit);
+            if (!CanProfileTarget(GetAttackTarget(attacker.sourceCharacterCardData), targetIsAir))
+            {
+                return false;
+            }
+
+            actionType = ActionType.AttackUnit;
+            return true;
+        }
+
+        private static float ScoreThreatNearOwnFort(ComputerGameSnapshot snapshot, HexTile targetTile)
+        {
+            if (snapshot?.HexGrid == null || targetTile == null)
+            {
+                return 0f;
+            }
+
+            if (!TryGetFortTile(snapshot, snapshot.ActingPlayerKey, out AxialCoord fortCoord))
+            {
+                return 0f;
+            }
+
+            HexTile fortTile = snapshot.HexGrid.GetTile(fortCoord);
+            int distanceToFort = HexUtils.GetHexDistance(targetTile, fortTile);
+            if (distanceToFort < 0)
+            {
+                return 0f;
+            }
+
+            if (distanceToFort <= 2)
+            {
+                return 120f;
+            }
+
+            if (distanceToFort <= 4)
+            {
+                return 70f;
+            }
+
+            return Mathf.Max(0f, 6 - distanceToFort) * 12f;
+        }
+
+        private static AttackType GetAttackType(CharacterCardData cardData)
+        {
+            return cardData != null ? cardData.attackType : AttackType.Melee;
+        }
+
+        private static global::AttackTarget GetAttackTarget(CharacterCardData cardData)
+        {
+            return cardData != null ? cardData.attackTarget : global::AttackTarget.Ground;
+        }
+
+        private static bool CanProfileTarget(global::AttackTarget attackTarget, bool targetIsAir)
+        {
+            if (attackTarget == global::AttackTarget.Both)
+            {
+                return true;
+            }
+
+            if (targetIsAir)
+            {
+                return attackTarget == global::AttackTarget.Air;
+            }
+
+            return attackTarget == global::AttackTarget.Ground;
+        }
+
+        private static bool IsAirUnit(Unit unit)
+        {
+            return unit != null
+                && unit.sourceCharacterCardData != null
+                && unit.sourceCharacterCardData.movementType == MovementType.Flying;
         }
 
         private static float ScoreLaneSpread(ComputerGameSnapshot snapshot, AxialCoord coord)
@@ -524,14 +775,17 @@ namespace FortGame.Computer
         // Ali: reusable validator checks the real Fort tile, so AI fort targets need the Fort coordinate.
         private static bool TryGetOpponentFortTile(ComputerGameSnapshot snapshot, out AxialCoord fortTile)
         {
+            return TryGetFortTile(snapshot, snapshot?.OpponentPlayerKey, out fortTile);
+        }
+
+        private static bool TryGetFortTile(ComputerGameSnapshot snapshot, string ownerKey, out AxialCoord fortTile)
+        {
             fortTile = default;
 
-            if (snapshot?.HexGrid == null)
+            if (snapshot?.HexGrid == null || string.IsNullOrWhiteSpace(ownerKey))
             {
                 return false;
             }
-
-            string opponentKey = snapshot.OpponentPlayerKey;
 
             for (int row = 0; row < snapshot.HexGrid.gridHeight; row++)
             {
@@ -540,7 +794,7 @@ namespace FortGame.Computer
                     AxialCoord coord = HexGrid.OffsetToAxial(col, row);
                     HexTile tile = snapshot.HexGrid.GetTile(coord);
 
-                    if (tile != null && tile.tileType == "fort" && tile.owner == opponentKey)
+                    if (tile != null && tile.tileType == "fort" && tile.owner == ownerKey)
                     {
                         fortTile = coord;
                         return true;

@@ -3,7 +3,8 @@ using UnityEngine;
 
 namespace FortGame.Computer
 {
-    /// <summary> 
+    // Rabie : "Added sorted AI scoring so the brain can try the next best action when the first scored action cannot execute."
+    /// <summary>
     /// Evaluates a list of possible ComputerActions and assigns each a score based on heuristic rules.
     /// </summary>
     public class ActionScoringSystem
@@ -13,14 +14,19 @@ namespace FortGame.Computer
         /// </summary>
         public ComputerAction GetBestAction(List<ComputerAction> possibleActions, PlayerState myState, int currentTurn)
         {
-            //Ali : Protection simple si le générateur renvoie rien ou si la liste est absente.
+            List<ComputerAction> sortedActions = GetActionsByScoreDescending(possibleActions, myState, currentTurn);
+            return sortedActions.Count > 0 ? sortedActions[0] : null;
+        }
+
+        public List<ComputerAction> GetActionsByScoreDescending(List<ComputerAction> possibleActions, PlayerState myState, int currentTurn)
+        {
+            List<ScoredAction> scoredActions = new List<ScoredAction>();
+
+            // Ali: simple protection if the generator returns no actions or a missing list.
             if (possibleActions == null || possibleActions.Count == 0)
             {
-                return null;
+                return new List<ComputerAction>();
             }
-
-            ComputerAction bestAction = null;
-            float highestScore = float.MinValue;
 
             foreach (var action in possibleActions)
             {
@@ -32,15 +38,18 @@ namespace FortGame.Computer
                 float score = CalculateScore(action, myState, currentTurn);
 
                 Debug.Log($"[ActionScoringSystem] Action [{action.actionName}] scored: {score}");
-
-                if (score > highestScore)
-                {
-                    highestScore = score;
-                    bestAction = action;
-                }
+                scoredActions.Add(new ScoredAction(action, score));
             }
 
-            return bestAction;
+            scoredActions.Sort((left, right) => right.Score.CompareTo(left.Score));
+
+            List<ComputerAction> sortedActions = new List<ComputerAction>();
+            for (int i = 0; i < scoredActions.Count; i++)
+            {
+                sortedActions.Add(scoredActions[i].Action);
+            }
+
+            return sortedActions;
         }
 
 
@@ -70,7 +79,7 @@ namespace FortGame.Computer
 
             // 2. Save My Fort (Defensive priority)
 
-            if (myState != null && myState.fortHp < 5 && action.isDefensiveMove)  //Ali : évite une erreur si myState est null.
+            if (myState != null && myState.fortHp < 5 && action.isDefensiveMove)  // Ali: avoids an error if myState is null.
             {
                 score += 500f; // High priority if dying
             }
@@ -103,7 +112,7 @@ namespace FortGame.Computer
             // 4. Board Control / Pushing Forward
             if (action.movesCloserToEnemyFort)
             {
-                //Ali: Changed what was here before, so now if the AI fort is low, going forward is "still" possible, but is less prioritary than defending.
+                // Ali: Changed what was here before, so now if the AI fort is low, going forward is still possible, but less important than defending.
                 score += myState != null && myState.fortHp < 8 ? 15f : 50f;
             }
 
@@ -127,7 +136,7 @@ namespace FortGame.Computer
                 score += currentTurn < 5 ? 60f : -30f;
             }
 
-            // Late game cards are great in lategame, or if we can ramp to them.
+            // Late game cards are great in late game, or if we can ramp to them.
             if (action.isLateGameCard)
             {
                 score += currentTurn >= 5 ? 80f : -50f;
@@ -158,6 +167,18 @@ namespace FortGame.Computer
 
 
             return score;
+        }
+
+        private struct ScoredAction
+        {
+            public ScoredAction(ComputerAction action, float score)
+            {
+                Action = action;
+                Score = score;
+            }
+
+            public ComputerAction Action { get; }
+            public float Score { get; }
         }
     }
 }

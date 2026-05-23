@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace FortGame.Computer
 {
+    // Rabie : "Connected AI snapshots to the real GameManager round number so early-game and late-game scoring can work correctly."
     /// <summary>
     /// Builds a lightweight game-state snapshot for legal action generation.
     /// </summary>
@@ -59,7 +60,7 @@ namespace FortGame.Computer
                 }
             }
 
-            int currentTurn = 1;
+            int currentTurn = Mathf.Max(1, gameManager.roundNumber);
             GamePhase currentPhase = gameManager.currentPhase;
 
             return new ComputerGameSnapshot(
