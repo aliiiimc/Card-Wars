@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 namespace FortGame.UI
 {
@@ -25,6 +26,7 @@ namespace FortGame.UI
         private Image _imageComponent;
         private Color _originalColor;
         private bool _isSelected;
+        public Action<CardUI> clickOverride;
 
         public string CardName => cardNameText?.text ?? "Unknown";
         public bool IsSelected => _isSelected;
@@ -80,6 +82,27 @@ namespace FortGame.UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (clickOverride != null)
+            {
+                clickOverride(this);
+                return;
+            }
+
+            RevivalManager revivalManager = RevivalManager.Instance ?? RevivalManager.GetOrCreate();
+            if (revivalManager != null)
+            {
+                if (revivalManager.BlocksCardSelection(this))
+                {
+                    _hudManager?.ShowInfo("Finish or cancel Revival before selecting another card.");
+                    return;
+                }
+
+                if (runtimeCard != null && revivalManager.TryBeginFromHand(runtimeCard))
+                {
+                    return;
+                }
+            }
+
             if (_gameManager != null
                 && _gameManager.currentPhase == GamePhase.Buy
                 && !_gameManager.isBuyDecisionPending)

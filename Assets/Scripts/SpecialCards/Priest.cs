@@ -4,7 +4,7 @@ public class Priest : SpecialCardScriptBase
 {
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "Priest");
+        return CardMatches(unitCardData, SpecialCardIds.CharacterPriest, "Priest");
     }
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)

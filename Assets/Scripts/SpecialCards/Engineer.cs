@@ -6,7 +6,7 @@ public class Engineer : SpecialCardScriptBase
 
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "Engineer");
+        return unitCardData is EngineerCardData;
     }
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)

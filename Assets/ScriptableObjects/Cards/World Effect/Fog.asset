@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fog
   m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
   cardName: 
-  cost: 0
+  cost: 3
   handDeckSprite: {fileID: -4137655655379895474, guid: af87803f102bf1f44a0d401a5a2c3e42, type: 3}
   description: 
   validatorId: target.rules.reusable
@@ -32,8 +32,8 @@ MonoBehaviour:
   allowsUnitPassThrough: 1
   allowsUnitOccupancy: 1
   worldEffectOpacity: 0.6
-  attackType: 1
-  attackTarget: 0
+  attackType: 0
+  attackTarget: 2
   revenuePerTurn:
     hasValue: 0
     value: 0

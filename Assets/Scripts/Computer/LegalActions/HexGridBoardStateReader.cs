@@ -58,6 +58,22 @@ namespace FortGame.Computer
                 }
             }
 
+            WorldEffect[] worldEffects = Object.FindObjectsByType<WorldEffect>(FindObjectsSortMode.None);
+            for (int i = 0; i < worldEffects.Length; i++)
+            {
+                WorldEffect worldEffect = worldEffects[i];
+                if (worldEffect == null || worldEffect.sourceCard == null || worldEffect.currentTile == null)
+                {
+                    continue;
+                }
+
+                AxialCoord effectPosition = worldEffect.currentTile.coord;
+                if (effectPosition.q == tile.q && effectPosition.r == tile.r)
+                {
+                    return worldEffect.sourceCard;
+                }
+            }
+
             CardManifest[] manifests = Object.FindObjectsByType<CardManifest>(FindObjectsSortMode.None);
             for (int i = 0; i < manifests.Length; i++)
             {

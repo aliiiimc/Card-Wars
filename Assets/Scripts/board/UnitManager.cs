@@ -349,6 +349,14 @@ public class UnitManager : MonoBehaviour
         Unit target = FindUnitOnTile(targetTile);
         if (target != null)
         {
+            if (Archer.ShouldPlayProjectile(attackerCardData))
+            {
+                ProjectileVisual.Spawn(
+                    ((ArcherCardData)attackerCardData).projectileVisuals,
+                    attacker.transform.position,
+                    targetTile.transform.position);
+            }
+
             target.ApplyDamage(attacker.attack);
             Debug.Log($"Attacked! Target health: {target.health}");
 
@@ -360,6 +368,14 @@ public class UnitManager : MonoBehaviour
         else if (targetTile.tileType == "fort") //Ali : Update de AttackTarget
         {
             Debug.Log("Attacked fort!");
+
+            if (Archer.ShouldPlayProjectile(attackerCardData))
+            {
+                ProjectileVisual.Spawn(
+                    ((ArcherCardData)attackerCardData).projectileVisuals,
+                    attacker.transform.position,
+                    targetTile.transform.position);
+            }
 
             if (gameManager == null)
             {
@@ -404,6 +420,14 @@ public class UnitManager : MonoBehaviour
                  && targetTile.worldEffectOwner != "none"
                  && targetTile.worldEffectOwner != activeOwner)
         {
+            if (Archer.ShouldPlayProjectile(attackerCardData))
+            {
+                ProjectileVisual.Spawn(
+                    ((ArcherCardData)attackerCardData).projectileVisuals,
+                    attacker.transform.position,
+                    targetTile.transform.position);
+            }
+
             if (worldEffectManager == null)
             {
                 worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
@@ -460,6 +484,29 @@ public class UnitManager : MonoBehaviour
             return;
         }
 
+        ResetUnitsForOwner(activeOwner);
+        lastActiveOwner = activeOwner;
+    }
+
+    public void ResetUnitsForCurrentOwnerTurn(bool force = false)
+    {
+        string activeOwner = GetActiveOwner();
+        if (string.IsNullOrEmpty(activeOwner))
+        {
+            return;
+        }
+
+        if (!force && activeOwner == lastActiveOwner)
+        {
+            return;
+        }
+
+        ResetUnitsForOwner(activeOwner);
+        lastActiveOwner = activeOwner;
+    }
+
+    void ResetUnitsForOwner(string activeOwner)
+    {
         Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
         foreach (Unit unit in allUnits)
         {
@@ -471,8 +518,6 @@ public class UnitManager : MonoBehaviour
                 specialScript?.OnOwnerTurnStart(unit, unitCardData);
             }
         }
-
-        lastActiveOwner = activeOwner;
     }
 
     string GetActiveOwner()
@@ -769,7 +814,6 @@ public class UnitManager : MonoBehaviour
             }
 
             specialScript?.OnAfterMove(unit, unitCardData, destinationTile);
-            hospital.ApplyAdjacentHospitalHealing(unit);
             isAnimatingUnit = false;
             yield break;
         }
@@ -809,7 +853,6 @@ public class UnitManager : MonoBehaviour
         }
 
         specialScript?.OnAfterMove(unit, unitCardData, destinationTile);
-        hospital.ApplyAdjacentHospitalHealing(unit);
         isAnimatingUnit = false;
     }
 }

@@ -2,7 +2,7 @@ public class Archer : SpecialCardScriptBase
 {
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "Archer");
+        return unitCardData is ArcherCardData;
     }
 
     public override int GetAttackRange(Unit unit, CharacterCardData unitCardData)
@@ -23,5 +23,12 @@ public class Archer : SpecialCardScriptBase
             : (unit != null ? UnityEngine.Mathf.Max(0, unit.attackRange) : 0);
 
         return baseAttackRange + bonusAttackRange;
+    }
+
+    public static bool ShouldPlayProjectile(CharacterCardData unitCardData)
+    {
+        return unitCardData is ArcherCardData archerCardData
+            && archerCardData.projectileVisuals != null
+            && archerCardData.projectileVisuals.projectilePrefab != null;
     }
 }

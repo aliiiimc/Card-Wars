@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10b9f8f30f2d57443a05fde10c03e1e4, type: 3}
   m_Name: Tax collection
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
-  cardName: 
+  cardName: Tax collection
   cost: 0
   handDeckSprite: {fileID: -2017849187300815682, guid: b82b88cf68ae2f14aad744d9418f7203, type: 3}
-  description: 
+  description: Redirects bonus income from an enemy money-generating field to you for a limited number of turns.
   validatorId: target.rules.reusable
-  effectId: 
-  effectType: 0
+  effectId: effect.damage
+  specialCardId: spell.tax_collection
+  effectType: 2
   effectPower: 0
-  effectDurationTurns: 0
+  effectDurationTurns: 1
   spellMovementCapacity:
     hasValue: 0
     value: 0

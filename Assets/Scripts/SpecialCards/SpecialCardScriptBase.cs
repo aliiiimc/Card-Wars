@@ -47,7 +47,17 @@ public abstract class SpecialCardScriptBase : ISpecialCardScript
             return false;
         }
 
-        return cardData.DisplayName.Trim().ToLowerInvariant() == expected.Trim().ToLowerInvariant();
+        return cardData.MatchesSpecialCard(string.Empty, expected);
+    }
+
+    protected static bool CardMatches(CharacterCardData cardData, string expectedSpecialId, string fallbackDisplayName)
+    {
+        if (cardData == null)
+        {
+            return false;
+        }
+
+        return cardData.MatchesSpecialCard(expectedSpecialId, fallbackDisplayName);
     }
 
     protected static AttackType GetAttackType(CharacterCardData cardData)
@@ -117,5 +127,49 @@ public abstract class SpecialCardScriptBase : ISpecialCardScript
         }
 
         return null;
+    }
+
+    public static void PlayProjectileFromUnit(Unit attacker, CharacterCardData attackerCardData, HexTile targetTile)
+    {
+        if (attacker == null || attackerCardData == null || targetTile == null)
+        {
+            return;
+        }
+
+        ProjectileVisualSettings visuals = GetProjectileVisualSettings(attackerCardData);
+        if (visuals == null || visuals.projectilePrefab == null)
+        {
+            return;
+        }
+
+        ProjectileVisual.Spawn(visuals, attacker.transform.position, targetTile.transform.position);
+    }
+
+    public static void PlayProjectileFromWorldEffect(WorldEffect worldEffect, HexTile targetTile)
+    {
+        if (worldEffect == null || worldEffect.sourceCard == null || targetTile == null)
+        {
+            return;
+        }
+
+        ProjectileVisualSettings visuals = GetProjectileVisualSettings(worldEffect.sourceCard.SourceCard);
+        if (visuals == null || visuals.projectilePrefab == null)
+        {
+            return;
+        }
+
+        ProjectileVisual.Spawn(visuals, worldEffect.transform.position, targetTile.transform.position);
+    }
+
+    public static ProjectileVisualSettings GetProjectileVisualSettings(CardData cardData)
+    {
+        return cardData switch
+        {
+            ArcherCardData archerCardData => archerCardData.projectileVisuals,
+            DragonCardData dragonCardData => dragonCardData.projectileVisuals,
+            WatchTowerCardData watchTowerCardData => watchTowerCardData.projectileVisuals,
+            AntiAirTowerCardData antiAirTowerCardData => antiAirTowerCardData.projectileVisuals,
+            _ => null
+        };
     }
 }

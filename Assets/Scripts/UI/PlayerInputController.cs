@@ -49,6 +49,13 @@ namespace FortGame.UI
             // ESC key to cancel selection
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                RevivalManager revivalManager = RevivalManager.Instance;
+                if (revivalManager != null && revivalManager.HasPendingSession)
+                {
+                    revivalManager.CancelSession();
+                    return;
+                }
+
                 if (_cardSelectionMgr?.HasSelection ?? false)
                 {
                     _cardSelectionMgr.CancelSelection();
@@ -92,6 +99,13 @@ namespace FortGame.UI
             {
                 _hudManager?.ShowError("Selected card is missing game data.");
                 Debug.LogWarning("[PlayerInputController] Selected CardUI has no runtime card.");
+                return;
+            }
+
+            RevivalManager revivalManager = RevivalManager.Instance;
+            if (revivalManager != null && revivalManager.IsAwaitingPlacementFor(runtimeCard))
+            {
+                revivalManager.TryResolvePlacement(target);
                 return;
             }
 

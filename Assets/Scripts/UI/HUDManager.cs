@@ -36,16 +36,22 @@ namespace FortGame.UI
         public TextMeshProUGUI currentRoundText;
         public TextMeshProUGUI currentPlayerText;
 
+        [Header("Spell Announcement")]
+        public TextMeshProUGUI spellAnnouncementText;
+        public float spellAnnouncementDuration = 2.5f;
+
         [Header("Game Over")]
         public GameObject gameOverPanel; //Ali : gameOverPanel: le panel entier à afficher/cacher.
         public TextMeshProUGUI winnerText; // Ali : Winner announcement text
         public GameObject gameplayControlsRoot; // Ali : Pour cacher boutons quand gameover 
 
         private float _errorMessageTimer = 0f;
+        private float _spellAnnouncementTimer = 0f;
 
         private void Awake()
         {
             AutoBindMissingReferences();
+            EnsureSpellAnnouncementBinding();
             SetGameOverPanelVisible(false); // Au lancement de la scène, la partie n’est pas finie. Donc le panel Game Over doit être caché dès le début.
 
 
@@ -61,6 +67,15 @@ namespace FortGame.UI
                 if (_errorMessageTimer <= 0 && errorMessageText != null)
                 {
                     errorMessageText.text = "";
+                }
+            }
+
+            if (_spellAnnouncementTimer > 0)
+            {
+                _spellAnnouncementTimer -= Time.deltaTime;
+                if (_spellAnnouncementTimer <= 0 && spellAnnouncementText != null)
+                {
+                    spellAnnouncementText.text = "";
                 }
             }
         }
@@ -85,6 +100,7 @@ namespace FortGame.UI
         public void UpdateHUD(PlayerState player, PlayerState enemy, PlayerState currentPlayer, GamePhase phase, int maxFortHp, int roundNumber, string winnerName)
         {
             AutoBindMissingReferences();
+            EnsureSpellAnnouncementBinding();
 
             UpdatePanel(player, playerFortHpText, playerMoneyText, playerCardsText, playerHpFill, maxFortHp);
             UpdatePanel(enemy, enemyFortHpText, enemyMoneyText, enemyCardsText, enemyHpFill, maxFortHp);
@@ -157,6 +173,21 @@ namespace FortGame.UI
             if (!string.IsNullOrWhiteSpace(message))
             {
                 Debug.Log($"[HUDManager] Info: {message}");
+            }
+        }
+
+        public void ShowSpellAnnouncement(string message)
+        {
+            EnsureSpellAnnouncementBinding();
+            if (spellAnnouncementText != null)
+            {
+                spellAnnouncementText.text = message ?? string.Empty;
+                _spellAnnouncementTimer = string.IsNullOrWhiteSpace(message) ? 0f : spellAnnouncementDuration;
+            }
+
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                Debug.Log($"[HUDManager] Spell: {message}");
             }
         }
 
@@ -281,6 +312,57 @@ namespace FortGame.UI
 
             if (currentRoundText == null) currentRoundText = FindComponentByObjectName<TextMeshProUGUI>("CurrentRoundText");
             if (currentPlayerText == null) currentPlayerText = FindComponentByObjectName<TextMeshProUGUI>("CurrentPlayerText");
+        }
+
+        private void EnsureSpellAnnouncementBinding()
+        {
+            if (spellAnnouncementText == null) spellAnnouncementText = FindComponentByObjectName<TextMeshProUGUI>("SpellAnnouncementText");
+            if (spellAnnouncementText == null) spellAnnouncementText = CreateRuntimeFeedbackText("SpellAnnouncementText", -42f);
+        }
+
+        private TextMeshProUGUI CreateRuntimeFeedbackText(string objectName, float verticalOffset)
+        {
+            if (currentPlayerText == null)
+            {
+                return null;
+            }
+
+            Canvas parentCanvas = currentPlayerText.GetComponentInParent<Canvas>();
+            if (parentCanvas == null)
+            {
+                return null;
+            }
+
+            Transform existing = FindChildByName(parentCanvas.transform, objectName);
+            if (existing != null && existing.TryGetComponent(out TextMeshProUGUI existingText))
+            {
+                return existingText;
+            }
+
+            GameObject textObject = new GameObject(objectName);
+            textObject.transform.SetParent(parentCanvas.transform, false);
+
+            RectTransform rect = textObject.AddComponent<RectTransform>();
+            RectTransform sourceRect = currentPlayerText.rectTransform;
+            rect.anchorMin = sourceRect.anchorMin;
+            rect.anchorMax = sourceRect.anchorMax;
+            rect.pivot = sourceRect.pivot;
+            rect.sizeDelta = new Vector2(Mathf.Max(420f, sourceRect.sizeDelta.x * 1.8f), Mathf.Max(42f, sourceRect.sizeDelta.y));
+            rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(0f, verticalOffset);
+            rect.localScale = Vector3.one;
+
+            TextMeshProUGUI feedbackText = textObject.AddComponent<TextMeshProUGUI>();
+            feedbackText.font = currentPlayerText.font;
+            feedbackText.fontSharedMaterial = currentPlayerText.fontSharedMaterial;
+            feedbackText.fontSize = Mathf.Max(20f, currentPlayerText.fontSize * 0.65f);
+            feedbackText.enableAutoSizing = false;
+            feedbackText.color = currentPlayerText.color;
+            feedbackText.alignment = TextAlignmentOptions.Center;
+            feedbackText.text = string.Empty;
+            feedbackText.raycastTarget = false;
+            feedbackText.overflowMode = TextOverflowModes.Ellipsis;
+
+            return feedbackText;
         }
 
         private T FindComponentByObjectName<T>(string objectName) where T : Component

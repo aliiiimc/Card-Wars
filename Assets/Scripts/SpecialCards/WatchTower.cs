@@ -12,11 +12,17 @@ public class WatchTower
 
         WorldEffect[] allWorldEffects = Object.FindObjectsByType<WorldEffect>(FindObjectsSortMode.None);
         int totalHits = 0;
+        SpellManager spellManager = SpellManager.GetOrCreate();
 
         for (int i = 0; i < allWorldEffects.Length; i++)
         {
             WorldEffect worldEffect = allWorldEffects[i];
             if (!IsWatchTower(worldEffect) || worldEffect.currentTile == null)
+            {
+                continue;
+            }
+
+            if (spellManager != null && spellManager.IsWorldEffectDisabled(worldEffect))
             {
                 continue;
             }
@@ -50,6 +56,7 @@ public class WatchTower
                     continue;
                 }
 
+                SpecialCardScriptBase.PlayProjectileFromWorldEffect(worldEffect, tile);
                 targetUnit.ApplyDamage(damage);
                 totalHits++;
                 Debug.Log($"[SpecialTrigger][WatchTower] Hit unit at ({tile.coord.q},{tile.coord.r}) for {damage} damage.");
@@ -64,7 +71,8 @@ public class WatchTower
         return worldEffect != null
             && worldEffect.sourceCard != null
             && worldEffect.sourceCard.SourceCard != null
-            && string.Equals(worldEffect.sourceCard.SourceCard.DisplayName, "Watch Tower", System.StringComparison.OrdinalIgnoreCase);
+            && (worldEffect.sourceCard.SourceCard is WatchTowerCardData
+                || worldEffect.sourceCard.SourceCard.MatchesSpecialCard(SpecialCardIds.WorldWatchTower, "Watch Tower"));
     }
 
     private static int GetDamage(WorldEffect worldEffect)

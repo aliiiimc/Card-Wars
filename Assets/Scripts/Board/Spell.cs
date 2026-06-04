@@ -3,6 +3,7 @@ using UnityEngine;
 public class Spell : MonoBehaviour
 {
     public string owner;
+    public string durationOwnerKey;
     public CardRuntimeState sourceCard;
     public CardTarget target;
     public SpellEffectType effectType;
@@ -13,6 +14,7 @@ public class Spell : MonoBehaviour
     public void Initialize(string spellOwner, CardRuntimeState card, CardTarget spellTarget)
     {
         owner = string.IsNullOrWhiteSpace(spellOwner) ? "none" : spellOwner;
+        durationOwnerKey = owner;
         sourceCard = card;
         target = spellTarget;
         effectType = card != null ? card.SpellEffectType : default;

@@ -54,9 +54,15 @@ public sealed class CardPlayDependencyResolver
 
     public ICardEffect ResolveEffect(CardData cardData)
     {
+        // Ali: route spell cards through the shared effect factory so every scene uses the same SpellManager-backed behavior.
+        if (cardData is SpellCardData)
+        {
+            return CardEffectFactory.Create(cardData);
+        }
+
         string effectId = cardData != null ? cardData.effectId : string.Empty;
         ICardEffect mapped = ResolveSceneComponentById<ICardEffect>(effectId, candidate => candidate.EffectId);
-        return mapped ?? FallbackEffectFactory.Create(cardData);
+        return mapped ?? CardEffectFactory.Create(cardData);
     }
 
     private static T ResolveSceneComponentById<T>(string id, Func<T, string> getId) where T : class

@@ -2,7 +2,7 @@ public class EuropeanKing : SpecialCardScriptBase
 {
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "European King");
+        return CardMatches(unitCardData, SpecialCardIds.CharacterEuropeanKing, "European King");
     }
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)

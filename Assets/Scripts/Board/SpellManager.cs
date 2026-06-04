@@ -3,6 +3,11 @@ using UnityEngine;
 
 public sealed class SpellManager : MonoBehaviour
 {
+    private static readonly Freeze freeze = new Freeze();
+    private static readonly LightningStrike lightningStrike = new LightningStrike();
+    private static readonly Sabotage sabotage = new Sabotage();
+    private static readonly TaxCollection taxCollection = new TaxCollection();
+    private static readonly TwoXSpeed twoXSpeed = new TwoXSpeed();
     private readonly Dictionary<CardRuntimeState, Spell> spellsBySource = new Dictionary<CardRuntimeState, Spell>();
     private readonly List<Spell> activePersistentSpells = new List<Spell>();
     private FortGame.UI.HUDManager hudManager;
@@ -63,7 +68,8 @@ public sealed class SpellManager : MonoBehaviour
                 continue;
             }
 
-            if (!string.IsNullOrWhiteSpace(ownerKey) && spell.owner != ownerKey)
+            string durationOwnerKey = ResolveDurationOwnerKey(spell);
+            if (!string.IsNullOrWhiteSpace(ownerKey) && durationOwnerKey != ownerKey)
             {
                 continue;
             }
@@ -93,6 +99,31 @@ public sealed class SpellManager : MonoBehaviour
         }
 
         int safeAmount = Mathf.Max(0, amount);
+        if (sabotage.IsMatch(sourceCard))
+        {
+            if (!string.IsNullOrWhiteSpace(target.targetPlayerId))
+            {
+                spell.durationOwnerKey = target.targetPlayerId;
+            }
+
+            return CompleteSpell(spell, sabotage.Apply(sourceCard, target));
+        }
+
+        if (taxCollection.IsMatch(sourceCard))
+        {
+            if (!string.IsNullOrWhiteSpace(target.targetPlayerId))
+            {
+                spell.durationOwnerKey = target.targetPlayerId;
+            }
+
+            return CompleteSpell(spell, taxCollection.Apply(sourceCard, target));
+        }
+
+        if (lightningStrike.IsMatch(sourceCard))
+        {
+            return CompleteSpell(spell, lightningStrike.Apply(context, sourceCard, target, safeAmount));
+        }
+
         if (target.type == CardTargetType.EnemyFort)
         {
             if (string.IsNullOrWhiteSpace(target.targetPlayerId))
@@ -153,38 +184,9 @@ public sealed class SpellManager : MonoBehaviour
             return CompleteSpell(spell, failure);
         }
 
-        SpeedSpellCardData speedSpellCard = sourceCard != null ? sourceCard.SourceCard as SpeedSpellCardData : null;
-        int movementCapacityMultiplier = speedSpellCard != null
-            ? Mathf.Max(1, speedSpellCard.movementCapacityMultiplier)
-            : 1;
-
-        if (movementCapacityMultiplier > 1)
+        if (twoXSpeed.IsMatch(sourceCard))
         {
-            int durationTurns = speedSpellCard != null ? speedSpellCard.effectDurationTurns : 0;
-            if (durationTurns <= 0)
-            {
-                return CompleteSpell(
-                    spell,
-                    CardEffectResult.Failure(
-                        "INVALID_DURATION",
-                        "Movement multiplier spells need effectDurationTurns above zero."));
-            }
-
-            Unit targetUnit = FindUnitForCard(target.targetCard);
-            if (targetUnit == null)
-            {
-                return CompleteSpell(
-                    spell,
-                    CardEffectResult.Failure(
-                        "NO_TARGET_UNIT",
-                        "Buff spell could not resolve the targeted board unit."));
-            }
-
-            targetUnit.ApplyMovementRangeMultiplier(movementCapacityMultiplier, durationTurns);
-            return CompleteSpell(
-                spell,
-                CardEffectResult.Success(
-                    $"Movement capacity x{movementCapacityMultiplier} applied for {durationTurns} turn(s)."));
+            return CompleteSpell(spell, twoXSpeed.Apply(sourceCard, target));
         }
 
         int safeHeal = Mathf.Max(0, healAmount);
@@ -233,6 +235,17 @@ public sealed class SpellManager : MonoBehaviour
         int safeDamage = Mathf.Max(0, damageAmount);
         int safeDamageReduction = Mathf.Max(0, damageReductionAmount);
         int safeSpeedReduction = Mathf.Max(0, speedReductionAmount);
+
+        if (freeze.IsMatch(sourceCard))
+        {
+            if (!string.IsNullOrWhiteSpace(target.targetPlayerId))
+            {
+                spell.durationOwnerKey = target.targetPlayerId;
+            }
+
+            return CompleteSpell(spell, freeze.Apply(sourceCard, target));
+        }
+
         bool didSomething = false;
 
         if (safeDamage > 0)
@@ -433,6 +446,57 @@ public sealed class SpellManager : MonoBehaviour
         return "none";
     }
 
+    public bool TryGetFieldIncomeRecipient(string fieldOwnerKey, HexTile incomeTile, out string recipientOwnerKey)
+    {
+        recipientOwnerKey = fieldOwnerKey;
+
+        if (string.IsNullOrWhiteSpace(fieldOwnerKey) || incomeTile == null || !incomeTile.HasWorldEffect() || !incomeTile.isFieldTile)
+        {
+            return false;
+        }
+
+        for (int i = activePersistentSpells.Count - 1; i >= 0; i--)
+        {
+            Spell spell = activePersistentSpells[i];
+            if (spell == null
+                || !taxCollection.IsMatch(spell.sourceCard)
+                || ResolveDurationOwnerKey(spell) != fieldOwnerKey
+                || !taxCollection.MatchesIncomeTile(spell, incomeTile))
+            {
+                continue;
+            }
+
+            recipientOwnerKey = spell.owner;
+            return !string.IsNullOrWhiteSpace(recipientOwnerKey) && recipientOwnerKey != fieldOwnerKey;
+        }
+
+        return false;
+    }
+
+    public bool IsWorldEffectDisabled(WorldEffect worldEffect)
+    {
+        if (worldEffect == null || worldEffect.currentTile == null || string.IsNullOrWhiteSpace(worldEffect.owner))
+        {
+            return false;
+        }
+
+        for (int i = activePersistentSpells.Count - 1; i >= 0; i--)
+        {
+            Spell spell = activePersistentSpells[i];
+            if (spell == null
+                || !sabotage.IsMatch(spell.sourceCard)
+                || ResolveDurationOwnerKey(spell) != worldEffect.owner
+                || !sabotage.MatchesWorldEffect(spell, worldEffect))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     private static Unit FindUnitForCard(CardRuntimeState card)
     {
         if (card == null)
@@ -460,17 +524,13 @@ public sealed class SpellManager : MonoBehaviour
             return;
         }
 
-        string cardName = spell.sourceCard.SourceCard.DisplayName;
-        string ownerLabel = GetOwnerLabel(spell.owner);
-
-        if (spell.remainingDurationTurns > 0)
+        string targetName = GetTargetDisplayName(spell.target);
+        if (string.IsNullOrWhiteSpace(targetName))
         {
-            string message = $"{ownerLabel} cast {cardName}. Effect active for {spell.remainingDurationTurns} turn(s).";
-            BroadcastNotification(message);
             return;
         }
 
-        BroadcastNotification($"{ownerLabel} cast {cardName}. Effect resolved.");
+        BroadcastSpellAnnouncement($"{spell.sourceCard.SourceCard.DisplayName} played on {targetName}");
     }
 
     private void NotifySpellExpired(Spell spell)
@@ -485,7 +545,7 @@ public sealed class SpellManager : MonoBehaviour
         BroadcastNotification($"{cardName} effect from {ownerLabel} has ended.");
     }
 
-    private void BroadcastNotification(string message)
+    private void BroadcastNotification(string message, string logPrefix = "SpellManager")
     {
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -502,7 +562,27 @@ public sealed class SpellManager : MonoBehaviour
             hudManager.ShowInfo(message);
         }
 
-        Debug.Log($"[SpellManager] {message}");
+        Debug.Log($"[{logPrefix}] {message}");
+    }
+
+    private void BroadcastSpellAnnouncement(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        if (hudManager == null)
+        {
+            hudManager = FindFirstObjectByType<FortGame.UI.HUDManager>();
+        }
+
+        if (hudManager != null)
+        {
+            hudManager.ShowSpellAnnouncement(message);
+        }
+
+        Debug.Log($"[SpellAnnouncement] {message}");
     }
 
     private static string GetOwnerLabel(string owner)
@@ -518,5 +598,38 @@ public sealed class SpellManager : MonoBehaviour
         }
 
         return string.IsNullOrWhiteSpace(owner) ? "Unknown" : owner;
+    }
+
+    private static string ResolveDurationOwnerKey(Spell spell)
+    {
+        if (spell == null)
+        {
+            return string.Empty;
+        }
+
+        return string.IsNullOrWhiteSpace(spell.durationOwnerKey) ? spell.owner : spell.durationOwnerKey;
+    }
+
+    private static string GetTargetDisplayName(CardTarget target)
+    {
+        if (target.targetCard != null && target.targetCard.SourceCard != null)
+        {
+            return target.targetCard.SourceCard.DisplayName;
+        }
+
+        switch (target.type)
+        {
+            case CardTargetType.AllyFort:
+                return "Fort";
+
+            case CardTargetType.EnemyFort:
+                return "Fort";
+
+            case CardTargetType.Tile:
+                return $"tile ({target.tile.q},{target.tile.r})";
+
+            default:
+                return string.Empty;
+        }
     }
 }

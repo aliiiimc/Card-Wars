@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10b9f8f30f2d57443a05fde10c03e1e4, type: 3}
   m_Name: Freeze
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
-  cardName: 
-  cost: 0
+  cardName: Freeze
+  cost: 3
   handDeckSprite: {fileID: 4726758900192830586, guid: 0ffbe12b268541a42b804f25c068de06, type: 3}
-  description: 
+  description: Freeze an enemy unit so it cannot move during its next turn.
   validatorId: target.rules.reusable
-  effectId: 
-  effectType: 0
-  effectPower: 0
-  effectDurationTurns: 0
+  effectId: effect.debuff
+  specialCardId: spell.freeze
+  effectType: 1
+  effectPower: 1
+  effectDurationTurns: 1
   spellMovementCapacity:
     hasValue: 0
     value: 0

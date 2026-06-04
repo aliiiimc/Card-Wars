@@ -23,6 +23,16 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
         // Ali: enforce spell-specific target rules so each spell effect type can only hit its allowed target category.
         if (sourceCard.SourceCard is SpellCardData spellCard)
         {
+            if (spellCard.MatchesSpecialCard(SpecialCardIds.SpellSabotage, "Sabotage"))
+            {
+                return ValidateSabotageTarget(context, target);
+            }
+
+            if (spellCard.MatchesSpecialCard(SpecialCardIds.SpellTaxCollection, "Tax collection"))
+            {
+                return ValidateTaxCollectionTarget(context, target);
+            }
+
             CardValidationResult spellRuleResult = ValidateSpellTargetRules(spellCard, target);
             if (!spellRuleResult.IsValid)
             {
@@ -38,6 +48,12 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
 
             case CardTargetType.EnemyUnit:
                 return ValidateUnitTarget(context, target, shouldBeAlly: false);
+
+            case CardTargetType.AllyStructure:
+                return ValidateStructureTarget(context, target, shouldBeAlly: true);
+
+            case CardTargetType.EnemyStructure:
+                return ValidateStructureTarget(context, target, shouldBeAlly: false);
 
             case CardTargetType.Tile:
                 return ValidateTileTarget(context, sourceCard, target); //Ali: tile validation now depends on the source card type.
@@ -151,9 +167,11 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
                 return CardValidationResult.Valid();
 
             case SpellEffectType.Damage:
-                if (target.type != CardTargetType.EnemyUnit && target.type != CardTargetType.EnemyFort)
+                if (target.type != CardTargetType.EnemyUnit
+                    && target.type != CardTargetType.EnemyStructure
+                    && target.type != CardTargetType.EnemyFort)
                 {
-                    return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Damage spells can only target enemy units or the enemy fort.");
+                    return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Damage spells can only target enemy units, structures, or the enemy fort.");
                 }
                 return CardValidationResult.Valid();
 
@@ -208,6 +226,118 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
             return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", shouldBeAlly
                 ? "Target unit is not allied."
                 : "Target unit is not an enemy.");
+        }
+
+        return CardValidationResult.Valid();
+    }
+
+    private static CardValidationResult ValidateStructureTarget(CardValidationContext context, CardTarget target, bool shouldBeAlly)
+    {
+        if (target.targetCard == null)
+        {
+            return CardValidationResult.Invalid("NO_TARGET_CARD", "Structure target requires target card.");
+        }
+
+        if (!(target.targetCard.SourceCard is WorldEffectCardData worldEffectCard))
+        {
+            return CardValidationResult.Invalid("NOT_STRUCTURE", "Target card is not a structure.");
+        }
+
+        if (worldEffectCard.category != WorldEffectCategory.Structure)
+        {
+            return CardValidationResult.Invalid("NOT_STRUCTURE", "Target world effect is not a structure.");
+        }
+
+        if (!target.targetCard.IsManifestedOnBoard)
+        {
+            return CardValidationResult.Invalid("NOT_ON_BOARD", "Target structure is not on the board.");
+        }
+
+        if (string.IsNullOrWhiteSpace(target.targetPlayerId))
+        {
+            return CardValidationResult.Invalid("MISSING_TARGET_PLAYER", "Structure target player id is required.");
+        }
+
+        string expected = shouldBeAlly ? context.ActingPlayerKey : context.OpponentPlayerKey;
+        if (target.targetPlayerId != expected)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", shouldBeAlly
+                ? "Target structure is not allied."
+                : "Target structure is not an enemy.");
+        }
+
+        return CardValidationResult.Valid();
+    }
+
+    private static CardValidationResult ValidateTaxCollectionTarget(CardValidationContext context, CardTarget target)
+    {
+        if (target.type != CardTargetType.EnemyStructure)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Tax collection can only target enemy money-generating fields.");
+        }
+
+        if (target.targetCard == null || !(target.targetCard.SourceCard is WorldEffectCardData worldEffectCard))
+        {
+            return CardValidationResult.Invalid("NO_TARGET_CARD", "Tax collection needs a field target.");
+        }
+
+        if (worldEffectCard.category != WorldEffectCategory.ResourceField)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_FIELD", "Tax collection can only target money-generating fields.");
+        }
+
+        if (!target.targetCard.IsManifestedOnBoard)
+        {
+            return CardValidationResult.Invalid("NOT_ON_BOARD", "Target field is not on the board.");
+        }
+
+        if (string.IsNullOrWhiteSpace(target.targetPlayerId) || target.targetPlayerId != context.OpponentPlayerKey)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Target field is not owned by the opponent.");
+        }
+
+        HexGrid grid = FindFirstObjectByType<HexGrid>();
+        HexTile targetTile = grid != null ? grid.GetTile(target.tile) : null;
+        if (targetTile == null || !targetTile.HasWorldEffect() || !targetTile.isFieldTile)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_FIELD", "Tax collection needs a real field tile target.");
+        }
+
+        return CardValidationResult.Valid();
+    }
+
+    private static CardValidationResult ValidateSabotageTarget(CardValidationContext context, CardTarget target)
+    {
+        if (target.type != CardTargetType.EnemyStructure)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Sabotage can only target enemy buildings.");
+        }
+
+        if (target.targetCard == null || !(target.targetCard.SourceCard is WorldEffectCardData worldEffectCard))
+        {
+            return CardValidationResult.Invalid("NO_TARGET_CARD", "Sabotage needs an enemy building target.");
+        }
+
+        if (worldEffectCard.category != WorldEffectCategory.Structure)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_STRUCTURE", "Sabotage can only target enemy buildings.");
+        }
+
+        if (!target.targetCard.IsManifestedOnBoard)
+        {
+            return CardValidationResult.Invalid("NOT_ON_BOARD", "Target building is not on the board.");
+        }
+
+        if (string.IsNullOrWhiteSpace(target.targetPlayerId) || target.targetPlayerId != context.OpponentPlayerKey)
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_PLAYER", "Target building is not owned by the opponent.");
+        }
+
+        HexGrid grid = FindFirstObjectByType<HexGrid>();
+        HexTile targetTile = grid != null ? grid.GetTile(target.tile) : null;
+        if (targetTile == null || !targetTile.HasWorldEffect())
+        {
+            return CardValidationResult.Invalid("WRONG_TARGET_STRUCTURE", "Sabotage needs a real enemy building target.");
         }
 
         return CardValidationResult.Valid();

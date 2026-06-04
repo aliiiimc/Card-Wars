@@ -4,7 +4,7 @@ public class Miner : SpecialCardScriptBase
 {
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "Miner");
+        return unitCardData is MinerCardData;
     }
 
     public override bool ConsumeMoveAction(Unit unit, CharacterCardData unitCardData)

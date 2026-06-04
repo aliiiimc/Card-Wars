@@ -203,6 +203,39 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             return;
         }
 
+        WorldEffect boardWorldEffect = FindWorldEffectForCard(card);
+        if (boardWorldEffect != null)
+        {
+            card.ApplyDamage(safeAmount);
+
+            if (card.CurrentHp.HasValue)
+            {
+                boardWorldEffect.health = card.CurrentHp.Value;
+            }
+            else
+            {
+                boardWorldEffect.health = Mathf.Max(0, boardWorldEffect.health - safeAmount);
+            }
+
+            if (boardWorldEffect.health <= 0)
+            {
+                HexTile structureTile = boardWorldEffect.currentTile;
+                card.MoveToZone(CardZone.Discard);
+
+                if (structureTile != null)
+                {
+                    EnsureWorldEffectManager();
+                    worldEffectManager?.Remove(structureTile);
+                }
+
+                LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} structure destroyed by {safeAmount} damage.");
+                return;
+            }
+
+            LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} realStructure amount={safeAmount}, hp={boardWorldEffect.health}.");
+            return;
+        }
+
         card.ApplyDamage(safeAmount);
         LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} amount={safeAmount}.");
     }
@@ -402,6 +435,53 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         return null;
     }
 
+    private WorldEffect FindWorldEffectForCard(CardRuntimeState card)
+    {
+        if (card == null || !card.IsManifestedOnBoard)
+        {
+            return null;
+        }
+
+        if (boardSource == null)
+        {
+            boardSource = FindFirstObjectByType<HexGrid>();
+        }
+
+        if (boardSource == null)
+        {
+            return null;
+        }
+
+        EnsureWorldEffectManager();
+
+        HexTile targetTile = boardSource.GetTile(card.BoardPosition);
+        if (targetTile == null)
+        {
+            return null;
+        }
+
+        WorldEffect worldEffect = worldEffectManager != null
+            ? worldEffectManager.FindWorldEffectOnTile(targetTile)
+            : null;
+
+        return worldEffect != null && ReferenceEquals(worldEffect.sourceCard, card)
+            ? worldEffect
+            : null;
+    }
+
+    private void EnsureWorldEffectManager()
+    {
+        if (worldEffectManager == null)
+        {
+            worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
+        }
+
+        if (worldEffectManager == null)
+        {
+            worldEffectManager = CreateWorldEffectManagerFallback();
+        }
+    }
+
     private void LogTransaction(string message)
     {
         if (logTransactions)
@@ -426,17 +506,13 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             worldEffectManager = CreateWorldEffectManagerFallback();
         }
 
-        string cardName = worldEffectCard.DisplayName != null
-            ? worldEffectCard.DisplayName.Trim().ToLowerInvariant()
-            : string.Empty;
-
         // Reset card-specific tile metadata before assigning the new world-effect behavior.
         if (worldEffectManager != null)
         {
             worldEffectManager.TryClearSpecialData(targetTile);
         }
 
-        if (cardName == "wheat field")
+        if (worldEffectCard is WheatFieldCardData)
         {
             WheatField wheatField = new WheatField();
             if (!wheatField.ApplyFieldCluster(
@@ -457,10 +533,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             return;
         }
 
-        if (cardName == "mines")
+        if (worldEffectCard is MinesCardData minesCardData)
         {
             Mines mines = new Mines();
-            MinesCardData minesCardData = worldEffectCard as MinesCardData;
             int placedMineCount = mines.ApplyMinefield(boardSource, worldEffectManager, minesCardData, runtimeCard, owner, targetTile);
             LogTransaction($"{mines.GetEnemyWarningMessage()} Placed {placedMineCount} mine(s).");
 
@@ -475,10 +550,10 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             return;
         }
 
-        if (cardName == "camp")
+        if (worldEffectCard is CampCardData campCardData)
         {
             Camp camp = new Camp();
-            if (camp.TryActivateOnTile(worldEffectManager, targetTile, worldEffectCard as CampCardData))
+            if (camp.TryActivateOnTile(worldEffectManager, targetTile, campCardData))
             {
                 LogTransaction("Camp world effect activated on tile.");
             }
@@ -490,7 +565,7 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
             return;
         }
 
-        if (cardName == "wall")
+        if (worldEffectCard is WallCardData)
         {
             Wall wall = new Wall();
             if (!wall.ApplyWallLine(boardSource, targetTile, owner, runtimeCard))

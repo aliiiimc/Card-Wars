@@ -21,6 +21,7 @@ public class HexTile : MonoBehaviour
     private static readonly Color EnemyUnitTileColor = new Color(0.58f, 0.22f, 0.28f);
 
     private SpriteRenderer spriteRenderer;
+    private SpriteRenderer fortRenderer;
     private SpriteRenderer worldEffectRenderer;
     private Color baseColor;
     private Color originalColor;
@@ -86,13 +87,22 @@ public class HexTile : MonoBehaviour
         return !hasWorldEffect || worldEffectAllowsUnitOccupancy;
     }
 
-    public void SetAsFort(Color fortColor, string fortOwner)
+    public void SetAsFort(Color fortColor, string fortOwner, Sprite fortSprite = null)
     {
         tileType = "fort";
         owner = fortOwner;
         ClearFieldData();
         originalColor = fortColor;
         spriteRenderer.color = fortColor;
+
+        if (fortSprite != null)
+        {
+            SetFortVisual(fortSprite);
+        }
+        else
+        {
+            ClearFortVisual();
+        }
     }
 
     public void PlaceUnit(string unitOwner)
@@ -320,28 +330,49 @@ public class HexTile : MonoBehaviour
 
     private void SetWorldEffectVisual(Sprite effectSprite, float opacity = 1f)
     {
-        if (worldEffectRenderer == null)
-        {
-            GameObject visualObject = new GameObject("WorldEffectVisual");
-            visualObject.transform.SetParent(transform, false);
-            visualObject.transform.localPosition = Vector3.zero;
-            visualObject.transform.localRotation = Quaternion.identity;
-            visualObject.transform.localScale = Vector3.one;
-
-            worldEffectRenderer = visualObject.AddComponent<SpriteRenderer>();
-            worldEffectRenderer.sortingLayerID = spriteRenderer.sortingLayerID;
-            worldEffectRenderer.sortingOrder = spriteRenderer.sortingOrder + 1;
-        }
+        worldEffectRenderer = EnsureOverlayRenderer(worldEffectRenderer, "WorldEffectVisual", 1);
 
         worldEffectRenderer.sprite = effectSprite;
         worldEffectRenderer.color = new Color(1f, 1f, 1f, Mathf.Clamp01(opacity));
-        FitWorldEffectVisualToTile(effectSprite);
+        FitOverlayVisualToTile(worldEffectRenderer, effectSprite, 1f, 0f);
         worldEffectRenderer.enabled = true;
     }
 
-    private void FitWorldEffectVisualToTile(Sprite effectSprite)
+    private void SetFortVisual(Sprite fortSprite)
     {
-        if (worldEffectRenderer == null || spriteRenderer == null || effectSprite == null)
+        fortRenderer = EnsureOverlayRenderer(fortRenderer, "FortVisual", 2);
+        fortRenderer.sprite = fortSprite;
+        fortRenderer.color = Color.white;
+        FitOverlayVisualToTile(fortRenderer, fortSprite, 0.92f, 0.08f);
+        fortRenderer.enabled = true;
+    }
+
+    private SpriteRenderer EnsureOverlayRenderer(SpriteRenderer existingRenderer, string objectName, int sortingOrderOffset)
+    {
+        if (existingRenderer != null)
+        {
+            return existingRenderer;
+        }
+
+        GameObject visualObject = new GameObject(objectName);
+        visualObject.transform.SetParent(transform, false);
+        visualObject.transform.localPosition = Vector3.zero;
+        visualObject.transform.localRotation = Quaternion.identity;
+        visualObject.transform.localScale = Vector3.one;
+
+        SpriteRenderer overlayRenderer = visualObject.AddComponent<SpriteRenderer>();
+        overlayRenderer.sortingLayerID = spriteRenderer.sortingLayerID;
+        overlayRenderer.sortingOrder = spriteRenderer.sortingOrder + sortingOrderOffset;
+        return overlayRenderer;
+    }
+
+    private void FitOverlayVisualToTile(
+        SpriteRenderer overlayRenderer,
+        Sprite overlaySprite,
+        float scaleMultiplier,
+        float verticalOffsetInTileHeights)
+    {
+        if (overlayRenderer == null || spriteRenderer == null || overlaySprite == null)
         {
             return;
         }
@@ -349,18 +380,21 @@ public class HexTile : MonoBehaviour
         Vector2 tileSize = spriteRenderer.sprite != null
             ? spriteRenderer.sprite.bounds.size
             : Vector2.zero;
-        Vector2 effectSize = effectSprite.bounds.size;
+        Vector2 overlaySize = overlaySprite.bounds.size;
 
-        if (tileSize.x <= 0f || tileSize.y <= 0f || effectSize.x <= 0f || effectSize.y <= 0f)
+        if (tileSize.x <= 0f || tileSize.y <= 0f || overlaySize.x <= 0f || overlaySize.y <= 0f)
         {
-            worldEffectRenderer.transform.localScale = Vector3.one;
+            overlayRenderer.transform.localScale = Vector3.one;
+            overlayRenderer.transform.localPosition = Vector3.zero;
             return;
         }
 
-        worldEffectRenderer.transform.localScale = new Vector3(
-            tileSize.x / effectSize.x,
-            tileSize.y / effectSize.y,
-            1f);
+        float scale = Mathf.Min(tileSize.x / overlaySize.x, tileSize.y / overlaySize.y) * scaleMultiplier;
+        overlayRenderer.transform.localScale = new Vector3(scale, scale, 1f);
+        overlayRenderer.transform.localPosition = new Vector3(
+            0f,
+            tileSize.y * verticalOffsetInTileHeights,
+            0f);
     }
 
     private void ClearWorldEffectVisual()
@@ -373,6 +407,18 @@ public class HexTile : MonoBehaviour
         worldEffectRenderer.sprite = null;
         worldEffectRenderer.color = Color.white;
         worldEffectRenderer.enabled = false;
+    }
+
+    private void ClearFortVisual()
+    {
+        if (fortRenderer == null)
+        {
+            return;
+        }
+
+        fortRenderer.sprite = null;
+        fortRenderer.color = Color.white;
+        fortRenderer.enabled = false;
     }
 
     public void Highlight(Color color)

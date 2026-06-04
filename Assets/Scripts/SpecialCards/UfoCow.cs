@@ -2,7 +2,7 @@ public class UfoCow : SpecialCardScriptBase
 {
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "UFO Cow");
+        return unitCardData is UfoCowCardData;
     }
 
     public override int GetAttackRange(Unit unit, CharacterCardData unitCardData)

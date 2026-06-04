@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10b9f8f30f2d57443a05fde10c03e1e4, type: 3}
   m_Name: Lightning strike
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
-  cardName: 
-  cost: 0
+  cardName: Lightning Strike
+  cost: 3
   handDeckSprite: {fileID: -5138918207490506707, guid: 3adfa7ca31d126049bce4fc18d2d23c3, type: 3}
-  description: 
+  description: Deal direct damage equal to effect power to an enemy unit, structure, or fort.
   validatorId: target.rules.reusable
-  effectId: 
-  effectType: 0
-  effectPower: 0
+  effectId: effect.damage
+  specialCardId: spell.lightning_strike
+  effectType: 2
+  effectPower: 2
   effectDurationTurns: 0
   spellMovementCapacity:
     hasValue: 0

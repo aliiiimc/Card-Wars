@@ -15,6 +15,7 @@ public class Unit : MonoBehaviour
     public CharacterCardData sourceCharacterCardData;
     public int movementRangeMultiplier = 1;
     public int movementRangeMultiplierTurnsRemaining;
+    public int frozenTurnsRemaining;
 
     private CardRuntimeState runtimeCard;
 
@@ -26,11 +27,12 @@ public class Unit : MonoBehaviour
     public bool isReadyToAttack = true;
 
     public CardRuntimeState RuntimeCard => runtimeCard;
+    public bool IsFrozen => frozenTurnsRemaining > 0;
 
 
     public bool CanMove()
     {
-        return !hasAttackedThisTurn && GetRemainingMovement() > 0;
+        return !IsFrozen && !hasAttackedThisTurn && GetRemainingMovement() > 0;
     }
 
 
@@ -42,6 +44,11 @@ public class Unit : MonoBehaviour
 
     public int GetRemainingMovement()
     {
+        if (IsFrozen)
+        {
+            return 0;
+        }
+
         return Mathf.Max(0, GetEffectiveMoveRange() - movementSpentThisTurn);
     }
 
@@ -173,8 +180,19 @@ public class Unit : MonoBehaviour
         movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
     }
 
+    public void ApplyFreeze(int turns)
+    {
+        int safeTurns = Mathf.Max(1, turns);
+        frozenTurnsRemaining = Mathf.Max(frozenTurnsRemaining, safeTurns);
+    }
+
     public void ConsumeTimedEffectsOnOwnerTurnEnd()
     {
+        if (frozenTurnsRemaining > 0)
+        {
+            frozenTurnsRemaining = Mathf.Max(0, frozenTurnsRemaining - 1);
+        }
+
         if (movementRangeMultiplierTurnsRemaining <= 0)
         {
             return;
@@ -222,6 +240,7 @@ public class Unit : MonoBehaviour
 
     public void Die()
     {
+        DeathHistoryManager.GetOrCreate().RecordCharacterDeath(runtimeCard, owner);
         runtimeCard?.MoveToZone(CardZone.Discard);
 
         if (currentTile != null)

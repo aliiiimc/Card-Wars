@@ -4,7 +4,8 @@ public class Dragon : SpecialCardScriptBase
 {
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "Dragon");
+        return unitCardData is DragonCardData
+            || CardMatches(unitCardData, SpecialCardIds.CharacterDragon, "Dragon");
     }
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
@@ -23,6 +24,7 @@ public class Dragon : SpecialCardScriptBase
             return false;
         }
 
+        PlayProjectileFromUnit(attacker, attackerCardData, tile);
         int dealtDamage;
         bool attackApplied = TryDamageWorldEffect(tile, Mathf.Max(0, attacker.attack), out dealtDamage);
         if (attackApplied)

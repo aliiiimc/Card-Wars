@@ -5,6 +5,7 @@ public class HexGrid : MonoBehaviour
 {
     public GameObject hexPrefab;
     public GameObject unitPrefab;
+    public Sprite fortLandmarkSprite;
     public int gridWidth = 7;
     public int gridHeight = 5;
     public float hexSize = 0.5f;
@@ -55,8 +56,8 @@ public class HexGrid : MonoBehaviour
     void PlaceForts()
     {
         int midRow = gridHeight / 2;
-        tiles[OffsetToAxial(0, midRow)].SetAsFort(playerFortColor, "player");
-        tiles[OffsetToAxial(gridWidth - 1, midRow)].SetAsFort(enemyFortColor, "enemy");
+        tiles[OffsetToAxial(0, midRow)].SetAsFort(playerFortColor, "player", fortLandmarkSprite);
+        tiles[OffsetToAxial(gridWidth - 1, midRow)].SetAsFort(enemyFortColor, "enemy", fortLandmarkSprite);
     }
 
     void SpawnHorizontalDebugUnits()

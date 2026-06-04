@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10b9f8f30f2d57443a05fde10c03e1e4, type: 3}
   m_Name: Sabotage
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
-  cardName: 
+  cardName: Sabotage
   cost: 0
   handDeckSprite: {fileID: 8187653537258171138, guid: 1045d2787b8ec0c48b8418b5ece5636e, type: 3}
-  description: 
+  description: Disables an enemy building's special work for a limited number of turns.
   validatorId: target.rules.reusable
-  effectId: 
-  effectType: 0
+  effectId: effect.damage
+  specialCardId: spell.sabotage
+  effectType: 2
   effectPower: 0
-  effectDurationTurns: 0
+  effectDurationTurns: 1
   spellMovementCapacity:
     hasValue: 0
     value: 0

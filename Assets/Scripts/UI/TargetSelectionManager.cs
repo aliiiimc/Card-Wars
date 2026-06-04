@@ -221,17 +221,36 @@ namespace FortGame.UI
                 CardRuntimeState runtimeTarget = GetRuntimeCardOnTile(coord);
                 if (runtimeTarget != null)
                 {
-                    //Ali : spells that hit units need the runtime card reference plus ally/enemy ownership.
-                    bool isAllyUnit = tile.owner == actingPlayerKey;
-
-                    target = new CardTarget
+                    if (runtimeTarget.SourceCard is CharacterCardData)
                     {
-                        type = isAllyUnit ? CardTargetType.AllyUnit : CardTargetType.EnemyUnit,
-                        tile = coord,
-                        targetCard = runtimeTarget,
-                        targetPlayerId = tile.owner
-                    };
-                    return true;
+                        //Ali : spells that hit units need the runtime card reference plus ally/enemy ownership.
+                        bool isAllyUnit = tile.owner == actingPlayerKey;
+
+                        target = new CardTarget
+                        {
+                            type = isAllyUnit ? CardTargetType.AllyUnit : CardTargetType.EnemyUnit,
+                            tile = coord,
+                            targetCard = runtimeTarget,
+                            targetPlayerId = tile.owner,
+                            targetEntityId = "unit"
+                        };
+                        return true;
+                    }
+
+                    if (runtimeTarget.SourceCard is WorldEffectCardData)
+                    {
+                        bool isAllyStructure = tile.worldEffectOwner == actingPlayerKey;
+
+                        target = new CardTarget
+                        {
+                            type = isAllyStructure ? CardTargetType.AllyStructure : CardTargetType.EnemyStructure,
+                            tile = coord,
+                            targetCard = runtimeTarget,
+                            targetPlayerId = tile.worldEffectOwner,
+                            targetEntityId = "worldEffect"
+                        };
+                        return true;
+                    }
                 }
             }
 

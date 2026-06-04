@@ -9,15 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d10e72179da00f74cb4561cda13856f7, type: 3}
+  m_Script: {fileID: 11500000, guid: 9a015e942e384e3794dbd98d0012def7, type: 3}
   m_Name: Watch tower
-  m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
+  m_EditorClassIdentifier: Assembly-CSharp::WatchTowerCardData
   cardName: Watch Tower
   cost: 0
   handDeckSprite: {fileID: -9044012078644547418, guid: 0db5b2f01fb2cd943b9f2bab729360b6, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
+  specialCardId: world.watch_tower
   manifestedSprite: {fileID: 21300000, guid: 413c6ade34a942658e43ac29a1b67b2e, type: 3}
   category: 0
   structureHp:
@@ -46,3 +47,8 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
+  projectileVisuals:
+    projectilePrefab: {fileID: 734101, guid: 1d9835c6254b42cc873bdd173e77e128, type: 3}
+    impactPrefab: {fileID: 0}
+    projectileSpeed: 10
+    spawnOffset: {x: 0, y: 0.35, z: 0}

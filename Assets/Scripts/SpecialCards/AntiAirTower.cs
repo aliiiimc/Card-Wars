@@ -12,11 +12,17 @@ public class AntiAirTower
 
         WorldEffect[] allWorldEffects = Object.FindObjectsByType<WorldEffect>(FindObjectsSortMode.None);
         int totalHits = 0;
+        SpellManager spellManager = SpellManager.GetOrCreate();
 
         for (int i = 0; i < allWorldEffects.Length; i++)
         {
             WorldEffect worldEffect = allWorldEffects[i];
             if (!IsAntiAirTower(worldEffect) || worldEffect.currentTile == null)
+            {
+                continue;
+            }
+
+            if (spellManager != null && spellManager.IsWorldEffectDisabled(worldEffect))
             {
                 continue;
             }
@@ -40,6 +46,7 @@ public class AntiAirTower
             }
 
             HexTile targetTile = targetUnit.currentTile;
+            SpecialCardScriptBase.PlayProjectileFromWorldEffect(worldEffect, targetTile);
             targetUnit.ApplyDamage(damage);
             totalHits++;
             if (targetTile != null)
@@ -107,7 +114,8 @@ public class AntiAirTower
         return worldEffect != null
             && worldEffect.sourceCard != null
             && worldEffect.sourceCard.SourceCard != null
-            && string.Equals(worldEffect.sourceCard.SourceCard.DisplayName, "Anti-Air Tower", System.StringComparison.OrdinalIgnoreCase);
+            && (worldEffect.sourceCard.SourceCard is AntiAirTowerCardData
+                || worldEffect.sourceCard.SourceCard.MatchesSpecialCard(SpecialCardIds.WorldAntiAirTower, "Anti-Air Tower"));
     }
 
     private static bool IsAirUnit(Unit unit)

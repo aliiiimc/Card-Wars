@@ -6,7 +6,7 @@ public class Bomber : SpecialCardScriptBase
 
     public override bool IsMatch(Unit unit, CharacterCardData unitCardData)
     {
-        return CardNameMatches(unitCardData, "Bomber");
+        return unitCardData is BomberCardData;
     }
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)

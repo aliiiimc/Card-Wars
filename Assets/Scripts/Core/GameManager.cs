@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public int pendingBuyCost = -1; //Ali: garde le prix choisi quand la main est pleine et que le joueur doit confirmer.
     public CardRuntimeState selectedCardToDiscard;
     public int roundNumber = 1;
+    public int turnNumber = 1;
 
     [Header("Buy Cost Menu UI")]
     public bool autoCreateBuyCostMenu = true;
@@ -89,6 +90,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         winnerName = string.Empty;
         roundNumber = 1;
+        turnNumber = 1;
 
         player1.money = gameConfig.startingMoney;
         player2.money = gameConfig.startingMoney;
@@ -1019,6 +1021,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         SpellManager.GetOrCreate().ConsumePersistentDurations(endingOwnerKey);
 
         PlayerState previousPlayer = currentPlayer;
+        turnNumber += 1;
         currentPlayer = currentPlayer == player1 ? player2 : player1;
         if (ReferenceEquals(previousPlayer, player2) && ReferenceEquals(currentPlayer, player1))
         {
@@ -1143,7 +1146,10 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         Dictionary<string, int> ownedFieldClusterBonusById = new Dictionary<string, int>();
+        Dictionary<string, int> redirectedFieldClusterBonusByRecipient = new Dictionary<string, int>();
         int unclusteredBonusTotal = 0;
+        int redirectedUnclusteredBonusTotal = 0;
+        SpellManager spellManager = SpellManager.GetOrCreate();
         for (int i = 0; i < allTiles.Length; i++)
         {
             HexTile tile = allTiles[i];
@@ -1156,17 +1162,39 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             }
 
             int tileBonus = Mathf.Max(0, tile.fieldBonusMoneyPerTurn);
+            string redirectedRecipientKey = string.Empty;
+            bool isRedirected = spellManager != null
+                && spellManager.TryGetFieldIncomeRecipient(ownerKey, tile, out redirectedRecipientKey);
 
             if (!string.IsNullOrWhiteSpace(tile.fieldClusterId))
             {
-                if (!ownedFieldClusterBonusById.ContainsKey(tile.fieldClusterId))
+                if (ownedFieldClusterBonusById.ContainsKey(tile.fieldClusterId))
                 {
-                    ownedFieldClusterBonusById[tile.fieldClusterId] = tileBonus;
+                    continue;
+                }
+
+                ownedFieldClusterBonusById[tile.fieldClusterId] = tileBonus;
+                if (isRedirected)
+                {
+                    if (!redirectedFieldClusterBonusByRecipient.ContainsKey(redirectedRecipientKey))
+                    {
+                        redirectedFieldClusterBonusByRecipient[redirectedRecipientKey] = 0;
+                    }
+
+                    redirectedFieldClusterBonusByRecipient[redirectedRecipientKey] += tileBonus;
                 }
             }
             else
             {
-                unclusteredBonusTotal += tileBonus;
+                if (isRedirected)
+                {
+                    redirectedUnclusteredBonusTotal += tileBonus;
+                    AddMoneyToOwner(redirectedRecipientKey, tileBonus);
+                }
+                else
+                {
+                    unclusteredBonusTotal += tileBonus;
+                }
             }
         }
 
@@ -1176,9 +1204,20 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             clusterBonusTotal += Mathf.Max(0, pair.Value);
         }
 
+        foreach (KeyValuePair<string, int> pair in redirectedFieldClusterBonusByRecipient)
+        {
+            AddMoneyToOwner(pair.Key, pair.Value);
+            clusterBonusTotal -= Mathf.Max(0, pair.Value);
+        }
+
         int bonusMoney = Mathf.Max(0, clusterBonusTotal + unclusteredBonusTotal);
         if (bonusMoney <= 0)
         {
+            if (redirectedFieldClusterBonusByRecipient.Count > 0 || redirectedUnclusteredBonusTotal > 0)
+            {
+                Debug.Log($"{currentPlayer.playerName} loses field income to Tax collection.");
+            }
+
             return;
         }
 
@@ -1238,6 +1277,13 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
+        Hospital hospital = new Hospital();
+        int totalHealing = hospital.ApplyAutomaticHealing(ownerKey);
+        if (totalHealing > 0)
+        {
+            Debug.Log($"[SpecialTrigger][Hospital] Applied {totalHealing} total healing for '{ownerKey}'.");
+        }
+
         WatchTower watchTower = new WatchTower();
         int hits = watchTower.ApplyAutomaticAttacks(ownerKey, grid, worldEffectManager);
         if (hits > 0)
@@ -1281,6 +1327,25 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         return ResolveCurrentOwnerKey();
+    }
+
+    private void AddMoneyToOwner(string ownerKey, int amount)
+    {
+        if (string.IsNullOrWhiteSpace(ownerKey) || amount <= 0)
+        {
+            return;
+        }
+
+        if (ownerKey == PlayerKeyResolver.PlayerOneKey)
+        {
+            player1.money += amount;
+            return;
+        }
+
+        if (ownerKey == PlayerKeyResolver.PlayerTwoKey)
+        {
+            player2.money += amount;
+        }
     }
 
     private void ApplyFortDamage(PlayerState targetPlayer, int damage)
