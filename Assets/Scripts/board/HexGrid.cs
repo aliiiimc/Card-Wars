@@ -9,7 +9,7 @@ public class HexGrid : MonoBehaviour
     public int gridWidth = 7;
     public int gridHeight = 5;
     public float hexSize = 0.5f;
-    public bool spawnDebugUnits = true;
+    public bool spawnDebugUnits = false;
     public Color playerSideColor = new Color(0.16f, 0.42f, 0.47f);
     public Color enemySideColor = new Color(0.47f, 0.20f, 0.26f);
     public Color playerFortColor = new Color(0.12f, 0.70f, 0.78f);

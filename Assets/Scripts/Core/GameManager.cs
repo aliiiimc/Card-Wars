@@ -75,6 +75,9 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         SetupBuyCostMenu();
         ResolveActionButtonReferences();
         RefreshActionButtons();
+
+        // Play theme music if available
+        SoundManager.GetOrCreate().PlayTheme();
     }
 
     private void ResolveActionButtonReferences()
