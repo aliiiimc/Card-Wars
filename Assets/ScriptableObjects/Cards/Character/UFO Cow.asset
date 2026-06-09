@@ -18,9 +18,10 @@ MonoBehaviour:
   description: 
   validatorId: target.rules.reusable
   effectId: 
+  specialCardId: 
   manifestedSprite: {fileID: 21300000, guid: 581962ac0447a7f49be95ed3d4028fec, type: 3}
   maxHp: 55
-  attackDamage: 0
+  attackDamage: 2
   attackRange: 0
   attackType: 0
   attackTarget: 0
@@ -30,4 +31,4 @@ MonoBehaviour:
     hasValue: 1
     value: 3
   canColonizeEnemyWorldEffects: 0
-  fieldConsumeAmount: 2
+  fieldConsumeAmount: 1

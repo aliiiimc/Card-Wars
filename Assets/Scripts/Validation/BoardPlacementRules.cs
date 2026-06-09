@@ -15,7 +15,7 @@ public static class BoardPlacementRules // verify if a board-placement card can 
             return false;
         }
 
-        if (CanPlaceUfoCowOnEnemyField(characterCard, tile, playerKey))
+        if (CanPlaceUfoCowOnField(characterCard, tile))
         {
             return true;
         }
@@ -89,9 +89,9 @@ public static class BoardPlacementRules // verify if a board-placement card can 
         return null;
     }
 
-    private static bool CanPlaceUfoCowOnEnemyField(CharacterCardData characterCard, HexTile tile, string playerKey)
+    private static bool CanPlaceUfoCowOnField(CharacterCardData characterCard, HexTile tile)
     {
-        if (characterCard == null || tile == null || string.IsNullOrWhiteSpace(playerKey))
+        if (characterCard == null || tile == null)
         {
             return false;
         }
@@ -103,8 +103,6 @@ public static class BoardPlacementRules // verify if a board-placement card can 
 
         return tile.HasWorldEffect()
             && tile.isFieldTile
-            && tile.worldEffectOwner != "none"
-            && tile.worldEffectOwner != playerKey
             && tile.CanUnitOccupy();
     }
 }

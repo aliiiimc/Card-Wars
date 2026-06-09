@@ -35,15 +35,48 @@ public class WorldEffectManager : MonoBehaviour
             return false;
         }
 
-        tile.SetWorldEffectOwner(newOwner);
+        string clusterId = tile.isFieldTile ? tile.fieldClusterId : string.Empty;
+        bool colonizedAtLeastOne = false;
 
-        if (worldEffectsByTile.TryGetValue(tile, out WorldEffect existing) && existing != null)
+        HexGrid grid = UnityEngine.Object.FindFirstObjectByType<HexGrid>();
+        Color? sideColor = null;
+        if (grid != null)
         {
-            existing.owner = newOwner;
-            return true;
+            sideColor = newOwner == "player" ? grid.playerSideColor : grid.enemySideColor;
         }
 
-        return true;
+        HexTile[] allTiles = UnityEngine.Object.FindObjectsByType<HexTile>(FindObjectsSortMode.None);
+        for (int i = 0; i < allTiles.Length; i++)
+        {
+            HexTile t = allTiles[i];
+            bool shouldColonize = false;
+
+            if (t == tile)
+            {
+                shouldColonize = true;
+            }
+            else if (!string.IsNullOrEmpty(clusterId) && t.isFieldTile && t.fieldClusterId == clusterId)
+            {
+                shouldColonize = true;
+            }
+
+            if (shouldColonize && t.HasWorldEffect() && t.worldEffectOwner != newOwner)
+            {
+                t.SetWorldEffectOwner(newOwner);
+                if (worldEffectsByTile.TryGetValue(t, out WorldEffect existing) && existing != null)
+                {
+                    existing.owner = newOwner;
+                }
+
+                if (sideColor.HasValue)
+                {
+                    t.SetBaseColor(sideColor.Value);
+                }
+                colonizedAtLeastOne = true;
+            }
+        }
+
+        return colonizedAtLeastOne;
     }
 
     public bool TryReplace(HexTile tile, string owner, CardRuntimeState card, out WorldEffect worldEffect)

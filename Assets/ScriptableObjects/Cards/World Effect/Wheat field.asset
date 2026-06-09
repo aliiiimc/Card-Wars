@@ -18,6 +18,7 @@ MonoBehaviour:
   description: 
   validatorId: target.rules.reusable
   effectId: effect.summon
+  specialCardId: 
   manifestedSprite: {fileID: -5534807364260679264, guid: dd4a2689b92f86c41967b204b54fa90d, type: 3}
   category: 1
   structureHp:
@@ -31,6 +32,7 @@ MonoBehaviour:
     value: 0
   allowsUnitPassThrough: 1
   allowsUnitOccupancy: 1
+  worldEffectOpacity: 1
   attackType: 1
   attackTarget: 0
   revenuePerTurn:
@@ -47,5 +49,5 @@ MonoBehaviour:
     hasValue: 0
     value: 0
   tilesPerField: 4
-  hpPerTile: 2
+  hpPerTile: 10
   bonusMoneyPerTurn: 1

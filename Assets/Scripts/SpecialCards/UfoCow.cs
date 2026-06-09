@@ -43,6 +43,19 @@ public class UfoCow : SpecialCardScriptBase
         }
 
         HexTile currentTile = ufoCow.currentTile;
+
+        // EMERGENCY AUTO-FIX:
+        // If the engine failed to mark this specific tile as a field (isFieldTile = false), 
+        // the cow will get stuck forever trying to consume a non-existent HP bar.
+        // We detect this and forcefully repair the tile's data on the fly.
+        if (currentTile.HasWorldEffect() && currentTile.worldEffectOwner != "none" && currentTile.worldEffectOwner != ufoCow.owner)
+        {
+            if (!currentTile.isFieldTile)
+            {
+                currentTile.SetFieldData("UfoCowEmergencyRepair", 4, 1);
+            }
+        }
+
         if (!CanConsumeEnemyField(currentTile, ufoCow.owner))
         {
             return false;
@@ -71,7 +84,7 @@ public class UfoCow : SpecialCardScriptBase
 
     private void ExecuteAutoFieldRoutine(Unit unit, bool refreshTurnStartTile)
     {
-        if (unit == null)
+        if (unit == null || unit.currentTile == null)
         {
             return;
         }
@@ -83,45 +96,70 @@ public class UfoCow : SpecialCardScriptBase
         }
 
         bool consumed = ConsumeOneFieldStep(unit, grid);
-        if (!consumed && TryMoveOntoAdjacentEnemyField(unit, grid, refreshTurnStartTile))
+        
+        if (!consumed)
         {
-            consumed = ConsumeOneFieldStep(unit, grid);
+            HexTile target = FindClosestEnemyField(unit);
+            if (target != null)
+            {
+                // We no longer check if the engine thinks the tile can be occupied.
+                // We are taking its spot!
+                unit.currentTile.ClearUnitOccupant();
+                unit.PlaceOnTile(target);
+                if (refreshTurnStartTile)
+                {
+                    unit.turnStartTile = target;
+                }
+                
+                int amount = 1;
+                if (unit.sourceCharacterCardData is UfoCowCardData cd)
+                {
+                    amount = UnityEngine.Mathf.Max(1, cd.fieldConsumeAmount);
+                }
+                
+                WorldEffectManager wem = UnityEngine.Object.FindFirstObjectByType<WorldEffectManager>();
+                if (wem != null)
+                {
+                    wem.TryDamageField(target, amount);
+                    consumed = true;
+                    UnityEngine.Debug.Log($"[SpecialTrigger][UfoCow] Jumped to and zapped field at {target.coord.q},{target.coord.r}");
+                }
+            }
         }
 
-        if (!consumed)
+        if (consumed)
+        {
+            unit.MarkMoved(unit.GetEffectiveMoveRange());
+            unit.MarkAttacked();
+        }
+        else
         {
             UnityEngine.Debug.Log("[SpecialTrigger][UfoCow] No enemy field tile consumed.");
         }
     }
 
-    private bool TryMoveOntoAdjacentEnemyField(Unit unit, HexGrid grid, bool refreshTurnStartTile)
+    private HexTile FindClosestEnemyField(Unit unit)
     {
-        if (unit == null || grid == null || unit.currentTile == null)
+        HexTile[] allTiles = UnityEngine.Object.FindObjectsByType<HexTile>(UnityEngine.FindObjectsSortMode.None);
+        System.Collections.Generic.List<HexTile> validTiles = new System.Collections.Generic.List<HexTile>();
+
+        for (int i = 0; i < allTiles.Length; i++)
         {
-            return false;
+            HexTile tile = allTiles[i];
+            
+            // ULTRA-FORGIVING CHECK: Ignore isFieldTile. If it has ANY world effect and it's an enemy's, target it!
+            if (tile.HasWorldEffect() && tile.worldEffectOwner != unit.owner && tile.worldEffectOwner != "none")
+            {
+                validTiles.Add(tile);
+            }
         }
 
-        System.Collections.Generic.List<HexTile> neighbors = HexUtils.GetNeighbors(unit.currentTile, grid);
-        for (int i = 0; i < neighbors.Count; i++)
+        if (validTiles.Count == 0)
         {
-            HexTile neighbor = neighbors[i];
-            if (!CanConsumeEnemyField(neighbor, unit.owner) || !neighbor.CanUnitOccupy())
-            {
-                continue;
-            }
-
-            HexTile previousTile = unit.currentTile;
-            previousTile.ClearUnitOccupant();
-            unit.PlaceOnTile(neighbor);
-            if (refreshTurnStartTile)
-            {
-                unit.turnStartTile = neighbor;
-            }
-
-            UnityEngine.Debug.Log($"[SpecialTrigger][UfoCow] Moved onto enemy field tile at ({neighbor.coord.q},{neighbor.coord.r}).");
-            return true;
+            return null;
         }
 
-        return false;
+        validTiles.Sort((a, b) => HexUtils.GetHexDistance(unit.currentTile, a).CompareTo(HexUtils.GetHexDistance(unit.currentTile, b)));
+        return validTiles[0];
     }
 }

@@ -29,35 +29,73 @@ public class WheatField
 
         int targetCount = Mathf.Max(1, requestedTileCount);
 
-        Queue<HexTile> frontier = new Queue<HexTile>();
-        HashSet<HexTile> visited = new HashSet<HexTile>();
-        frontier.Enqueue(originTile);
-        visited.Add(originTile);
-
-        while (frontier.Count > 0 && fieldTiles.Count < targetCount)
+        // Predefined tight 'square' (rhombus/block) offsets to ensure no dead-ends (horseshoe shapes)
+        List<AxialCoord> squareOffsets = new List<AxialCoord>
         {
-            HexTile current = frontier.Dequeue();
-            if (current == null)
-            {
-                continue;
-            }
+            new AxialCoord(0, 0),
+            new AxialCoord(1, 0),
+            new AxialCoord(0, 1),
+            new AxialCoord(1, 1),
+            new AxialCoord(-1, 1),
+            new AxialCoord(0, 2),
+            new AxialCoord(1, -1),
+            new AxialCoord(-1, 0)
+        };
 
-            if (current.IsEmpty() || current.HasWorldEffect())
-            {
-                fieldTiles.Add(current);
-            }
+        foreach (AxialCoord offset in squareOffsets)
+        {
+            if (fieldTiles.Count >= targetCount) break;
 
-            List<HexTile> neighbors = HexUtils.GetNeighbors(current, grid);
-            for (int i = 0; i < neighbors.Count; i++)
+            AxialCoord targetCoord = new AxialCoord(originTile.coord.q + offset.q, originTile.coord.r + offset.r);
+            HexTile tile = grid.GetTile(targetCoord);
+
+            if (tile != null && (tile.IsEmpty() || tile.HasWorldEffect()))
             {
-                HexTile neighbor = neighbors[i];
-                if (neighbor == null || visited.Contains(neighbor))
+                if (!fieldTiles.Contains(tile))
                 {
-                    continue;
+                    fieldTiles.Add(tile);
+                }
+            }
+        }
+
+        // If the tight block couldn't find enough tiles (e.g. near map edges), fallback to BFS to fill the rest
+        if (fieldTiles.Count < targetCount)
+        {
+            Queue<HexTile> frontier = new Queue<HexTile>();
+            HashSet<HexTile> visited = new HashSet<HexTile>();
+            
+            foreach (HexTile ft in fieldTiles)
+            {
+                frontier.Enqueue(ft);
+                visited.Add(ft);
+            }
+
+            if (frontier.Count == 0)
+            {
+                frontier.Enqueue(originTile);
+                visited.Add(originTile);
+            }
+
+            while (frontier.Count > 0 && fieldTiles.Count < targetCount)
+            {
+                HexTile current = frontier.Dequeue();
+
+                if (!fieldTiles.Contains(current) && (current.IsEmpty() || current.HasWorldEffect()))
+                {
+                    fieldTiles.Add(current);
                 }
 
-                visited.Add(neighbor);
-                frontier.Enqueue(neighbor);
+                if (fieldTiles.Count >= targetCount) break;
+
+                List<HexTile> neighbors = HexUtils.GetNeighbors(current, grid);
+                for (int i = 0; i < neighbors.Count; i++)
+                {
+                    HexTile neighbor = neighbors[i];
+                    if (neighbor == null || visited.Contains(neighbor)) continue;
+
+                    visited.Add(neighbor);
+                    frontier.Enqueue(neighbor);
+                }
             }
         }
 

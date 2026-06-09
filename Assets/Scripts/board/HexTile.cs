@@ -28,7 +28,6 @@ public class HexTile : MonoBehaviour
 
     private bool isHighlighted; //Ali : variable bach nt7ekmo f selection dial cards 
 
-
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -40,7 +39,7 @@ public class HexTile : MonoBehaviour
     {
         baseColor = color;
 
-        if (tileType == "empty")
+        if (tileType == "empty" || tileType == "worldEffect")
         {
             originalColor = color;
             spriteRenderer.color = color;
