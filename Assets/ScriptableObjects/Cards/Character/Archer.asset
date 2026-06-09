@@ -30,7 +30,6 @@ MonoBehaviour:
     hasValue: 1
     value: 2
   canColonizeEnemyWorldEffects: 0
-  bonusAttackRange: 2
   projectileVisuals:
     projectilePrefab: {fileID: 734101, guid: 1d9835c6254b42cc873bdd173e77e128, type: 3}
     impactPrefab: {fileID: 0}
