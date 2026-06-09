@@ -74,7 +74,7 @@ public static class HexUtils
         return (Mathf.Abs(dq) + Mathf.Abs(dr) + Mathf.Abs(ds)) / 2;
     }
 
-    public static List<HexTile> GetReachableMoveTiles(HexTile start, int range, HexGrid grid, MovementType movementType = MovementType.Ground)
+    public static List<HexTile> GetReachableMoveTiles(HexTile start, int range, HexGrid grid, MovementType movementType = MovementType.Ground, string movingUnitOwner = null)
     {
         List<HexTile> reachableTiles = new List<HexTile>();
         if (start == null || grid == null || range <= 0)
@@ -109,13 +109,13 @@ public static class HexUtils
 
                 visited.Add(neighbor);
 
-                bool canLandOnNeighbor = neighbor.CanUnitOccupy();
+                bool canLandOnNeighbor = neighbor.CanUnitOccupy(movingUnitOwner);
                 if (canLandOnNeighbor)
                 {
                     reachableTiles.Add(neighbor);
                 }
 
-                if (!CanTraverseTile(neighbor, movementType))
+                if (!CanTraverseTile(neighbor, movementType, null, movingUnitOwner))
                 {
                     continue;
                 }
@@ -128,7 +128,7 @@ public static class HexUtils
         return reachableTiles;
     }
 
-    public static int GetMoveDistance(HexTile start, HexTile target, HexGrid grid, int maxRange, MovementType movementType = MovementType.Ground)
+    public static int GetMoveDistance(HexTile start, HexTile target, HexGrid grid, int maxRange, MovementType movementType = MovementType.Ground, string movingUnitOwner = null)
     {
         if (start == null || target == null || grid == null || maxRange < 0)
         {
@@ -160,7 +160,7 @@ public static class HexUtils
 
             foreach (HexTile neighbor in GetNeighbors(current, grid))
             {
-                if (visited.Contains(neighbor) || !CanTraverseTile(neighbor, movementType, target))
+                if (visited.Contains(neighbor) || !CanTraverseTile(neighbor, movementType, target, movingUnitOwner))
                 {
                     continue;
                 }
@@ -180,7 +180,7 @@ public static class HexUtils
         return -1;
     }
 
-    private static bool CanTraverseTile(HexTile tile, MovementType movementType, HexTile target = null)
+    private static bool CanTraverseTile(HexTile tile, MovementType movementType, HexTile target = null, string movingUnitOwner = null)
     {
         if (tile == null)
         {
@@ -189,7 +189,7 @@ public static class HexUtils
 
         if (tile == target)
         {
-            return tile.CanUnitOccupy() || movementType == MovementType.Flying;
+            return tile.CanUnitOccupy(movingUnitOwner) || movementType == MovementType.Flying;
         }
 
         if (movementType == MovementType.Flying)

@@ -76,14 +76,27 @@ public class HexTile : MonoBehaviour
         return !hasWorldEffect || worldEffectAllowsUnitPassThrough;
     }
 
-    public bool CanUnitOccupy()
+    public bool CanUnitOccupy(string movingUnitOwner = null)
     {
         if (tileType == "fort" || tileType == "unit")
         {
             return false;
         }
 
-        return !hasWorldEffect || worldEffectAllowsUnitOccupancy;
+        if (!hasWorldEffect)
+        {
+            return true;
+        }
+
+        if (isMineTile && movingUnitOwner != null)
+        {
+            if (worldEffectOwner != "none" && worldEffectOwner != movingUnitOwner)
+            {
+                return true;
+            }
+        }
+
+        return worldEffectAllowsUnitOccupancy;
     }
 
     public void SetAsFort(Color fortColor, string fortOwner, Sprite fortSprite = null)

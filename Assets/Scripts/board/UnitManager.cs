@@ -179,8 +179,8 @@ public class UnitManager : MonoBehaviour
             unit.currentTile,
             unit.GetRemainingMovement(),
             grid,
-            GetMovementType(unit.sourceCharacterCardData));
-        AppendReachableEnemyMineTiles(unit.currentTile, unit, legalTiles);
+            GetMovementType(unit.sourceCharacterCardData),
+            unit.owner);
         legalTiles.RemoveAll(tile => !IsInsideTurnStartRange(unit, tile) || !IsValidMoveDestination(unit, tile));
         return legalTiles;
     }
@@ -286,7 +286,8 @@ public class UnitManager : MonoBehaviour
             targetTile,
             grid,
             movingUnit.GetRemainingMovement(),
-            GetMovementType(unitCardData));
+            GetMovementType(unitCardData),
+            movingUnit.owner);
 
         if (movementCost <= 0)
         {
@@ -643,6 +644,10 @@ public class UnitManager : MonoBehaviour
 
         if (tile.tileType == "worldEffect" || tile.HasWorldEffect())
         {
+            if (tile.isMineTile)
+            {
+                return false;
+            }
             return CanProfileTarget(attackTarget, false) || canTargetEnemyWorldEffect;
         }
 
@@ -661,43 +666,7 @@ public class UnitManager : MonoBehaviour
             return false;
         }
 
-        return tile.CanUnitOccupy() || IsEnemyMineTileForUnit(tile, unit);
-    }
-
-    bool IsEnemyMineTileForUnit(HexTile tile, Unit unit)
-    {
-        Mines mines = new Mines();
-        return mines.IsEnemyMineTileForUnit(tile, unit);
-    }
-
-    void AppendReachableEnemyMineTiles(HexTile startTile, Unit unit, List<HexTile> destinationTiles)
-    {
-        if (startTile == null || unit == null || destinationTiles == null || grid == null)
-        {
-            return;
-        }
-
-        List<HexTile> inRangeTiles = HexUtils.GetTilesInRange(startTile, unit.GetRemainingMovement(), grid);
-        for (int i = 0; i < inRangeTiles.Count; i++)
-        {
-            HexTile tile = inRangeTiles[i];
-            if (!IsEnemyMineTileForUnit(tile, unit))
-            {
-                continue;
-            }
-
-            MovementType movementType = GetMovementType(unit.sourceCharacterCardData);
-            int distance = HexUtils.GetMoveDistance(startTile, tile, grid, unit.GetRemainingMovement(), movementType);
-            if (distance <= 0)
-            {
-                continue;
-            }
-
-            if (!destinationTiles.Contains(tile))
-            {
-                destinationTiles.Add(tile);
-            }
-        }
+        return tile.CanUnitOccupy(unit.owner);
     }
 
     bool IsInsideTurnStartRange(Unit unit, HexTile tile)

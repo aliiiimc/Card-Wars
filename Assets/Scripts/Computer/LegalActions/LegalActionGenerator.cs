@@ -226,7 +226,8 @@ namespace FortGame.Computer
                         destinationTile,
                         snapshot.HexGrid,
                         unit.GetRemainingMovement(),
-                        unit.sourceCharacterCardData != null ? unit.sourceCharacterCardData.movementType : MovementType.Ground);
+                        unit.sourceCharacterCardData != null ? unit.sourceCharacterCardData.movementType : MovementType.Ground,
+                        unit.owner);
 
                     var action = new ComputerAction(
                         $"Move {unit.name} to ({destinationTile.coord.q}, {destinationTile.coord.r})",
