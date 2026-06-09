@@ -41,3 +41,5 @@ MonoBehaviour:
     value: 0
   minesToPlace: 4
   mineDamage: 12
+  allowsUnitPassThrough: 0
+  allowsUnitOccupancy: 0
