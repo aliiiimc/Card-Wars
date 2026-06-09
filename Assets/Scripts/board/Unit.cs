@@ -40,10 +40,9 @@ public class Unit : MonoBehaviour
     }
 
 
-    // Ali: a unit can only attack if it has not attacked yet and its summon/readiness rule allows it.
     public bool CanAttack()
     {
-        return isReadyToAttack && !hasAttackedThisTurn && !HasExhaustedMovementThisTurn();
+        return !IsFrozen && isReadyToAttack && !hasAttackedThisTurn && !HasExhaustedMovementThisTurn();
     }
 
     public int GetRemainingMovement()
