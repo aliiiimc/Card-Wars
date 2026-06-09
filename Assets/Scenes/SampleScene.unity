@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 114665866}
   - component: {fileID: 114665865}
   m_Layer: 5
-  m_Name: Buycard
+  m_Name: TestBuycard
   m_TagString: Untagged
   m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
@@ -155,7 +155,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -321.6, y: -286.67}
+  m_AnchoredPosition: {x: -110.1, y: -402.1}
   m_SizeDelta: {x: 280, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &114665865
@@ -204,7 +204,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 961893401}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: BuyCard
+        m_MethodName: TestBuyCard
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -433,7 +433,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 139018000}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -793,7 +793,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 560, y: -286.67}
+  m_AnchoredPosition: {x: 560, y: -402.1}
   m_SizeDelta: {x: 280, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &220000002
@@ -1186,8 +1186,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 29.3, y: -21.3}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 0, y: -28.6}
+  m_SizeDelta: {x: 926.3, y: 37.9}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &308165018
 MonoBehaviour:
@@ -1218,8 +1218,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294946304
-  m_fontColor: {r: 0, g: 0.6836374, b: 1, a: 1}
+    rgba: 4281635584
+  m_fontColor: {r: 0, g: 0.5754717, b: 0.20579785, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1236,15 +1236,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 48.3
+  m_fontSizeBase: 48.3
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_fontStyle: 1
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -2202,8 +2202,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 0, y: 51}
-  m_SizeDelta: {x: -80, y: 329.69}
+  m_AnchoredPosition: {x: 33.100098, y: 11.5}
+  m_SizeDelta: {x: -1155.0002, y: 254.29}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &849563074
 MonoBehaviour:
@@ -2498,7 +2498,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 236, y: 42.4}
+  m_SizeDelta: {x: 264.18, y: 42.4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1032293583
 MonoBehaviour:
@@ -2520,7 +2520,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'BuyCard
+  m_text: 'Buy Card
 
 '
   m_isRightToLeft: 0
@@ -2549,15 +2549,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 37.95
-  m_fontSizeBase: 5
+  m_fontSize: 51
+  m_fontSizeBase: 51
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 50
   m_fontStyle: 1
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -2998,7 +2998,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -610.9, y: -286.67}
+  m_AnchoredPosition: {x: -443.9, y: -402.1}
   m_SizeDelta: {x: 280, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1208825526
@@ -3131,7 +3131,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 253.4, y: -286.67}
+  m_AnchoredPosition: {x: 1133.1, y: 395.6}
   m_SizeDelta: {x: 280, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1231000266
@@ -3677,8 +3677,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -15.8, y: 44.4}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: -10, y: 48.9}
+  m_SizeDelta: {x: 472.81, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1425818655
 MonoBehaviour:
@@ -3700,7 +3700,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ROUND 1
+  m_text: Round 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -3727,13 +3727,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 45.6
+  m_fontSizeBase: 45.6
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -3985,7 +3985,7 @@ Transform:
   m_GameObject: {fileID: 1552139956}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 4.4, y: -0.63, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4028,7 +4028,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: -570.9, y: -7.1000977}
-  m_SizeDelta: {x: 326.8, y: 285.7}
+  m_SizeDelta: {x: 458.1, y: 226.8}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1779738949
 MonoBehaviour:
@@ -4241,7 +4241,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -33.5, y: -286.67}
+  m_AnchoredPosition: {x: 226.4, y: -402.1}
   m_SizeDelta: {x: 280, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1877930157

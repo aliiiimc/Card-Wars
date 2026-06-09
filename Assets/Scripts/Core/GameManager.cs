@@ -35,6 +35,10 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public Transform buyCostMenuParent;
     public float buyCostOptionSpacing = 110f;
     private GameObject buyCostOptionsRoot;
+    private const int MinBuyMenuCost = 2;
+    private const int MaxBuyMenuCost = 7;
+    private const float BuyCostOptionWidth = 95f;
+    private const float BuyCostOptionHeight = 44f;
 
     [Header("Action Buttons")]
     public GameObject buyButtonObject;
@@ -404,13 +408,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void BuyCard()
     {
-        int defaultCost = gameConfig != null ? gameConfig.buyCost : -1;
-        if (!HasCardsAtBuyCost(defaultCost))
-        {
-            defaultCost = GetLowestAvailableBuyCost();
-        }
-
-        BuyCardForCost(defaultCost);
+        ToggleBuyCostOptions();
     }
 
     public void BuyCardForCost2() { BuyCardForCost(2); }
@@ -418,6 +416,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public void BuyCardForCost4() { BuyCardForCost(4); }
     public void BuyCardForCost5() { BuyCardForCost(5); }
     public void BuyCardForCost6() { BuyCardForCost(6); }
+    public void BuyCardForCost7() { BuyCardForCost(7); }
 
     public void BuyCardForCost(int selectedCost)
     {
@@ -433,8 +432,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
-        HideBuyCostOptions();
-
         if (hasBoughtThisTurn)
         {
             Debug.Log(currentPlayer.playerName + " already bought a card this turn.");
@@ -443,9 +440,11 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         if (selectedCost <= 0)
         {
-            Debug.Log("Choose a valid buy cost.");
+            ShowBuyCostOptions();
             return;
         }
+
+        HideBuyCostOptions();
 
         if (currentPlayer.money < selectedCost)
         {
@@ -938,7 +937,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     private void CreateBuyCostOptions(Button buyButton)
     {
-        List<int> costs = GetAvailableBuyCosts(false);
+        List<int> costs = GetBuyMenuCosts();
         if (costs.Count == 0)
         {
             return;
@@ -950,31 +949,31 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         buyCostOptionsRoot = new GameObject("BuyCostOptions");
         RectTransform rootRect = buyCostOptionsRoot.AddComponent<RectTransform>();
         buyCostOptionsRoot.transform.SetParent(parent, false);
+        buyCostOptionsRoot.transform.SetAsLastSibling();
 
         if (buyButtonRect != null)
         {
-            rootRect.anchorMin = buyButtonRect.anchorMin;
-            rootRect.anchorMax = buyButtonRect.anchorMax;
-            rootRect.pivot = buyButtonRect.pivot;
-            rootRect.anchoredPosition = buyButtonRect.anchoredPosition + new Vector2(0f, 90f);
-            rootRect.sizeDelta = new Vector2(costs.Count * buyCostOptionSpacing, 50f);
+            PositionBuyCostOptions(rootRect, buyButtonRect, costs.Count);
         }
 
         for (int i = 0; i < costs.Count; i++)
         {
-            CreateBuyCostOptionButton(buyButton, costs[i], i);
+            CreateBuyCostOptionButton(buyButton, costs[i], i, costs.Count);
         }
     }
 
-    private void CreateBuyCostOptionButton(Button buyButton, int selectedCost, int index)
+    private void CreateBuyCostOptionButton(Button buyButton, int selectedCost, int index, int optionCount)
     {
         //Ali: ces boutons sont neufs, donc ils ne gardent pas l'ancien OnClick Unity du bouton Buy.
         GameObject buttonObject = new GameObject("BuyCost" + selectedCost + "Option");
         buttonObject.transform.SetParent(buyCostOptionsRoot.transform, false);
 
         RectTransform buttonRect = buttonObject.AddComponent<RectTransform>();
-        buttonRect.sizeDelta = new Vector2(95f, 44f);
-        buttonRect.anchoredPosition = new Vector2(index * buyCostOptionSpacing, 0f);
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.sizeDelta = new Vector2(BuyCostOptionWidth, BuyCostOptionHeight);
+        buttonRect.anchoredPosition = new Vector2((index - (optionCount - 1) * 0.5f) * buyCostOptionSpacing, 0f);
 
         Image image = buttonObject.AddComponent<Image>();
         Image buyButtonImage = buyButton.GetComponent<Image>();
@@ -1031,7 +1030,23 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
-        buyCostOptionsRoot.SetActive(!buyCostOptionsRoot.activeSelf);
+        if (buyCostOptionsRoot.activeSelf)
+        {
+            HideBuyCostOptions();
+        }
+        else
+        {
+            ShowBuyCostOptions();
+        }
+    }
+
+    private void ShowBuyCostOptions()
+    {
+        if (buyCostOptionsRoot != null)
+        {
+            buyCostOptionsRoot.SetActive(true);
+            buyCostOptionsRoot.transform.SetAsLastSibling();
+        }
     }
 
     private void HideBuyCostOptions()
@@ -1040,6 +1055,41 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             buyCostOptionsRoot.SetActive(false);
         }
+    }
+
+    private List<int> GetBuyMenuCosts()
+    {
+        List<int> costs = new List<int>();
+        for (int cost = MinBuyMenuCost; cost <= MaxBuyMenuCost; cost++)
+        {
+            costs.Add(cost);
+        }
+
+        return costs;
+    }
+
+    private void PositionBuyCostOptions(RectTransform rootRect, RectTransform buyButtonRect, int optionCount)
+    {
+        rootRect.anchorMin = buyButtonRect.anchorMin;
+        rootRect.anchorMax = buyButtonRect.anchorMax;
+        rootRect.pivot = buyButtonRect.pivot;
+
+        float totalWidth = (optionCount - 1) * buyCostOptionSpacing + BuyCostOptionWidth;
+        rootRect.sizeDelta = new Vector2(totalWidth, BuyCostOptionHeight + 6f);
+
+        Vector2 position = buyButtonRect.anchoredPosition + new Vector2(0f, 90f);
+        RectTransform parentRect = rootRect.parent as RectTransform;
+        if (parentRect != null && Mathf.Approximately(rootRect.anchorMin.x, rootRect.anchorMax.x))
+        {
+            float anchorX = (rootRect.anchorMin.x - parentRect.pivot.x) * parentRect.rect.width;
+            float halfWidth = totalWidth * 0.5f;
+            float minCenterX = -parentRect.pivot.x * parentRect.rect.width + halfWidth;
+            float maxCenterX = (1f - parentRect.pivot.x) * parentRect.rect.width - halfWidth;
+            float centerX = anchorX + position.x;
+            position.x = Mathf.Clamp(centerX, minCenterX, maxCenterX) - anchorX;
+        }
+
+        rootRect.anchoredPosition = position;
     }
 
     private Button FindButtonByObjectName(string objectName)
