@@ -36,6 +36,20 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public float buyCostOptionSpacing = 110f;
     private GameObject buyCostOptionsRoot;
 
+    [Header("Action Buttons")]
+    public GameObject buyButtonObject;
+    public string buyButtonObjectName = "TestBuycard";
+    public GameObject skipBuyButtonObject;
+    public string skipBuyButtonObjectName = "SkipBuy";
+    public GameObject confirmBuyWithFullHandButtonObject;
+    public string confirmBuyWithFullHandButtonObjectName = "ConfirmBuyWithFullHand";
+    public GameObject cancelBuyButtonObject;
+    public string cancelBuyButtonObjectName = "CancelBuy";
+    public GameObject discardButtonObject;
+    public string discardButtonObjectName = "DiscardCard";
+    public GameObject endTurnButtonObject;
+    public string endTurnButtonObjectName = "End Turn";
+
     public HandUI handUI; //HandUI gère l’affichage des cartes dans la main
 
 
