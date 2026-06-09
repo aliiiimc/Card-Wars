@@ -8,6 +8,26 @@ public class Dragon : SpecialCardScriptBase
             || CardMatches(unitCardData, SpecialCardIds.CharacterDragon, "Dragon");
     }
 
+    public override int GetAttackRange(Unit unit, CharacterCardData unitCardData)
+    {
+        if (unit == null)
+        {
+            return 0;
+        }
+
+        int bonusAttackRange = 2;
+        if (unitCardData is DragonCardData dragonCardData)
+        {
+            bonusAttackRange = UnityEngine.Mathf.Max(0, dragonCardData.bonusAttackRange);
+        }
+
+        int baseAttackRange = unitCardData != null
+            ? UnityEngine.Mathf.Max(0, unitCardData.attackRange)
+            : (unit != null ? UnityEngine.Mathf.Max(0, unit.attackRange) : 0);
+
+        return baseAttackRange + bonusAttackRange;
+    }
+
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
     {
         return tile != null

@@ -11,10 +11,12 @@ public class UnitManager : MonoBehaviour
     public float walkSquashAmount = 0.08f;
     public Color moveHighlightColor = new Color(0.42f, 0.93f, 0.68f);
     public Color attackHighlightColor = new Color(1f, 0.70f, 0.30f);
+    public Color attackRangeHighlightColor = new Color(1f, 0.35f, 0.35f, 0.45f);
 
     private Unit selectedUnit;
     private List<HexTile> moveTiles = new List<HexTile>();
     private List<HexTile> attackTiles = new List<HexTile>();
+    private List<HexTile> attackRangeTiles = new List<HexTile>();
     private HexGrid grid;
     private WorldEffectManager worldEffectManager;
     private readonly List<ISpecialCardScript> specialCardScripts = new List<ISpecialCardScript>
@@ -104,6 +106,26 @@ public class UnitManager : MonoBehaviour
         selectedUnit = FindUnitOnTile(tile);
         if (selectedUnit == null) return;
 
+        // Attack range boundary — show all tiles within attack range in a distinct color first.
+        // Movement and enemy target highlights will overwrite where they overlap.
+        int effectiveAttackRange = GetAttackRangeForUnit(selectedUnit);
+        if (effectiveAttackRange > 0 && selectedUnit.CanAttack())
+        {
+            EnsureReferences();
+            if (grid != null)
+            {
+                List<HexTile> allAttackRangeTiles = HexUtils.GetTilesInRange(selectedUnit.currentTile, effectiveAttackRange, grid);
+                foreach (HexTile t in allAttackRangeTiles)
+                {
+                    if (t != selectedUnit.currentTile)
+                    {
+                        t.Highlight(attackRangeHighlightColor);
+                        attackRangeTiles.Add(t);
+                    }
+                }
+            }
+        }
+
         // Movement range (green). The range uses the unit's remaining turn budget, not the full card range again.
         moveTiles = GetLegalMoveTiles(selectedUnit);
         foreach (HexTile t in moveTiles)
@@ -111,7 +133,7 @@ public class UnitManager : MonoBehaviour
             t.Highlight(moveHighlightColor);
         }
 
-        // Attack range (red) — highlight enemies within attackRange
+        // Attack targets (orange) — highlight enemies within attackRange
         attackTiles = GetLegalAttackTargets(selectedUnit);
         foreach (HexTile t in attackTiles)
         {
@@ -349,10 +371,11 @@ public class UnitManager : MonoBehaviour
         Unit target = FindUnitOnTile(targetTile);
         if (target != null)
         {
-            if (Archer.ShouldPlayProjectile(attackerCardData))
+            ProjectileVisualSettings projectileVisuals = SpecialCardScriptBase.GetProjectileVisualSettings(attackerCardData);
+            if (projectileVisuals != null && projectileVisuals.projectilePrefab != null)
             {
                 ProjectileVisual.Spawn(
-                    ((ArcherCardData)attackerCardData).projectileVisuals,
+                    projectileVisuals,
                     attacker.transform.position,
                     targetTile.transform.position);
             }
@@ -369,10 +392,11 @@ public class UnitManager : MonoBehaviour
         {
             Debug.Log("Attacked fort!");
 
-            if (Archer.ShouldPlayProjectile(attackerCardData))
+            ProjectileVisualSettings projectileVisuals = SpecialCardScriptBase.GetProjectileVisualSettings(attackerCardData);
+            if (projectileVisuals != null && projectileVisuals.projectilePrefab != null)
             {
                 ProjectileVisual.Spawn(
-                    ((ArcherCardData)attackerCardData).projectileVisuals,
+                    projectileVisuals,
                     attacker.transform.position,
                     targetTile.transform.position);
             }
@@ -420,10 +444,11 @@ public class UnitManager : MonoBehaviour
                  && targetTile.worldEffectOwner != "none"
                  && targetTile.worldEffectOwner != activeOwner)
         {
-            if (Archer.ShouldPlayProjectile(attackerCardData))
+            ProjectileVisualSettings projectileVisuals = SpecialCardScriptBase.GetProjectileVisualSettings(attackerCardData);
+            if (projectileVisuals != null && projectileVisuals.projectilePrefab != null)
             {
                 ProjectileVisual.Spawn(
-                    ((ArcherCardData)attackerCardData).projectileVisuals,
+                    projectileVisuals,
                     attacker.transform.position,
                     targetTile.transform.position);
             }
@@ -458,8 +483,10 @@ public class UnitManager : MonoBehaviour
 
     void DeselectUnit()
     {
+        foreach (HexTile t in attackRangeTiles) t.ResetColor();
         foreach (HexTile t in moveTiles) t.ResetColor();
         foreach (HexTile t in attackTiles) t.ResetColor();
+        attackRangeTiles.Clear();
         moveTiles.Clear();
         attackTiles.Clear();
         selectedUnit = null;
