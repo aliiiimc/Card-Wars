@@ -398,7 +398,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         // 2 Character cards
         for (int i = 0; i < 2; i++)
         {
-            CardRuntimeState card = CreateRandomCardRuntimeStateOfType<CharacterCardData>();
+            CardRuntimeState card = CreateRandomStartingCardRuntimeStateOfType<CharacterCardData>();
             if (card == null)
             {
                 Debug.Log("Could not create a starting character card.");
@@ -408,7 +408,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         // 1 WorldEffect card
-        CardRuntimeState worldEffectCard = CreateRandomCardRuntimeStateOfType<WorldEffectCardData>();
+        CardRuntimeState worldEffectCard = CreateRandomStartingCardRuntimeStateOfType<WorldEffectCardData>();
         if (worldEffectCard == null)
         {
             Debug.Log("Could not create a starting world effect card.");
@@ -417,7 +417,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         AddCardToHand(player, worldEffectCard);
 
         // 1 Spell card
-        CardRuntimeState spellCard = CreateRandomCardRuntimeStateOfType<SpellCardData>();
+        CardRuntimeState spellCard = CreateRandomStartingCardRuntimeStateOfType<SpellCardData>();
         if (spellCard == null)
         {
             Debug.Log("Could not create a starting spell card.");
@@ -811,6 +811,49 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         if (matchingCards.Count == 0)
         {
             Debug.Log("No cards of type " + typeof(T).Name + " found in the library.");
+            return null;
+        }
+
+        return matchingCards[Random.Range(0, matchingCards.Count)];
+    }
+
+    private CardRuntimeState CreateRandomStartingCardRuntimeStateOfType<T>() where T : CardData
+    {
+        CardData randomCard = GetRandomStartingCardFromLibraryByType<T>();
+        if (randomCard == null)
+        {
+            return null;
+        }
+        return CardFactory.CreateRuntimeState(randomCard);
+    }
+
+    private CardData GetRandomStartingCardFromLibraryByType<T>() where T : CardData
+    {
+        if (cardLibrary == null || cardLibrary.cards == null || cardLibrary.cards.Count == 0)
+        {
+            Debug.Log("Card Library is missing or empty.");
+            return null;
+        }
+
+        List<CardData> matchingCards = new List<CardData>();
+        for (int i = 0; i < cardLibrary.cards.Count; i++)
+        {
+            CardData card = cardLibrary.cards[i];
+            if (card is T)
+            {
+                // Prevent starting with a Dragon
+                if (card is DragonCardData || card.MatchesSpecialCard(SpecialCardIds.CharacterDragon, "Dragon"))
+                {
+                    continue;
+                }
+
+                matchingCards.Add(card);
+            }
+        }
+
+        if (matchingCards.Count == 0)
+        {
+            Debug.Log("No cards of type " + typeof(T).Name + " found in the starting library pool.");
             return null;
         }
 

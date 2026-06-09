@@ -39,7 +39,8 @@ public class HexGrid : MonoBehaviour
                 AxialCoord coord = OffsetToAxial(col, row);
                 Vector3 position = AxialToWorld(coord);
 
-                GameObject hex = Instantiate(hexPrefab, position, Quaternion.identity, transform);
+                GameObject hex = Instantiate(hexPrefab, transform);
+                hex.transform.localPosition = position;
                 hex.name = $"Hex_{coord.q}_{coord.r}";
 
                 HexTile tile = hex.GetComponent<HexTile>();
