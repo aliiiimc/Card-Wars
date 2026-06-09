@@ -95,6 +95,9 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         ApplyActionButtonStyle(discardButtonObject);
         ApplyActionButtonStyle(endTurnButtonObject);
         RefreshActionButtons();
+
+        // Play theme music if available
+        SoundManager.GetOrCreate().PlayTheme();
     }
 
     private void ResolveActionButtonReferences()
