@@ -92,13 +92,18 @@ public class Unit : MonoBehaviour
         {
             health = Mathf.Max(0, health - safeAmount);
         }
+        
+        string unitName = sourceCharacterCardData != null ? sourceCharacterCardData.DisplayName : "Unit";
+        var hud = FindFirstObjectByType<FortGame.UI.HUDManager>();
 
         if (health <= 0)
         {
+            hud?.ShowSpellAnnouncement($"{unitName} took {safeAmount} damage and was destroyed! [HP: 0]");
             Die();
             return;
         }
 
+        hud?.ShowSpellAnnouncement($"{unitName} took {safeAmount} damage. [HP: {health}]");
         RefreshVisualState();
     }
 
@@ -110,6 +115,10 @@ public class Unit : MonoBehaviour
         {
             runtimeCard.ApplyHeal(safeAmount);
             SyncStatsFromRuntimeCard();
+            
+            string name = sourceCharacterCardData != null ? sourceCharacterCardData.DisplayName : "Unit";
+            FindFirstObjectByType<FortGame.UI.HUDManager>()?.ShowSpellAnnouncement($"{name} was healed for {safeAmount}. [HP: {health}]");
+            
             RefreshVisualState();
             return;
         }
@@ -118,6 +127,10 @@ public class Unit : MonoBehaviour
         health = maxHp > 0
             ? Mathf.Min(maxHp, health + safeAmount)
             : health + safeAmount;
+            
+        string unitName = sourceCharacterCardData != null ? sourceCharacterCardData.DisplayName : "Unit";
+        FindFirstObjectByType<FortGame.UI.HUDManager>()?.ShowSpellAnnouncement($"{unitName} was healed for {safeAmount}. [HP: {health}]");
+            
         RefreshVisualState();
     }
 

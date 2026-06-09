@@ -1743,6 +1743,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         targetPlayer.fortHp = Mathf.Max(0, targetPlayer.fortHp - damage);
         Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
+        
+        hudManager?.ShowSpellAnnouncement($"{targetPlayer.playerName}'s Fort took {damage} damage. [HP: {targetPlayer.fortHp}]");
 
         CheckGameOver();
         LogStateSummary();
@@ -1764,6 +1766,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         targetPlayer.fortHp += amount;
         Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
+        
+        hudManager?.ShowSpellAnnouncement($"{targetPlayer.playerName}'s Fort was healed for {amount}. [HP: {targetPlayer.fortHp}]");
 
         LogStateSummary();
     }
