@@ -32,9 +32,7 @@ namespace FortGame.Computer
                 return TryExecuteMoveAction(action, snapshot);
             }
 
-            if (action.type == ActionType.AttackUnit
-                || action.type == ActionType.AttackWorldEffect
-                || action.type == ActionType.AttackFort)
+            if (action.type == ActionType.AttackUnit || action.type == ActionType.AttackFort || action.type == ActionType.AttackStructure)
             {
                 return TryExecuteAttackAction(action, snapshot);
             }

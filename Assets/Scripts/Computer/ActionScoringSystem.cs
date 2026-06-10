@@ -96,7 +96,8 @@ namespace FortGame.Computer
 
             // 3. Favorable Unit Trades (+100 to +300)
             bool isUnitTradeAction = action.type == ActionType.AttackUnit
-                || (action.type == ActionType.PlaySpellCard && action.target.type == CardTargetType.EnemyUnit);
+                || action.type == ActionType.AttackStructure
+                || (action.type == ActionType.PlaySpellCard && (action.target.type == CardTargetType.EnemyUnit || action.target.type == CardTargetType.EnemyStructure));
 
             if (isUnitTradeAction)
             {

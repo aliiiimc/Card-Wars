@@ -264,9 +264,7 @@ namespace FortGame.Computer
         private static bool IsAttackAction(ComputerAction action)
         {
             return action != null
-                && (action.type == ActionType.AttackUnit
-                    || action.type == ActionType.AttackWorldEffect
-                    || action.type == ActionType.AttackFort);
+                && (action.type == ActionType.AttackUnit || action.type == ActionType.AttackFort || action.type == ActionType.AttackStructure);
         }
     }
 }

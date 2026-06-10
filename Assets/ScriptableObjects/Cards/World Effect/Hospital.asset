@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e3bb4aa8bca449f8784e3d77db7c3fe, type: 3}
   m_Name: Hospital
   m_EditorClassIdentifier: Assembly-CSharp::HospitalCardData
-  cardName: Hospital
+  cardName: Healing Station
   cost: 4
   handDeckSprite: {fileID: -8268236786426009918, guid: 43d2d67d1c7123744a2fe5317a4c529a, type: 3}
   description: Heals nearby allied units at the start of your turn.
   validatorId: target.rules.reusable
   effectId: effect.summon
+  specialCardId: 
   manifestedSprite: {fileID: 21300000, guid: b2cb923982d74ef3b0df7c9a0eb04dcc, type: 3}
   category: 0
   structureHp:
@@ -31,6 +32,7 @@ MonoBehaviour:
     value: 0
   allowsUnitPassThrough: 0
   allowsUnitOccupancy: 0
+  worldEffectOpacity: 1
   attackType: 1
   attackTarget: 2
   revenuePerTurn:

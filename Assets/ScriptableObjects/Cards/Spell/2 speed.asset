@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85be3f4dc3ca4b8f8c9d7f48c2da41bd, type: 3}
   m_Name: 2 speed
   m_EditorClassIdentifier: Assembly-CSharp::SpeedSpellCardData
-  cardName: +2 speed
+  cardName: Speed boost
   cost: 4
   handDeckSprite: {fileID: -1980338675225548929, guid: e4372a200b6d2e1488c72e8910250c9f, type: 3}
   description: Adds 2 movement capacity to the target

@@ -47,6 +47,12 @@ public class Engineer : SpecialCardScriptBase
         }
 
         Debug.Log($"[SpecialTrigger][Engineer] Repaired allied structure at ({tile.coord.q},{tile.coord.r}) for {restoredHp} HP.");
+        FortGame.UI.HUDManager hudManager = Object.FindFirstObjectByType<FortGame.UI.HUDManager>();
+        if (hudManager != null)
+        {
+            string structureName = worldEffect?.sourceCard?.SourceCard?.DisplayName ?? "structure";
+            hudManager.ShowInfo($"Engineer repaired {structureName} for {restoredHp} HP.");
+        }
         return true;
     }
 

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
   m_Name: Spearman
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
-  cardName: Spearman
+  cardName: Spear Fighter
   cost: 3
   handDeckSprite: {fileID: 2140098413681247292, guid: e4a6f2847b7db5444995cdcef106821a, type: 3}
   description: 

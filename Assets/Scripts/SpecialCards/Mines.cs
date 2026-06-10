@@ -64,6 +64,15 @@ public class Mines
             }
         }
 
+        if (placedCount > 0)
+        {
+            FortGame.UI.HUDManager hudManager = Object.FindFirstObjectByType<FortGame.UI.HUDManager>();
+            if (hudManager != null)
+            {
+                hudManager.ShowInfo($"{placedCount} mines have been placed.");
+            }
+        }
+
         return placedCount;
     }
 

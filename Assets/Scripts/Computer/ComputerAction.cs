@@ -12,6 +12,7 @@ namespace FortGame.Computer
         AttackUnit,
         AttackWorldEffect,
         AttackFort,
+        AttackStructure,
         EndTurn
     }
 

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
   m_Name: Priest
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
-  cardName: Priest
+  cardName: Priestess
   cost: 3
   handDeckSprite: {fileID: -338558310170827541, guid: 506d8adbf34d5b3479b1c3e08403a928, type: 3}
   description: 
