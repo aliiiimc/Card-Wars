@@ -100,10 +100,15 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
 # Local planning notes (kept out of commits)
-/FATINE_TASK_PLAN.md
-
 /ALI_WORK_PLAN.md
 /codex.md
+/PROJECT_PLAN.md
+/PROJECT_PLAN_2.md
+
+# Temporary project artifacts
+/[Tt]mp/
+UpgradeLog.htm
+/.commandcode/
 
 
 
