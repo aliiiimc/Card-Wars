@@ -124,6 +124,8 @@ MonoBehaviour:
   hudSelectedCardAnchor: {fileID: 0}
   liftDuration: 0.6
   liftScale: 3.2
+  statsPanelVerticalOffset: 90
+  statsPanelHorizontalOffset: -600
 --- !u!225 &6832601372875780548
 CanvasGroup:
   m_ObjectHideFlags: 0
