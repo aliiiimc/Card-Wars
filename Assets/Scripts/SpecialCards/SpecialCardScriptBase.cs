@@ -93,6 +93,11 @@ public abstract class SpecialCardScriptBase : ISpecialCardScript
             return false;
         }
 
+        if (tile.isMineTile)
+        {
+            return false;
+        }
+
         bool targetIsAir = false;
         if (tile.tileType == "unit")
         {

@@ -60,7 +60,7 @@ How to play: Anti-resource unit, low damage against units/buildings, bonus damag
 
 --- +2 speed ---
 Cost: 4
-How to play: Adds 2 movement capacity, doesnt work on miner
+How to play: Adds 2 movement capacity, doesn't work on miner
 
 --- Freeze ---
 Cost: 3
@@ -82,39 +82,39 @@ How to play: Disables enemy building for 1 turn
 Cost: 4
 How to play: Choose field of enemy player and takes away the money generated of the field and gives it to you
 
---- Anti-Air Tower ---
+--- Anti-Air Tower ---x
 Cost: 5
 HP: 25
 Damage: 15
 How to play: Building made to counter flying units like Dragon
 
---- Camp ---
+--- Camp ---x
 Cost: 4
 HP: 35
 How to play: Force new spawn location
 
---- Hospital ---
+--- Hospital ---x
 Cost: 4
 HP: 20
 How to play: Heals allied characters nearby
 
---- Mines ---
+--- Mines ---x
 Cost: 3
 Damage: 12
 How to play: Mines alert: moderate ATK. Hidden trap that damages enemies who step on it.
 
---- Wall ---
+--- Wall ---x
 Cost: 3
 HP: 20
 How to play: To prevent enemy from passing or attacking
 
---- Watch Tower ---
+--- Watch Tower ---x
 Cost: 4
 HP: 25
 Damage: 8
 How to play: Attacks enemy units in range
 
---- Wheat Field ---
+--- Wheat Field ---x
 Cost: 3
 HP: 8
 How to play: Accelerates money generation
