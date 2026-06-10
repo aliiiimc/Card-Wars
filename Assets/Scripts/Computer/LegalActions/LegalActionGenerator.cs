@@ -290,7 +290,13 @@ namespace FortGame.Computer
                         continue;
                     }
 
-                    if (targetTile.tileType != "unit" && targetTile.tileType != "fort")
+                    bool isWorldEffect = targetTile.HasWorldEffect() && targetTile.tileType != "unit" && targetTile.tileType != "fort";
+                    if (targetTile.tileType != "unit" && targetTile.tileType != "fort" && !isWorldEffect)
+                    {
+                        continue;
+                    }
+
+                    if (isWorldEffect && targetTile.isMineTile)
                     {
                         continue;
                     }
@@ -298,19 +304,33 @@ namespace FortGame.Computer
                     _diagnostics.RecordCandidate();
 
                     Unit targetUnit = unitManager.FindUnitOnTile(targetTile);
+                    CardRuntimeState targetWorldEffect = null;
+                    if (isWorldEffect)
+                    {
+                        targetWorldEffect = snapshot.BoardReader != null ? snapshot.BoardReader.GetCardAt(targetTile.coord) : null;
+                    }
+
                     ActionType actionType = targetTile.tileType == "fort"
                         ? ActionType.AttackFort
-                        : ActionType.AttackUnit;
+                        : (isWorldEffect ? ActionType.AttackStructure : ActionType.AttackUnit);
 
                     CardTargetType targetType = actionType == ActionType.AttackFort
                         ? CardTargetType.EnemyFort
-                        : CardTargetType.EnemyUnit;
+                        : (actionType == ActionType.AttackStructure ? CardTargetType.EnemyStructure : CardTargetType.EnemyUnit);
 
                     string targetName = actionType == ActionType.AttackFort
                         ? "enemy fort"
-                        : targetUnit != null ? targetUnit.name : "enemy unit";
+                        : (actionType == ActionType.AttackStructure ? (targetWorldEffect?.SourceCard?.DisplayName ?? "enemy structure") : (targetUnit != null ? targetUnit.name : "enemy unit"));
+
+                    string targetEntityId = actionType == ActionType.AttackFort ? "fort" : (actionType == ActionType.AttackStructure ? "worldEffect" : "unit");
+                    string targetOwner = actionType == ActionType.AttackStructure ? targetTile.worldEffectOwner : targetTile.owner;
+                    CardRuntimeState targetCard = actionType == ActionType.AttackStructure ? targetWorldEffect : (targetUnit != null ? targetUnit.RuntimeCard : null);
 
                     int targetColumn = snapshot.HexGrid.AxialToOffsetColumn(targetTile.coord);
+
+                    bool destroysEnemyUnit = actionType == ActionType.AttackStructure
+                        ? (targetWorldEffect?.SourceCard is WorldEffectCardData we && unit.attack >= (we.structureHp.HasValue ? we.structureHp.Value : 1))
+                        : (targetUnit != null && unit.attack >= targetUnit.health);
 
                     var action = new ComputerAction(
                         $"Attack {targetName} with {unit.name}",
@@ -323,9 +343,9 @@ namespace FortGame.Computer
                         {
                             type = targetType,
                             tile = targetTile.coord,
-                            targetCard = targetUnit != null ? targetUnit.RuntimeCard : null,
-                            targetPlayerId = targetTile.owner,
-                            targetEntityId = actionType == ActionType.AttackFort ? "fort" : "unit"
+                            targetCard = targetCard,
+                            targetPlayerId = targetOwner,
+                            targetEntityId = targetEntityId
                         },
                         isGeneratedByLegalReader = true,
                         isLegalAction = true,
@@ -333,7 +353,7 @@ namespace FortGame.Computer
                             && snapshot.OpponentPlayer != null
                             && unit.attack >= snapshot.OpponentPlayer.fortHp,
                         isDefensiveMove = ShouldDefend(snapshot, targetColumn),
-                        destroysEnemyUnit = targetUnit != null && unit.attack >= targetUnit.health,
+                        destroysEnemyUnit = destroysEnemyUnit,
                         survivesTrade = targetUnit == null || unit.health > targetUnit.attack,
                         tacticalScore = ScoreAttackTarget(snapshot, unit, targetTile, targetUnit, actionType)
                     };
@@ -805,6 +825,12 @@ namespace FortGame.Computer
                 score += target.targetCard.CurrentRevenue.Value * 45f;
             }
 
+            int hp = GetCardCurrentHp(target.targetCard);
+            if (hp > 0)
+            {
+                score += hp * 10f;
+            }
+
             score += ScoreThreatNearOwnFort(snapshot, target.tile) * 0.35f;
             return score;
         }
@@ -982,6 +1008,11 @@ namespace FortGame.Computer
                 return ScoreFortAttack(snapshot, attacker);
             }
 
+            if (actionType == ActionType.AttackStructure)
+            {
+                return ScoreStructureAttack(snapshot, attacker, targetTile);
+            }
+
             if (actionType != ActionType.AttackUnit || targetUnit == null)
             {
                 return 0f;
@@ -1046,6 +1077,41 @@ namespace FortGame.Computer
             if (remainingFortHp <= attackDamage)
             {
                 score += 180f;
+            }
+
+            return score;
+        }
+
+        private static float ScoreStructureAttack(ComputerGameSnapshot snapshot, Unit attacker, HexTile targetTile)
+        {
+            if (snapshot?.BoardReader == null || attacker == null || targetTile == null)
+            {
+                return 0f;
+            }
+
+            CardRuntimeState runtimeTarget = snapshot.BoardReader.GetCardAt(targetTile.coord);
+            if (runtimeTarget?.SourceCard is not WorldEffectCardData worldEffectCard)
+            {
+                return 0f;
+            }
+
+            int structureHp = worldEffectCard.structureHp.HasValue ? worldEffectCard.structureHp.Value : 0;
+            if (structureHp <= 0)
+            {
+                return 0f;
+            }
+
+            if (attacker.canColonizeEnemyWorldEffects)
+            {
+                return 400f;
+            }
+
+            int attackDamage = Mathf.Max(0, attacker.attack);
+            float score = attackDamage * 25f;
+
+            if (attackDamage >= structureHp)
+            {
+                score += 150f;
             }
 
             return score;

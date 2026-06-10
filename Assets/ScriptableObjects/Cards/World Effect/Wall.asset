@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60286785afef456db51a8f397bca81af, type: 3}
   m_Name: Wall
   m_EditorClassIdentifier: Assembly-CSharp::WallCardData
-  cardName: Wall
+  cardName: The Barrier
   cost: 3
   handDeckSprite: {fileID: 3398097592885845358, guid: 94f682216327bf6459c8b76d3c25ff3a, type: 3}
   description: Builds a short blocking wall line that helps control movement.
   validatorId: target.rules.reusable
   effectId: effect.summon
+  specialCardId: 
   manifestedSprite: {fileID: 21300000, guid: 3502510e7d7b47bd88d45d796d0a4238, type: 3}
   category: 0
   structureHp:
@@ -29,6 +30,9 @@ MonoBehaviour:
   worldEffectAttackRange:
     hasValue: 0
     value: 0
+  allowsUnitPassThrough: 0
+  allowsUnitOccupancy: 0
+  worldEffectOpacity: 1
   attackType: 1
   attackTarget: 0
   revenuePerTurn:

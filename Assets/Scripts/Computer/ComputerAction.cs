@@ -11,6 +11,7 @@ namespace FortGame.Computer
         MoveUnit,
         AttackUnit,
         AttackFort,
+        AttackStructure,
         EndTurn
     }
 
