@@ -129,6 +129,20 @@ namespace FortGame.Computer
             // (abdo :) Apply the tile/movement score added by the legal-action generator.
             score += action.tacticalScore;
 
+            if (action.type == ActionType.PlayUnitCard)
+            {
+                score += 45f;
+
+                if (myState != null && myState.handCount >= 4)
+                {
+                    score += 25f;
+                }
+            }
+            else if (action.type == ActionType.PlayWorldEffectCard)
+            {
+                score += action.isDefensiveMove ? 35f : 10f;
+            }
+
             if (action.movesBackward)
             {
                 score -= 50f;
@@ -144,7 +158,7 @@ namespace FortGame.Computer
             // Late game cards are great in late game, or if we can ramp to them.
             if (action.isLateGameCard)
             {
-                score += currentTurn >= 5 ? 80f : -50f;
+                score += currentTurn >= 5 ? 80f : -25f;
             }
 
 

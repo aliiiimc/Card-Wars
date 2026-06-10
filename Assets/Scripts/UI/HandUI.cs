@@ -59,7 +59,26 @@ namespace FortGame.UI
                     cardImage.sprite = runtimeCard.SourceCard.handDeckSprite;
                 }
 
+                HideEmptyChildImages(newCardObj, cardImage);
                 _cardsInHand.Add(cardUI);
+            }
+        }
+
+        private static void HideEmptyChildImages(GameObject cardObject, Image rootImage)
+        {
+            if (cardObject == null)
+            {
+                return;
+            }
+
+            Image[] images = cardObject.GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+                if (image != null && image != rootImage && image.sprite == null)
+                {
+                    image.enabled = false;
+                }
             }
         }
 

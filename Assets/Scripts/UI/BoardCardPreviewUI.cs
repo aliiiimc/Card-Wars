@@ -33,6 +33,9 @@ namespace FortGame.UI
             GameObject previewObject = new GameObject(PreviewObjectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(BoardCardPreviewUI));
             previewObject.transform.SetParent(canvas.transform, false);
 
+            // Sync layer with canvas to make sure it renders on the UI layer (Layer 5)
+            previewObject.layer = canvas.gameObject.layer;
+
             BoardCardPreviewUI preview = previewObject.GetComponent<BoardCardPreviewUI>();
             preview.Initialize(canvas, true);
             return preview;
@@ -115,6 +118,8 @@ namespace FortGame.UI
             }
             cardImage.preserveAspect = true;
             cardImage.raycastTarget = false;
+            cardImage.enabled = false;
+            HideEmptyChildImages();
             previewCanvas = GetComponent<Canvas>();
             if (previewCanvas == null)
             {
@@ -155,24 +160,39 @@ namespace FortGame.UI
             _activePreview = this;
 
             targetAnchoredPos = configuredAnchoredPos;
-            cardImage.sprite = card.SourceCard.handDeckSprite;
+            HideEmptyChildImages();
+            cardImage.sprite = GetPreviewSprite(card.SourceCard);
             cardImage.enabled = cardImage.sprite != null;
             gameObject.SetActive(cardImage.enabled);
-            if (!gameObject.activeInHierarchy)
-            {
-                return;
-            }
 
-            if (animCoroutine != null)
+            if (gameObject.activeInHierarchy)
             {
-                StopCoroutine(animCoroutine);
-            }
+                if (animCoroutine != null)
+                {
+                    StopCoroutine(animCoroutine);
+                }
 
-            Vector2 startAnchoredPos = targetAnchoredPos + new Vector2(700f, 0f);
-            rectTransform.anchoredPosition = startAnchoredPos;
-            animCoroutine = StartCoroutine(AnimateShow(startAnchoredPos, targetAnchoredPos, 0.2f));
+                Vector2 startAnchoredPos = targetAnchoredPos + new Vector2(700f, 0f);
+                rectTransform.anchoredPosition = startAnchoredPos;
+                animCoroutine = StartCoroutine(AnimateShow(startAnchoredPos, targetAnchoredPos, 0.2f));
+            }
 
             statsPanel = StatsPanelUI.GetOrCreate(canvas);
+            if (statsPanel != null)
+            {
+                statsPanel.gameObject.SetActive(true);
+                if (statsPanel.useDynamicPositioning)
+                {
+                    statsPanel.SyncAnchorsAndPivot(rectTransform);
+
+                    // Calculate position exactly above the preview card, accounting for scale
+                    float cardHeight = rectTransform.sizeDelta.y * rectTransform.localScale.y;
+                    float panelHeight = statsPanel.GetComponent<RectTransform>().sizeDelta.y * statsPanel.GetComponent<RectTransform>().localScale.y;
+                    float offsetY = (cardHeight / 2f) + (panelHeight / 2f) + 15f; // 15px gap
+
+                    statsPanel.SetTargetAnchoredPosition(targetAnchoredPos + new Vector2(0f, offsetY));
+                }
+            }
             statsPanel?.ShowFromRight(card, 0.2f);
         }
 
@@ -217,7 +237,19 @@ namespace FortGame.UI
 
         private static Canvas ResolveUiCanvas()
         {
-            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+            BoardCardPreviewUI existingPreview = Object.FindFirstObjectByType<BoardCardPreviewUI>(FindObjectsInactive.Include);
+            Canvas existingCanvas = null;
+            if (existingPreview != null && existingPreview.transform.parent != null)
+            {
+                // On cherche le Canvas à partir du parent pour éviter de trouver celui de BoardCardPreview lui-même
+                existingCanvas = existingPreview.transform.parent.GetComponentInParent<Canvas>(true);
+            }
+            if (existingCanvas != null)
+            {
+                return existingCanvas;
+            }
+
+            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (int i = 0; i < canvases.Length; i++)
             {
                 Canvas canvas = canvases[i];
@@ -233,6 +265,63 @@ namespace FortGame.UI
             }
 
             return Object.FindFirstObjectByType<Canvas>();
+        }
+
+        private static Sprite GetPreviewSprite(CardData sourceCard)
+        {
+            if (sourceCard == null)
+            {
+                return null;
+            }
+
+            if (sourceCard.handDeckSprite != null)
+            {
+                return sourceCard.handDeckSprite;
+            }
+
+            if (sourceCard is CharacterCardData characterCard)
+            {
+                return characterCard.manifestedSprite;
+            }
+
+            if (sourceCard is WorldEffectCardData worldEffectCard)
+            {
+                return worldEffectCard.manifestedSprite;
+            }
+
+            return null;
+        }
+
+        private void HideEmptyChildImages()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+                if (image != null
+                    && image != cardImage
+                    && image.sprite == null
+                    && image.GetComponentInParent<StatsPanelUI>(true) == null
+                    && !IsStatsPanelChild(image.transform))
+                {
+                    image.enabled = false;
+                }
+            }
+        }
+
+        private static bool IsStatsPanelChild(Transform transform)
+        {
+            while (transform != null)
+            {
+                if (string.Equals(transform.name, "StatsPanel", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                transform = transform.parent;
+            }
+
+            return false;
         }
     }
 }

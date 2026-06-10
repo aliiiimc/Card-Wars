@@ -3,6 +3,7 @@ using UnityEngine;
 public sealed class LightningStrike
 {
     private const string CardName = "Lightning Strike";
+    public const int FortDamageAmount = 5;
 
     public bool IsMatch(CardRuntimeState sourceCard)
     {
@@ -34,8 +35,8 @@ public sealed class LightningStrike
                 return CardEffectResult.Failure("NO_TARGET_PLAYER", "Lightning Strike needs a fort owner id.");
             }
 
-            context.Writer.ApplyFortDamage(target.targetPlayerId, safeAmount);
-            return CardEffectResult.Success("Fort damage applied.", damageDealt: safeAmount);
+            context.Writer.ApplyFortDamage(target.targetPlayerId, FortDamageAmount);
+            return CardEffectResult.Success("Fort damage applied.", damageDealt: FortDamageAmount);
         }
 
         if (target.targetCard == null)

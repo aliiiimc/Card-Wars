@@ -9,8 +9,7 @@ namespace FortGame.UI
     [RequireComponent(typeof(CanvasGroup))]
     public class StatsPanelUI : MonoBehaviour
     {
-        [Header("UI References (Assign in Inspector)")]
-        public TextMeshProUGUI titleText;
+        [Header("UI References")]
         public TextMeshProUGUI statsText;
         public CanvasGroup canvasGroup;
 
@@ -21,64 +20,97 @@ namespace FortGame.UI
         [Tooltip("Starting position offset relative to target position when flyFromCard is false.")]
         public Vector2 startingOffset = new Vector2(0f, -50f);
 
+        [Tooltip("If true, the panel is positioned dynamically relative to the preview card. If false, it keeps its editor-configured position.")]
+        public bool useDynamicPositioning = true;
+
         private Vector2 _targetAnchoredPos;
         private RectTransform _rectTransform;
         private Coroutine _animCoroutine;
         private bool _isInitialized;
-        private bool _isDynamicFallback;
         private Canvas _canvas;
-
-        private static Transform FindDeepChild(Transform parent, string name)
-        {
-            foreach (Transform child in parent)
-            {
-                if (child.name == name)
-                    return child;
-                Transform result = FindDeepChild(child, name);
-                if (result != null)
-                    return result;
-            }
-            return null;
-        }
+        private bool _isDynamic = false;
 
         public static StatsPanelUI GetOrCreate(Canvas canvas)
         {
-            if (canvas == null) return null;
-
-            // 1. First, search for a designer-configured StatsPanel in the Canvas hierarchy (even if inactive/nested)
-            Transform panelTransform = FindDeepChild(canvas.transform, "StatsPanel");
-            if (panelTransform != null)
+            if (canvas == null)
             {
-                StatsPanelUI panel = panelTransform.GetComponent<StatsPanelUI>();
-                if (panel == null)
-                {
-                    panel = panelTransform.gameObject.AddComponent<StatsPanelUI>();
-                }
-                panel.Initialize();
-                return panel;
+                Debug.LogWarning("[StatsPanelUI] GetOrCreate called with null canvas.");
+                return null;
             }
 
-            // 2. Fallback: Search the active scene objects
-            GameObject panelObj = GameObject.Find("StatsPanel");
-            if (panelObj != null)
+            // 1. Search for any existing StatsPanelUI under the Canvas
+            StatsPanelUI[] panels = canvas.GetComponentsInChildren<StatsPanelUI>(true);
+            StatsPanelUI selectedPanel = null;
+
+            // First, prefer any panel that is already marked as dynamic
+            foreach (var panel in panels)
             {
-                StatsPanelUI panel = panelObj.GetComponent<StatsPanelUI>();
-                if (panel == null)
+                if (panel != null && panel._isDynamic)
                 {
-                    panel = panelObj.AddComponent<StatsPanelUI>();
+                    selectedPanel = panel;
+                    break;
                 }
-                panel.Initialize();
-                return panel;
             }
 
-            // 3. Fallback: Create a dynamic StatsPanel programmatically
-            GameObject newPanelObj = new GameObject("StatsPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup), typeof(StatsPanelUI));
-            newPanelObj.transform.SetParent(canvas.transform, false);
+            // If none is marked dynamic, take the first existing scene panel
+            if (selectedPanel == null)
+            {
+                foreach (var panel in panels)
+                {
+                    if (panel != null)
+                    {
+                        selectedPanel = panel;
+                        Debug.Log($"[StatsPanelUI] Found existing scene StatsPanel: {panel.gameObject.name}. Reusing it.");
+                        break;
+                    }
+                }
+            }
 
-            StatsPanelUI dynamicPanel = newPanelObj.GetComponent<StatsPanelUI>();
-            dynamicPanel._isDynamicFallback = true;
-            dynamicPanel.Initialize();
-            return dynamicPanel;
+            // 2. Destroy any DUPLICATE/obsolete StatsPanels in the scene recursively to avoid conflict
+            List<GameObject> toDestroy = new List<GameObject>();
+            FindObsoleteStatsPanelsRecursive(canvas.transform, toDestroy, selectedPanel != null ? selectedPanel.gameObject : null);
+            foreach (var obj in toDestroy)
+            {
+                if (obj != null)
+                {
+                    Debug.Log($"[StatsPanelUI] Destroying duplicate StatsPanel GameObject: {obj.name} (parent: {(obj.transform.parent != null ? obj.transform.parent.name : "none")})");
+                    Destroy(obj);
+                }
+            }
+
+            // 3. Create a fresh dynamic panel from scratch if it doesn't exist
+            if (selectedPanel == null)
+            {
+                Debug.Log("[StatsPanelUI] Creating fresh dynamic StatsPanel from scratch.");
+                GameObject newPanelObj = new GameObject("StatsPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+                newPanelObj.transform.SetParent(canvas.transform, false);
+                
+                // Sync layer with canvas to make sure it renders on the UI layer (Layer 5)
+                newPanelObj.layer = canvas.gameObject.layer;
+
+                selectedPanel = newPanelObj.AddComponent<StatsPanelUI>();
+                selectedPanel._isDynamic = true;
+            }
+
+            selectedPanel.AttachToCanvas(canvas);
+            selectedPanel.Initialize();
+            return selectedPanel;
+        }
+
+        private static void FindObsoleteStatsPanelsRecursive(Transform parent, List<GameObject> results, GameObject exclude)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == "StatsPanel" && child.gameObject != exclude)
+                {
+                    results.Add(child.gameObject);
+                }
+                else
+                {
+                    FindObsoleteStatsPanelsRecursive(child, results, exclude);
+                }
+            }
         }
 
         private void Awake()
@@ -92,19 +124,13 @@ namespace FortGame.UI
 
             _rectTransform = GetComponent<RectTransform>();
             _targetAnchoredPos = _rectTransform.anchoredPosition;
-            _canvas = GetComponent<Canvas>();
-            if (_canvas == null)
-            {
-                _canvas = gameObject.AddComponent<Canvas>();
-            }
-            _canvas.overrideSorting = true;
-            _canvas.sortingOrder = 260;
+            AttachToCanvas(GetComponentInParent<Canvas>(true));
 
             if (canvasGroup == null)
                 canvasGroup = GetComponent<CanvasGroup>();
 
-            // If it's a programmatically created fallback, initialize its UI structure
-            if (_isDynamicFallback)
+            // Only initialize dynamically if it is marked dynamic, or if the references are missing
+            if (_isDynamic || statsText == null)
             {
                 InitializeDynamicUI();
             }
@@ -116,45 +142,90 @@ namespace FortGame.UI
             _isInitialized = true;
         }
 
+        private void AttachToCanvas(Canvas targetCanvas)
+        {
+            if (targetCanvas != null && targetCanvas.transform != transform && transform.parent != targetCanvas.transform)
+            {
+                transform.SetParent(targetCanvas.transform, false);
+            }
+
+            transform.SetAsLastSibling();
+
+            _rectTransform = GetComponent<RectTransform>();
+            if (_rectTransform == null)
+            {
+                _rectTransform = gameObject.AddComponent<RectTransform>();
+            }
+
+            _rectTransform.localScale = Vector3.one;
+            _rectTransform.localRotation = Quaternion.identity;
+
+            _canvas = GetComponent<Canvas>();
+            if (_canvas == null)
+            {
+                _canvas = gameObject.AddComponent<Canvas>();
+            }
+            _canvas.overrideSorting = true;
+            _canvas.sortingOrder = 260;
+
+            if (canvasGroup == null)
+            {
+                canvasGroup = GetComponent<CanvasGroup>();
+            }
+        }
+
         private void InitializeDynamicUI()
         {
-            _rectTransform.anchorMin = new Vector2(1f, 0.5f); // Right center fallback
-            _rectTransform.anchorMax = new Vector2(1f, 0.5f);
-            _rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            _rectTransform.sizeDelta = new Vector2(250f, 180f);
+            // Setup base panel dimensions if not already configured
+            if (_rectTransform.sizeDelta.x <= 10f || _rectTransform.sizeDelta.y <= 10f)
+            {
+                _rectTransform.sizeDelta = new Vector2(250f, 180f);
+            }
 
+            // Setup background image with the official texture if not set
             Image image = GetComponent<Image>();
-            if (image != null)
+            if (image != null && image.sprite == null)
             {
                 Sprite sprite = Resources.Load<Sprite>("UI/HUD/Stats_Panel");
                 if (sprite != null)
                 {
                     image.sprite = sprite;
                     image.type = Image.Type.Sliced;
+                    image.color = Color.white;
                 }
                 else
                 {
+                    // Fallback sleek color if resource isn't found
                     image.color = new Color(0.12f, 0.15f, 0.20f, 0.95f);
                 }
             }
 
-            // Create stats text (expanded to fill the panel since title is removed)
-            GameObject statsObj = new GameObject("StatsText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            statsObj.transform.SetParent(transform, false);
-            RectTransform statsRect = statsObj.GetComponent<RectTransform>();
-            statsRect.anchorMin = new Vector2(0f, 0f);
-            statsRect.anchorMax = new Vector2(1f, 1f);
-            statsRect.pivot = new Vector2(0.5f, 0.5f);
-            statsRect.offsetMin = new Vector2(20f, 15f);
-            statsRect.offsetMax = new Vector2(-20f, -15f);
+            // Attempt to resolve statsText reference if missing
+            if (statsText == null)
+            {
+                statsText = GetComponentInChildren<TextMeshProUGUI>(true);
+            }
 
-            statsText = statsObj.GetComponent<TextMeshProUGUI>();
-            statsText.alignment = TextAlignmentOptions.Center;
-            statsText.fontSize = 16f;
-            statsText.color = Color.white;
-            statsText.lineSpacing = 6f;
-            statsText.text = "Stats info";
-            ApplyFont(statsText);
+            if (statsText == null)
+            {
+                GameObject statsObj = new GameObject("StatsText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                statsObj.transform.SetParent(transform, false);
+                statsObj.layer = gameObject.layer; // Sync layer with parent
+                RectTransform statsRect = statsObj.GetComponent<RectTransform>();
+                statsRect.anchorMin = new Vector2(0f, 0f);
+                statsRect.anchorMax = new Vector2(1f, 1f);
+                statsRect.pivot = new Vector2(0.5f, 0.5f);
+                statsRect.offsetMin = new Vector2(20f, 15f);
+                statsRect.offsetMax = new Vector2(-20f, -15f);
+
+                statsText = statsObj.GetComponent<TextMeshProUGUI>();
+                statsText.alignment = TextAlignmentOptions.Center;
+                statsText.fontSize = 16f;
+                statsText.color = Color.white;
+                statsText.lineSpacing = 6f;
+                statsText.text = "Stats info";
+                ApplyFont(statsText);
+            }
         }
 
         private void ApplyFont(TextMeshProUGUI text)
@@ -168,15 +239,43 @@ namespace FortGame.UI
             }
         }
 
+        public void SyncAnchorsAndPivot(RectTransform source)
+        {
+            if (source == null) return;
+            Initialize();
+
+            Debug.Log($"[StatsPanelUI] SyncAnchorsAndPivot from {source.gameObject.name}. Source AnchorMin={source.anchorMin}, AnchorMax={source.anchorMax}, Pivot={source.pivot}");
+
+            _rectTransform.anchorMin = source.anchorMin;
+            _rectTransform.anchorMax = source.anchorMax;
+            _rectTransform.pivot = source.pivot;
+
+            if (source.anchorMin != source.anchorMax || _rectTransform.sizeDelta.x <= 10f || _rectTransform.sizeDelta.y <= 10f)
+            {
+                _rectTransform.sizeDelta = new Vector2(250f, 180f);
+            }
+        }
+
         public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, float duration)
         {
             Initialize();
+
+            Debug.Log($"[StatsPanelUI] Show called. Card: {card?.SourceCard?.DisplayName}, StartPos: {cardStartWorldPos}, activeSelf: {gameObject.activeSelf}, activeInHierarchy: {gameObject.activeInHierarchy}");
 
             if (_animCoroutine != null)
                 StopCoroutine(_animCoroutine);
 
             gameObject.SetActive(true);
+            transform.SetAsLastSibling();
             PopulateStats(card);
+
+            if (canvasGroup != null)
+                canvasGroup.alpha = 1f; // Force visible alpha immediately as a fail-safe
+
+            if (!gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning("[StatsPanelUI] Show: gameObject.activeInHierarchy is false after SetActive(true).");
+            }
 
             _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, duration));
         }
@@ -185,11 +284,22 @@ namespace FortGame.UI
         {
             Initialize();
 
+            Debug.Log($"[StatsPanelUI] ShowFromRight called. Card: {card?.SourceCard?.DisplayName}, activeSelf: {gameObject.activeSelf}, activeInHierarchy: {gameObject.activeInHierarchy}");
+
             if (_animCoroutine != null)
                 StopCoroutine(_animCoroutine);
 
             gameObject.SetActive(true);
+            transform.SetAsLastSibling();
             PopulateStats(card);
+
+            if (canvasGroup != null)
+                canvasGroup.alpha = 1f; // Force visible alpha immediately as a fail-safe
+
+            if (!gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning("[StatsPanelUI] ShowFromRight: gameObject.activeInHierarchy is false after SetActive(true).");
+            }
 
             _animCoroutine = StartCoroutine(AnimateShowFromRight(duration));
         }
@@ -198,10 +308,28 @@ namespace FortGame.UI
         {
             Initialize();
 
+            Debug.Log($"[StatsPanelUI] Hide called. activeSelf: {gameObject.activeSelf}, activeInHierarchy: {gameObject.activeInHierarchy}");
+
             if (_animCoroutine != null)
                 StopCoroutine(_animCoroutine);
 
+            if (!gameObject.activeInHierarchy)
+            {
+                if (canvasGroup != null)
+                    canvasGroup.alpha = 0f;
+                gameObject.SetActive(false);
+                Debug.Log("[StatsPanelUI] Hide finished instantly (already inactive in hierarchy).");
+                return;
+            }
+
             _animCoroutine = StartCoroutine(AnimateHide(duration));
+        }
+
+        public void SetTargetAnchoredPosition(Vector2 targetAnchoredPos)
+        {
+            Initialize();
+            Debug.Log($"[StatsPanelUI] SetTargetAnchoredPosition: {targetAnchoredPos}");
+            _targetAnchoredPos = targetAnchoredPos;
         }
 
         private void PopulateStats(CardRuntimeState card)
@@ -218,14 +346,31 @@ namespace FortGame.UI
             if (data is CharacterCardData charData)
             {
                 string speedText = charData.unitMovementCapacity.HasValue ? charData.unitMovementCapacity.Value.ToString() : "-";
-                statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage}\nRange : {charData.attackRange}\nMovement : {speedText}";
+                
+                // Special display for UFO Cow to show field consume damage alongside normal attack damage
+                if (charData is UfoCowCardData ufoCow)
+                {
+                    statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage} / <size=75%>{ufoCow.fieldConsumeAmount} for field</size>\nRange : {charData.attackRange}\nMovement : {speedText}";
+                }
+                else
+                {
+                    statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage}\nRange : {charData.attackRange}\nMovement : {speedText}";
+                }
             }
             else if (data is WorldEffectCardData weData)
             {
-                string hpText = weData.structureHp.HasValue ? weData.structureHp.Value.ToString() : "-";
-                string dmgText = weData.structureDamage.HasValue ? weData.structureDamage.Value.ToString() : "-";
-                string rangeText = weData.worldEffectAttackRange.HasValue ? weData.worldEffectAttackRange.Value.ToString() : "-";
-                statsText.text = $"HP : {hpText}\nDamage : {dmgText}\nRange : {rangeText}";
+                // Special display for Mines to show number of mines and individual mine trigger damage
+                if (weData is MinesCardData mines)
+                {
+                    statsText.text = $"Mines : {mines.minesToPlace}\nDamage : {mines.mineDamage}\nRange : -";
+                }
+                else
+                {
+                    string hpText = weData.structureHp.HasValue ? weData.structureHp.Value.ToString() : "-";
+                    string dmgText = weData.structureDamage.HasValue ? weData.structureDamage.Value.ToString() : "-";
+                    string rangeText = weData.worldEffectAttackRange.HasValue ? weData.worldEffectAttackRange.Value.ToString() : "-";
+                    statsText.text = $"HP : {hpText}\nDamage : {dmgText}\nRange : {rangeText}";
+                }
             }
             else if (data is SpellCardData spellData)
             {
@@ -252,6 +397,8 @@ namespace FortGame.UI
                 startAnchoredPos = _targetAnchoredPos + startingOffset;
             }
 
+            Debug.Log($"[StatsPanelUI] AnimateShow started. startAnchoredPos: {startAnchoredPos}, targetAnchoredPos: {_targetAnchoredPos}");
+
             float elapsed = 0f;
             while (elapsed < duration)
             {
@@ -268,12 +415,16 @@ namespace FortGame.UI
             _rectTransform.anchoredPosition = _targetAnchoredPos;
             if (canvasGroup != null)
                 canvasGroup.alpha = 1f;
+
+            Debug.Log($"[StatsPanelUI] AnimateShow finished. finalAnchoredPos: {_rectTransform.anchoredPosition}, final alpha: {(canvasGroup != null ? canvasGroup.alpha : 1f)}");
         }
 
         private IEnumerator AnimateHide(float duration)
         {
             Vector2 startAnchoredPos = _rectTransform.anchoredPosition;
             Vector2 targetAnchoredPos = _targetAnchoredPos + startingOffset;
+
+            Debug.Log($"[StatsPanelUI] AnimateHide started. startAnchoredPos: {startAnchoredPos}, targetAnchoredPos: {targetAnchoredPos}");
 
             float elapsed = 0f;
             while (elapsed < duration)
@@ -291,11 +442,15 @@ namespace FortGame.UI
             if (canvasGroup != null)
                 canvasGroup.alpha = 0f;
             gameObject.SetActive(false);
+
+            Debug.Log($"[StatsPanelUI] AnimateHide finished. activeSelf: {gameObject.activeSelf}, alpha: {(canvasGroup != null ? canvasGroup.alpha : 0f)}");
         }
 
         private IEnumerator AnimateShowFromRight(float duration)
         {
             Vector2 startAnchoredPos = _targetAnchoredPos + new Vector2(700f, 0f);
+
+            Debug.Log($"[StatsPanelUI] AnimateShowFromRight started. startAnchoredPos: {startAnchoredPos}, targetAnchoredPos: {_targetAnchoredPos}");
 
             float elapsed = 0f;
             while (elapsed < duration)
@@ -313,6 +468,8 @@ namespace FortGame.UI
             _rectTransform.anchoredPosition = _targetAnchoredPos;
             if (canvasGroup != null)
                 canvasGroup.alpha = 1f;
+
+            Debug.Log($"[StatsPanelUI] AnimateShowFromRight finished. finalAnchoredPos: {_rectTransform.anchoredPosition}, final alpha: {(canvasGroup != null ? canvasGroup.alpha : 1f)}");
         }
     }
 }

@@ -37,4 +37,4 @@ No visible board object. Applies an instant or temporary effect by modifying sta
 - Freeze: enemy unit cannot move for 1 turn
 - Tax Collection: choose field of enemy player and takes away the money generated of the field and gives it to you
 - Sabotage: disables enemy building for 1 turn
-- Lightning Strike: small direct damage, can target Fort
+- Lightning Strike: direct damage; deals 10 to units/structures and 5 to Fort

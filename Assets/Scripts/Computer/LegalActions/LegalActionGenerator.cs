@@ -159,6 +159,7 @@ namespace FortGame.Computer
                     ActionType actionType = isCharacterCard
                         ? ActionType.PlayUnitCard
                         : ActionType.PlayWorldEffectCard;
+                    bool developsBoard = isCharacterCard && ShouldDevelopBoard(snapshot, col);
 
                     var action = new ComputerAction($"Play {runtimeCard.SourceCard.DisplayName} on {coord}", actionType)
                     {
@@ -170,9 +171,9 @@ namespace FortGame.Computer
                         isGeneratedByLegalReader = true,
                         isLegalAction = true,
                         isDefensiveMove = ShouldDefend(snapshot, col),
-                        movesCloserToEnemyFort = ShouldPushForward(snapshot, col),
+                        movesCloserToEnemyFort = ShouldPushForward(snapshot, col) || developsBoard,
                         //Ali: hasSynergyOnBoard is for Small scoring bonus score for characters placed forward because they can create board pressure.
-                        hasSynergyOnBoard = (isCharacterCard && ShouldPushForward(snapshot, col)) || (!isCharacterCard && ShouldDefend(snapshot, col)),
+                        hasSynergyOnBoard = (isCharacterCard && (ShouldPushForward(snapshot, col) || developsBoard)) || (!isCharacterCard && ShouldDefend(snapshot, col)),
                         // (abdo :) Spawn cards get a tile score so the AI spreads pressure instead of picking the first valid row.
                         tacticalScore = ScorePlacementTile(snapshot, coord, isCharacterCard),
                         isLateGameCard = runtimeCard.SourceCard.cost >= 4,
@@ -670,7 +671,7 @@ namespace FortGame.Computer
 
         private static float ScoreDamageSpell(ComputerGameSnapshot snapshot, CardRuntimeState runtimeCard, CardTarget target)
         {
-            int damage = GetSpellDamageAmount(runtimeCard);
+            int damage = GetSpellDamageAmount(runtimeCard, target);
             if (target.type == CardTargetType.EnemyFort)
             {
                 int opponentFortHp = snapshot.OpponentPlayer != null ? Mathf.Max(1, snapshot.OpponentPlayer.fortHp) : 1;
@@ -818,6 +819,11 @@ namespace FortGame.Computer
 
         private static int GetSpellDamageAmount(CardRuntimeState runtimeCard)
         {
+            return GetSpellDamageAmount(runtimeCard, default);
+        }
+
+        private static int GetSpellDamageAmount(CardRuntimeState runtimeCard, CardTarget target)
+        {
             if (runtimeCard == null)
             {
                 return 0;
@@ -831,6 +837,13 @@ namespace FortGame.Computer
             if (runtimeCard.SourceCard != null && runtimeCard.SourceCard.MatchesSpecialCard(SpecialCardIds.SpellTaxCollection, "Tax collection"))
             {
                 return 0;
+            }
+
+            if (target.type == CardTargetType.EnemyFort
+                && runtimeCard.SourceCard != null
+                && runtimeCard.SourceCard.MatchesSpecialCard(SpecialCardIds.SpellLightningStrike, "Lightning Strike"))
+            {
+                return LightningStrike.FortDamageAmount;
             }
 
             return runtimeCard.SpellEffectPower.HasValue ? Mathf.Max(0, runtimeCard.SpellEffectPower.Value) : 0;
@@ -1357,7 +1370,8 @@ namespace FortGame.Computer
                 return false;
             }
 
-            return spellCard.effectPower >= snapshot.OpponentPlayer.fortHp;
+            CardTarget fortTarget = new CardTarget { type = CardTargetType.EnemyFort };
+            return GetSpellDamageAmount(runtimeCard, fortTarget) >= snapshot.OpponentPlayer.fortHp;
         }
 
         // Ali: defensive placement matters more when the AI Fort is low.
@@ -1390,6 +1404,16 @@ namespace FortGame.Computer
             }
 
             return snapshot.ActingPlayer.fortHp >= 8 && IsForwardColumn(snapshot, col);
+        }
+
+        private static bool ShouldDevelopBoard(ComputerGameSnapshot snapshot, int col)
+        {
+            if (snapshot?.ActingPlayer == null)
+            {
+                return false;
+            }
+
+            return snapshot.ActingPlayer.fortHp >= 8 && IsDefensiveColumn(snapshot, col);
         }
 
         private static bool IsForwardColumn(ComputerGameSnapshot snapshot, int col)
