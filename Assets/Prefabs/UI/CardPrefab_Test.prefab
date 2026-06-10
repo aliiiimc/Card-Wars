@@ -123,7 +123,7 @@ MonoBehaviour:
   selectedColor: {r: 1, g: 1, b: 0, a: 1}
   hudSelectedCardAnchor: {fileID: 0}
   liftDuration: 0.6
-  liftScale: 2
+  liftScale: 3.2
 --- !u!225 &6832601372875780548
 CanvasGroup:
   m_ObjectHideFlags: 0

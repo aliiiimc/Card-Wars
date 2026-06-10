@@ -81,9 +81,6 @@ namespace FortGame.UI
         {
             _isSelected = selected;
 
-            if (_imageComponent != null)
-                _imageComponent.color = selected ? selectedColor : _originalColor;
-
             if (_animCoroutine != null)
                 StopCoroutine(_animCoroutine);
 
