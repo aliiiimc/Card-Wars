@@ -36,6 +36,13 @@ namespace FortGame.UI
         [Tooltip("Horizontal offset of the stats panel relative to the card center.")]
         public float statsPanelHorizontalOffset = 0f;
 
+        [Header("Stats Panel Size (Unity Editor)")]
+        [Tooltip("Width of the stats panel.")]
+        public float statsPanelWidth = 250f;
+
+        [Tooltip("Height of the stats panel.")]
+        public float statsPanelHeight = 180f;
+
         // ── Private state ─────────────────────────────────────────────────
         private GameManager _gameManager;
         private HUDManager _hudManager;
@@ -202,7 +209,8 @@ namespace FortGame.UI
                 StatsPanelUI statsPanel = StatsPanelUI.GetOrCreate(parentCanvas);
                 if (statsPanel != null)
                 {
-                    statsPanel.Show(runtimeCard, transform.position, hudSelectedCardAnchor, liftScale, liftDuration, statsPanelHorizontalOffset, statsPanelVerticalOffset);
+                    statsPanel.Show(runtimeCard, transform.position, hudSelectedCardAnchor, liftScale, liftDuration, 
+                                    statsPanelHorizontalOffset, statsPanelVerticalOffset, statsPanelWidth, statsPanelHeight);
                 }
             }
 

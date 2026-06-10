@@ -106,7 +106,7 @@ namespace FortGame.UI
             }
         }
 
-        public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration, float xOffset, float yOffset)
+        public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration, float xOffset, float yOffset, float width, float height)
         {
             if (card == null || cardAnchor == null) return;
 
@@ -115,6 +115,8 @@ namespace FortGame.UI
 
             gameObject.SetActive(true);
             PopulateStats(card);
+
+            GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
 
             _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, cardAnchor, liftScale, duration, xOffset, yOffset));
         }
