@@ -11,6 +11,7 @@ public class EuropeanKing : SpecialCardScriptBase
             && GetAttackType(attackerCardData) != AttackType.HealFix
             && TargetsGround(attackerCardData)
             && tile.HasWorldEffect()
+            && !tile.isMineTile
             && tile.worldEffectOwner != "none"
             && tile.worldEffectOwner != activeOwner;
     }

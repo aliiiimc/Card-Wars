@@ -213,6 +213,11 @@ public class WorldEffectManager : MonoBehaviour
                 ? Mathf.Max(0, tile.fieldHp)
                 : 0;
             dealtDamage = Mathf.Max(0, fieldHpBefore - fieldHpAfter);
+            if (dealtDamage > 0)
+            {
+                var hud = UnityEngine.Object.FindFirstObjectByType<FortGame.UI.HUDManager>();
+                hud?.ShowSpellAnnouncement($"A field took {dealtDamage} damage. [HP: {fieldHpAfter}]");
+            }
             return true;
         }
 
@@ -240,6 +245,13 @@ public class WorldEffectManager : MonoBehaviour
         }
 
         dealtDamage = Mathf.Max(0, hpBefore - Mathf.Max(0, worldEffect.health));
+        if (dealtDamage > 0)
+        {
+            var hud = UnityEngine.Object.FindFirstObjectByType<FortGame.UI.HUDManager>();
+            string effectName = worldEffect.sourceCard != null ? worldEffect.sourceCard.SourceCard.DisplayName : "World effect";
+            hud?.ShowSpellAnnouncement($"{effectName} took {dealtDamage} damage. [HP: {worldEffect.health}]");
+        }
+
         if (worldEffect.health <= 0)
         {
             return Remove(tile);

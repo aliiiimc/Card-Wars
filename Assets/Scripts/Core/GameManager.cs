@@ -1961,12 +1961,17 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void NotifyEnemyMinefieldPlaced(int placedMineCount)
     {
-        if (placedMineCount <= 0 || computerPlayer == null)
+        if (placedMineCount <= 0)
         {
             return;
         }
 
-        Debug.LogWarning("[SpecialTrigger][Mines] Warning: enemy mines may have been placed in their territory.");
+        hudManager?.ShowSpellAnnouncement($"Warning: The enemy placed {placedMineCount} mine(s)!");
+
+        if (computerPlayer != null)
+        {
+            Debug.LogWarning("[SpecialTrigger][Mines] Warning: enemy mines may have been placed in their territory.");
+        }
     }
 
     private void ApplyAutomaticWorldEffectAttacksForCurrentPlayer()
