@@ -106,7 +106,7 @@ namespace FortGame.UI
             }
         }
 
-        public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration)
+        public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration, float xOffset, float yOffset)
         {
             if (card == null || cardAnchor == null) return;
 
@@ -116,7 +116,7 @@ namespace FortGame.UI
             gameObject.SetActive(true);
             PopulateStats(card);
 
-            _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, cardAnchor, liftScale, duration));
+            _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, cardAnchor, liftScale, duration, xOffset, yOffset));
         }
 
         public void Hide(float duration)
@@ -161,7 +161,7 @@ namespace FortGame.UI
             }
         }
 
-        private IEnumerator AnimateShow(Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration)
+        private IEnumerator AnimateShow(Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration, float xOffset, float yOffset)
         {
             RectTransform rect = GetComponent<RectTransform>();
             RectTransform canvasRect = transform.parent as RectTransform;
@@ -172,9 +172,8 @@ namespace FortGame.UI
             rect.pivot = cardAnchor.pivot;
 
             // 1. Calculate Target Position (centered above the selected card final position)
-            float targetX = cardAnchor.anchoredPosition.x;
-            float verticalOffset = 15f; // Spacing between card top edge and panel bottom edge (Adjustable)
-            float targetY = cardAnchor.anchoredPosition.y + (cardAnchor.rect.height * 0.5f * liftScale) + (rect.rect.height * 0.5f) + verticalOffset;
+            float targetX = cardAnchor.anchoredPosition.x + xOffset;
+            float targetY = cardAnchor.anchoredPosition.y + (cardAnchor.rect.height * 0.5f * liftScale) + (rect.rect.height * 0.5f) + yOffset;
             Vector2 targetAnchoredPos = new Vector2(targetX, targetY);
 
             // 2. Calculate Start Position (convert card's world position to Canvas space)
