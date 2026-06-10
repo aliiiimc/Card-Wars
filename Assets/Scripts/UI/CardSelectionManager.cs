@@ -65,6 +65,7 @@ namespace FortGame.UI
 
             _selectedCard = card;
             _currentState = CardSelectionState.CardSelected;
+            BoardCardPreviewUI.HideActive();
             card.SetSelected(true);
             _hudManager?.SetSelectedCard(card.CardName);
             _hudManager?.ShowInfo($"Choose a target for {card.CardName}.");

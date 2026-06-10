@@ -452,8 +452,13 @@ public class HexTile : MonoBehaviour
         FortGame.UI.TargetSelectionManager targetMgr = FortGame.UI.TargetSelectionManager.Instance;
         if (targetMgr != null)
         {
-            targetMgr.TrySelectTarget(this);
+            if (targetMgr.TrySelectTarget(this))
+            {
+                return;
+            }
         }
+
+        FortGame.UI.BoardCardPreviewUI.ShowForTile(this);
     }
 
     void OnMouseEnter()

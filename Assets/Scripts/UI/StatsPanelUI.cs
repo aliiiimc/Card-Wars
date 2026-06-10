@@ -26,12 +26,39 @@ namespace FortGame.UI
         private Coroutine _animCoroutine;
         private bool _isInitialized;
         private bool _isDynamicFallback;
+        private Canvas _canvas;
+
+        private static Transform FindDeepChild(Transform parent, string name)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name == name)
+                    return child;
+                Transform result = FindDeepChild(child, name);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
 
         public static StatsPanelUI GetOrCreate(Canvas canvas)
         {
             if (canvas == null) return null;
 
-            // 1. First, search for a designer-configured StatsPanel in the scene
+            // 1. First, search for a designer-configured StatsPanel in the Canvas hierarchy (even if inactive/nested)
+            Transform panelTransform = FindDeepChild(canvas.transform, "StatsPanel");
+            if (panelTransform != null)
+            {
+                StatsPanelUI panel = panelTransform.GetComponent<StatsPanelUI>();
+                if (panel == null)
+                {
+                    panel = panelTransform.gameObject.AddComponent<StatsPanelUI>();
+                }
+                panel.Initialize();
+                return panel;
+            }
+
+            // 2. Fallback: Search the active scene objects
             GameObject panelObj = GameObject.Find("StatsPanel");
             if (panelObj != null)
             {
@@ -40,15 +67,6 @@ namespace FortGame.UI
                 {
                     panel = panelObj.AddComponent<StatsPanelUI>();
                 }
-                panel.Initialize();
-                return panel;
-            }
-
-            // 2. Fallback: Check if we already created a dynamic one
-            Transform existing = canvas.transform.Find("StatsPanel");
-            if (existing != null)
-            {
-                StatsPanelUI panel = existing.GetComponent<StatsPanelUI>();
                 panel.Initialize();
                 return panel;
             }
@@ -74,6 +92,13 @@ namespace FortGame.UI
 
             _rectTransform = GetComponent<RectTransform>();
             _targetAnchoredPos = _rectTransform.anchoredPosition;
+            _canvas = GetComponent<Canvas>();
+            if (_canvas == null)
+            {
+                _canvas = gameObject.AddComponent<Canvas>();
+            }
+            _canvas.overrideSorting = true;
+            _canvas.sortingOrder = 260;
 
             if (canvasGroup == null)
                 canvasGroup = GetComponent<CanvasGroup>();
@@ -113,25 +138,7 @@ namespace FortGame.UI
                 }
             }
 
-            // Create title text
-            GameObject titleObj = new GameObject("TitleText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            titleObj.transform.SetParent(transform, false);
-            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0f, 1f);
-            titleRect.anchorMax = new Vector2(1f, 1f);
-            titleRect.pivot = new Vector2(0.5f, 1f);
-            titleRect.anchoredPosition = new Vector2(0f, -15f);
-            titleRect.sizeDelta = new Vector2(-30f, 30f);
-
-            titleText = titleObj.GetComponent<TextMeshProUGUI>();
-            titleText.alignment = TextAlignmentOptions.Center;
-            titleText.fontSize = 20f;
-            titleText.fontStyle = FontStyles.Bold;
-            titleText.color = new Color(0.96f, 0.78f, 0.26f, 1f); // Golden yellow
-            titleText.text = "Card Name";
-            ApplyFont(titleText);
-
-            // Create stats text
+            // Create stats text (expanded to fill the panel since title is removed)
             GameObject statsObj = new GameObject("StatsText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
             statsObj.transform.SetParent(transform, false);
             RectTransform statsRect = statsObj.GetComponent<RectTransform>();
@@ -139,7 +146,7 @@ namespace FortGame.UI
             statsRect.anchorMax = new Vector2(1f, 1f);
             statsRect.pivot = new Vector2(0.5f, 0.5f);
             statsRect.offsetMin = new Vector2(20f, 15f);
-            statsRect.offsetMax = new Vector2(-20f, -45f);
+            statsRect.offsetMax = new Vector2(-20f, -15f);
 
             statsText = statsObj.GetComponent<TextMeshProUGUI>();
             statsText.alignment = TextAlignmentOptions.Center;
@@ -174,6 +181,19 @@ namespace FortGame.UI
             _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, duration));
         }
 
+        public void ShowFromRight(CardRuntimeState card, float duration)
+        {
+            Initialize();
+
+            if (_animCoroutine != null)
+                StopCoroutine(_animCoroutine);
+
+            gameObject.SetActive(true);
+            PopulateStats(card);
+
+            _animCoroutine = StartCoroutine(AnimateShowFromRight(duration));
+        }
+
         public void Hide(float duration)
         {
             Initialize();
@@ -186,34 +206,30 @@ namespace FortGame.UI
 
         private void PopulateStats(CardRuntimeState card)
         {
-            if (card.SourceCard == null) return;
-            
-            if (titleText != null)
-                titleText.text = card.SourceCard.DisplayName;
-
             if (statsText == null) return;
+
+            if (card == null || card.SourceCard == null)
+            {
+                statsText.text = string.Empty;
+                return;
+            }
 
             CardData data = card.SourceCard;
             if (data is CharacterCardData charData)
             {
-                string speedText = charData.unitMovementCapacity.HasValue ? charData.unitMovementCapacity.Value.ToString() : "N/A";
-                statsText.text = $"HP: {charData.maxHp}\nAttack: {charData.attackDamage} (Range: {charData.attackRange})\nSpeed: {speedText}";
+                string speedText = charData.unitMovementCapacity.HasValue ? charData.unitMovementCapacity.Value.ToString() : "-";
+                statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage}\nRange : {charData.attackRange}\nMovement : {speedText}";
             }
             else if (data is WorldEffectCardData weData)
             {
-                List<string> lines = new List<string>();
-                if (weData.structureHp.HasValue) lines.Add($"HP: {weData.structureHp.Value}");
-                if (weData.structureDamage.HasValue) lines.Add($"Attack: {weData.structureDamage.Value}");
-                if (weData.revenuePerTurn.HasValue) lines.Add($"Income: +{weData.revenuePerTurn.Value} Gold");
-                if (weData.durationTurns > 0) lines.Add($"Duration: {weData.durationTurns} Turns");
-                statsText.text = lines.Count > 0 ? string.Join("\n", lines) : "Special Structure";
+                string hpText = weData.structureHp.HasValue ? weData.structureHp.Value.ToString() : "-";
+                string dmgText = weData.structureDamage.HasValue ? weData.structureDamage.Value.ToString() : "-";
+                string rangeText = weData.worldEffectAttackRange.HasValue ? weData.worldEffectAttackRange.Value.ToString() : "-";
+                statsText.text = $"HP : {hpText}\nDamage : {dmgText}\nRange : {rangeText}";
             }
             else if (data is SpellCardData spellData)
             {
-                List<string> lines = new List<string>();
-                lines.Add($"Power: {spellData.effectPower}");
-                if (spellData.effectDurationTurns > 0) lines.Add($"Duration: {spellData.effectDurationTurns} Turns");
-                statsText.text = string.Join("\n", lines);
+                statsText.text = $"Damage : {spellData.effectPower}\nDuration : {spellData.effectDurationTurns}";
             }
             else
             {
@@ -275,6 +291,28 @@ namespace FortGame.UI
             if (canvasGroup != null)
                 canvasGroup.alpha = 0f;
             gameObject.SetActive(false);
+        }
+
+        private IEnumerator AnimateShowFromRight(float duration)
+        {
+            Vector2 startAnchoredPos = _targetAnchoredPos + new Vector2(700f, 0f);
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float ease = 1f - Mathf.Pow(1f - t, 3f);
+
+                _rectTransform.anchoredPosition = Vector2.Lerp(startAnchoredPos, _targetAnchoredPos, ease);
+                if (canvasGroup != null)
+                    canvasGroup.alpha = Mathf.Lerp(0f, 1f, ease);
+                yield return null;
+            }
+
+            _rectTransform.anchoredPosition = _targetAnchoredPos;
+            if (canvasGroup != null)
+                canvasGroup.alpha = 1f;
         }
     }
 }

@@ -106,8 +106,7 @@ public sealed class RevivalManager : MonoBehaviour
         CancelSession(showMessage: false);
         pendingSpellCard = spellCard;
 
-        cardSelectionManager?.ClearSelection();
-        targetSelectionManager?.OnSelectionCancelled();
+        targetSelectionManager?.ClearHighlights();
 
         CreateChoiceCards(choices);
         hudManager?.ShowInfo("Choose one recently defeated character to revive.");

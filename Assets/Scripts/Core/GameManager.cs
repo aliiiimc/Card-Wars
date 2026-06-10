@@ -395,14 +395,20 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         if (player == null)
         { return; }
 
+        List<CardData> chosenCharacters = new List<CardData>();
+
         // 2 Character cards
         for (int i = 0; i < 2; i++)
         {
-            CardRuntimeState card = CreateRandomStartingCardRuntimeStateOfType<CharacterCardData>();
+            CardRuntimeState card = CreateRandomStartingCardRuntimeStateOfType<CharacterCardData>(chosenCharacters);
             if (card == null)
             {
                 Debug.Log("Could not create a starting character card.");
                 return;
+            }
+            if (card.SourceCard != null)
+            {
+                chosenCharacters.Add(card.SourceCard);
             }
             AddCardToHand(player, card);
         }
@@ -817,9 +823,9 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         return matchingCards[Random.Range(0, matchingCards.Count)];
     }
 
-    private CardRuntimeState CreateRandomStartingCardRuntimeStateOfType<T>() where T : CardData
+    private CardRuntimeState CreateRandomStartingCardRuntimeStateOfType<T>(List<CardData> excludeCards = null) where T : CardData
     {
-        CardData randomCard = GetRandomStartingCardFromLibraryByType<T>();
+        CardData randomCard = GetRandomStartingCardFromLibraryByType<T>(excludeCards);
         if (randomCard == null)
         {
             return null;
@@ -827,7 +833,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         return CardFactory.CreateRuntimeState(randomCard);
     }
 
-    private CardData GetRandomStartingCardFromLibraryByType<T>() where T : CardData
+    private CardData GetRandomStartingCardFromLibraryByType<T>(List<CardData> excludeCards = null) where T : CardData
     {
         if (cardLibrary == null || cardLibrary.cards == null || cardLibrary.cards.Count == 0)
         {
@@ -847,13 +853,23 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
                     continue;
                 }
 
+                // Prevent duplicates in the starting hand
+                if (excludeCards != null && excludeCards.Contains(card))
+                {
+                    continue;
+                }
+
                 matchingCards.Add(card);
             }
         }
 
         if (matchingCards.Count == 0)
         {
-            Debug.Log("No cards of type " + typeof(T).Name + " found in the starting library pool.");
+            Debug.Log("No unique cards of type " + typeof(T).Name + " found in the starting library pool. Retrying without exclusions.");
+            if (excludeCards != null)
+            {
+                return GetRandomStartingCardFromLibraryByType<T>(null);
+            }
             return null;
         }
 
