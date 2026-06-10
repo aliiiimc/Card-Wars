@@ -126,6 +126,8 @@ MonoBehaviour:
   liftScale: 3.2
   statsPanelVerticalOffset: 90
   statsPanelHorizontalOffset: -600
+  statsPanelWidth: 80.8
+  statsPanelHeight: 92.6
 --- !u!225 &6832601372875780548
 CanvasGroup:
   m_ObjectHideFlags: 0

@@ -6,50 +6,111 @@ using System.Collections;
 
 namespace FortGame.UI
 {
+    [RequireComponent(typeof(CanvasGroup))]
     public class StatsPanelUI : MonoBehaviour
     {
-        private TextMeshProUGUI _titleText;
-        private TextMeshProUGUI _statsText;
-        private CanvasGroup _canvasGroup;
+        [Header("UI References (Assign in Inspector)")]
+        public TextMeshProUGUI titleText;
+        public TextMeshProUGUI statsText;
+        public CanvasGroup canvasGroup;
+
+        [Header("Animation Settings")]
+        [Tooltip("If true, the panel flies from the clicked card's position. If false, it uses startingOffset.")]
+        public bool flyFromCard = true;
+
+        [Tooltip("Starting position offset relative to target position when flyFromCard is false.")]
+        public Vector2 startingOffset = new Vector2(0f, -50f);
+
+        private Vector2 _targetAnchoredPos;
+        private RectTransform _rectTransform;
         private Coroutine _animCoroutine;
+        private bool _isInitialized;
+        private bool _isDynamicFallback;
 
         public static StatsPanelUI GetOrCreate(Canvas canvas)
         {
             if (canvas == null) return null;
-            
+
+            // 1. First, search for a designer-configured StatsPanel in the scene
+            GameObject panelObj = GameObject.Find("StatsPanel");
+            if (panelObj != null)
+            {
+                StatsPanelUI panel = panelObj.GetComponent<StatsPanelUI>();
+                if (panel == null)
+                {
+                    panel = panelObj.AddComponent<StatsPanelUI>();
+                }
+                panel.Initialize();
+                return panel;
+            }
+
+            // 2. Fallback: Check if we already created a dynamic one
             Transform existing = canvas.transform.Find("StatsPanel");
             if (existing != null)
             {
-                return existing.GetComponent<StatsPanelUI>();
+                StatsPanelUI panel = existing.GetComponent<StatsPanelUI>();
+                panel.Initialize();
+                return panel;
             }
 
-            GameObject panelObj = new GameObject("StatsPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup), typeof(StatsPanelUI));
-            panelObj.transform.SetParent(canvas.transform, false);
+            // 3. Fallback: Create a dynamic StatsPanel programmatically
+            GameObject newPanelObj = new GameObject("StatsPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup), typeof(StatsPanelUI));
+            newPanelObj.transform.SetParent(canvas.transform, false);
 
-            StatsPanelUI statsPanel = panelObj.GetComponent<StatsPanelUI>();
-            statsPanel.Initialize();
-            return statsPanel;
+            StatsPanelUI dynamicPanel = newPanelObj.GetComponent<StatsPanelUI>();
+            dynamicPanel._isDynamicFallback = true;
+            dynamicPanel.Initialize();
+            return dynamicPanel;
+        }
+
+        private void Awake()
+        {
+            Initialize();
         }
 
         private void Initialize()
         {
-            RectTransform rect = GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(1f, 0.5f); // Anchors set to middle-right
-            rect.anchorMax = new Vector2(1f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(250f, 180f);
-            rect.anchoredPosition = Vector2.zero;
+            if (_isInitialized) return;
+
+            _rectTransform = GetComponent<RectTransform>();
+            _targetAnchoredPos = _rectTransform.anchoredPosition;
+
+            if (canvasGroup == null)
+                canvasGroup = GetComponent<CanvasGroup>();
+
+            // If it's a programmatically created fallback, initialize its UI structure
+            if (_isDynamicFallback)
+            {
+                InitializeDynamicUI();
+            }
+
+            if (canvasGroup != null)
+                canvasGroup.alpha = 0f;
+
+            gameObject.SetActive(false);
+            _isInitialized = true;
+        }
+
+        private void InitializeDynamicUI()
+        {
+            _rectTransform.anchorMin = new Vector2(1f, 0.5f); // Right center fallback
+            _rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            _rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            _rectTransform.sizeDelta = new Vector2(250f, 180f);
 
             Image image = GetComponent<Image>();
-            Sprite sprite = Resources.Load<Sprite>("UI/HUD/Stats_Panel");
-            if (sprite != null)
+            if (image != null)
             {
-                image.sprite = sprite;
-                image.type = Image.Type.Sliced;
-            }
-            else
-            {
-                image.color = new Color(0.12f, 0.15f, 0.20f, 0.95f);
+                Sprite sprite = Resources.Load<Sprite>("UI/HUD/Stats_Panel");
+                if (sprite != null)
+                {
+                    image.sprite = sprite;
+                    image.type = Image.Type.Sliced;
+                }
+                else
+                {
+                    image.color = new Color(0.12f, 0.15f, 0.20f, 0.95f);
+                }
             }
 
             // Create title text
@@ -62,13 +123,13 @@ namespace FortGame.UI
             titleRect.anchoredPosition = new Vector2(0f, -15f);
             titleRect.sizeDelta = new Vector2(-30f, 30f);
 
-            _titleText = titleObj.GetComponent<TextMeshProUGUI>();
-            _titleText.alignment = TextAlignmentOptions.Center;
-            _titleText.fontSize = 20f;
-            _titleText.fontStyle = FontStyles.Bold;
-            _titleText.color = new Color(0.96f, 0.78f, 0.26f, 1f); // Golden yellow
-            _titleText.text = "Card Name";
-            ApplyFont(_titleText);
+            titleText = titleObj.GetComponent<TextMeshProUGUI>();
+            titleText.alignment = TextAlignmentOptions.Center;
+            titleText.fontSize = 20f;
+            titleText.fontStyle = FontStyles.Bold;
+            titleText.color = new Color(0.96f, 0.78f, 0.26f, 1f); // Golden yellow
+            titleText.text = "Card Name";
+            ApplyFont(titleText);
 
             // Create stats text
             GameObject statsObj = new GameObject("StatsText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
@@ -80,24 +141,18 @@ namespace FortGame.UI
             statsRect.offsetMin = new Vector2(20f, 15f);
             statsRect.offsetMax = new Vector2(-20f, -45f);
 
-            _statsText = statsObj.GetComponent<TextMeshProUGUI>();
-            _statsText.alignment = TextAlignmentOptions.Center;
-            _statsText.fontSize = 16f;
-            _statsText.color = Color.white;
-            _statsText.lineSpacing = 6f;
-            _statsText.text = "Stats info";
-            ApplyFont(_statsText);
-
-            _canvasGroup = GetComponent<CanvasGroup>();
-            _canvasGroup.alpha = 0f;
-            gameObject.SetActive(false);
+            statsText = statsObj.GetComponent<TextMeshProUGUI>();
+            statsText.alignment = TextAlignmentOptions.Center;
+            statsText.fontSize = 16f;
+            statsText.color = Color.white;
+            statsText.lineSpacing = 6f;
+            statsText.text = "Stats info";
+            ApplyFont(statsText);
         }
 
         private void ApplyFont(TextMeshProUGUI text)
         {
             if (text == null) return;
-            
-            // Try to find any existing TextMeshProUGUI in the scene to copy its font
             TextMeshProUGUI templateText = FindFirstObjectByType<TextMeshProUGUI>();
             if (templateText != null)
             {
@@ -106,9 +161,9 @@ namespace FortGame.UI
             }
         }
 
-        public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration, float xOffset, float yOffset, float width, float height)
+        public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, float duration)
         {
-            if (card == null || cardAnchor == null) return;
+            Initialize();
 
             if (_animCoroutine != null)
                 StopCoroutine(_animCoroutine);
@@ -116,13 +171,13 @@ namespace FortGame.UI
             gameObject.SetActive(true);
             PopulateStats(card);
 
-            GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
-
-            _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, cardAnchor, liftScale, duration, xOffset, yOffset));
+            _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, duration));
         }
 
         public void Hide(float duration)
         {
+            Initialize();
+
             if (_animCoroutine != null)
                 StopCoroutine(_animCoroutine);
 
@@ -133,13 +188,16 @@ namespace FortGame.UI
         {
             if (card.SourceCard == null) return;
             
-            _titleText.text = card.SourceCard.DisplayName;
+            if (titleText != null)
+                titleText.text = card.SourceCard.DisplayName;
+
+            if (statsText == null) return;
 
             CardData data = card.SourceCard;
             if (data is CharacterCardData charData)
             {
                 string speedText = charData.unitMovementCapacity.HasValue ? charData.unitMovementCapacity.Value.ToString() : "N/A";
-                _statsText.text = $"HP: {charData.maxHp}\nAttack: {charData.attackDamage} (Range: {charData.attackRange})\nSpeed: {speedText}";
+                statsText.text = $"HP: {charData.maxHp}\nAttack: {charData.attackDamage} (Range: {charData.attackRange})\nSpeed: {speedText}";
             }
             else if (data is WorldEffectCardData weData)
             {
@@ -148,46 +206,34 @@ namespace FortGame.UI
                 if (weData.structureDamage.HasValue) lines.Add($"Attack: {weData.structureDamage.Value}");
                 if (weData.revenuePerTurn.HasValue) lines.Add($"Income: +{weData.revenuePerTurn.Value} Gold");
                 if (weData.durationTurns > 0) lines.Add($"Duration: {weData.durationTurns} Turns");
-                _statsText.text = lines.Count > 0 ? string.Join("\n", lines) : "Special Structure";
+                statsText.text = lines.Count > 0 ? string.Join("\n", lines) : "Special Structure";
             }
             else if (data is SpellCardData spellData)
             {
                 List<string> lines = new List<string>();
                 lines.Add($"Power: {spellData.effectPower}");
                 if (spellData.effectDurationTurns > 0) lines.Add($"Duration: {spellData.effectDurationTurns} Turns");
-                _statsText.text = string.Join("\n", lines);
+                statsText.text = string.Join("\n", lines);
             }
             else
             {
-                _statsText.text = data.description;
+                statsText.text = data.description;
             }
         }
 
-        private IEnumerator AnimateShow(Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration, float xOffset, float yOffset)
+        private IEnumerator AnimateShow(Vector3 cardStartWorldPos, float duration)
         {
-            RectTransform rect = GetComponent<RectTransform>();
-            RectTransform canvasRect = transform.parent as RectTransform;
+            RectTransform canvasRect = _rectTransform.parent as RectTransform;
 
-            // Align anchors and pivot with cardAnchor to ensure they share the exact same space
-            rect.anchorMin = cardAnchor.anchorMin;
-            rect.anchorMax = cardAnchor.anchorMax;
-            rect.pivot = cardAnchor.pivot;
-
-            // 1. Calculate Target Position (centered above the selected card final position)
-            float targetX = cardAnchor.anchoredPosition.x + xOffset;
-            float targetY = cardAnchor.anchoredPosition.y + (cardAnchor.rect.height * 0.5f * liftScale) + (rect.rect.height * 0.5f) + yOffset;
-            Vector2 targetAnchoredPos = new Vector2(targetX, targetY);
-
-            // 2. Calculate Start Position (convert card's world position to Canvas space)
             Vector2 startAnchoredPos;
-            if (canvasRect != null)
+            if (flyFromCard && canvasRect != null)
             {
                 Vector3 localStartPos = canvasRect.InverseTransformPoint(cardStartWorldPos);
                 startAnchoredPos = new Vector2(localStartPos.x, localStartPos.y);
             }
             else
             {
-                startAnchoredPos = targetAnchoredPos;
+                startAnchoredPos = _targetAnchoredPos + startingOffset;
             }
 
             float elapsed = 0f;
@@ -197,20 +243,21 @@ namespace FortGame.UI
                 float t = Mathf.Clamp01(elapsed / duration);
                 float ease = 1f - Mathf.Pow(1f - t, 3f); // Ease out cubic
 
-                rect.anchoredPosition = Vector2.Lerp(startAnchoredPos, targetAnchoredPos, ease);
-                _canvasGroup.alpha = Mathf.Lerp(0f, 1f, ease);
+                _rectTransform.anchoredPosition = Vector2.Lerp(startAnchoredPos, _targetAnchoredPos, ease);
+                if (canvasGroup != null)
+                    canvasGroup.alpha = Mathf.Lerp(0f, 1f, ease);
                 yield return null;
             }
 
-            rect.anchoredPosition = targetAnchoredPos;
-            _canvasGroup.alpha = 1f;
+            _rectTransform.anchoredPosition = _targetAnchoredPos;
+            if (canvasGroup != null)
+                canvasGroup.alpha = 1f;
         }
 
         private IEnumerator AnimateHide(float duration)
         {
-            RectTransform rect = GetComponent<RectTransform>();
-            float startY = rect.anchoredPosition.y;
-            float targetY = startY + 50f; // Slide up as it fades out
+            Vector2 startAnchoredPos = _rectTransform.anchoredPosition;
+            Vector2 targetAnchoredPos = _targetAnchoredPos + startingOffset;
 
             float elapsed = 0f;
             while (elapsed < duration)
@@ -219,12 +266,14 @@ namespace FortGame.UI
                 float t = Mathf.Clamp01(elapsed / duration);
                 float ease = 1f - Mathf.Pow(1f - t, 3f);
 
-                rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, Mathf.Lerp(startY, targetY, ease));
-                _canvasGroup.alpha = Mathf.Lerp(1f, 0f, ease);
+                _rectTransform.anchoredPosition = Vector2.Lerp(startAnchoredPos, targetAnchoredPos, ease);
+                if (canvasGroup != null)
+                    canvasGroup.alpha = Mathf.Lerp(1f, 0f, ease);
                 yield return null;
             }
 
-            _canvasGroup.alpha = 0f;
+            if (canvasGroup != null)
+                canvasGroup.alpha = 0f;
             gameObject.SetActive(false);
         }
     }
