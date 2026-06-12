@@ -108,6 +108,7 @@ InitTestScene*.unity*
 
 # Temporary project artifacts
 /[Tt]mp/
+/Documentation/
 UpgradeLog.htm
 /.commandcode/
 
